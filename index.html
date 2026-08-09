@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>岩浆跑酷 · 五星逃亡</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="top">
+      <h1>岩浆跑酷</h1>
+      <p class="tag">跳上砖块 · 躲开僵尸 · 夺取五角星</p>
+    </header>
+
+    <div class="stage-wrap">
+      <canvas id="game" width="960" height="540"></canvas>
+
+      <div id="puzzle-tools" class="puzzle-tools hidden" aria-hidden="true">
+        <button type="button" class="fake-btn" data-label="提示" data-id="hint">提示</button>
+        <button type="button" class="fake-btn" data-label="暂停" data-id="pause">暂停</button>
+        <button type="button" class="fake-btn" data-label="重开" data-id="restart">重开</button>
+      </div>
+
+      <button id="home-btn" class="home-btn hidden" type="button">主页</button>
+
+      <div id="level-select" class="level-select hidden" aria-hidden="true">
+        <div class="level-select-card">
+          <h2>选择关卡</h2>
+          <p class="level-select-desc">共 35 关 · 第 9 关为目前终点，后面还在制作</p>
+          <div id="level-grid" class="level-grid"></div>
+          <p id="level-tip" class="level-tip hidden"></p>
+          <button id="logout-btn" type="button">退出登录</button>
+        </div>
+      </div>
+
+      <div id="login-screen" class="login-screen" aria-hidden="false">
+        <div class="login-card">
+          <h2>岩浆跑酷 · 登录</h2>
+          <p class="login-desc">请先登录后开始游戏</p>
+
+          <div class="login-tabs" role="tablist">
+            <button type="button" class="login-tab active" data-mode="account">账号密码</button>
+            <button type="button" class="login-tab" data-mode="phone">手机验证码</button>
+            <button type="button" class="login-tab" data-mode="idcard">身份证</button>
+          </div>
+
+          <div id="login-pane-account" class="login-pane">
+            <label for="login-user">账号</label>
+            <input id="login-user" type="text" autocomplete="username" placeholder="输入账号" />
+            <label for="login-pass">密码</label>
+            <input id="login-pass" type="password" autocomplete="current-password" placeholder="输入密码" />
+          </div>
+
+          <div id="login-pane-phone" class="login-pane hidden">
+            <label for="login-phone">手机号</label>
+            <input id="login-phone" type="tel" maxlength="11" placeholder="输入 11 位手机号" />
+            <label for="login-sms">验证码</label>
+            <div class="sms-row">
+              <input id="login-sms" type="text" maxlength="6" placeholder="输入验证码" />
+              <button id="sms-btn" type="button">获取验证码</button>
+            </div>
+          </div>
+
+          <div id="login-pane-idcard" class="login-pane hidden">
+            <label for="login-idcard">身份证号码</label>
+            <input id="login-idcard" type="text" maxlength="18" placeholder="输入 18 位身份证号" />
+          </div>
+
+          <div id="minor-notice" class="minor-notice hidden">
+            <p>防止未成年沉迷于游戏，星期五至星期日每晚 20:00 至 21:00 开放</p>
+            <button id="minor-ok" type="button">我知道了</button>
+          </div>
+
+          <p id="login-error" class="login-error hidden">请输入账号和密码</p>
+          <button id="login-submit" type="button">登录</button>
+        </div>
+      </div>
+
+      <div id="overlay" class="overlay hidden">
+        <div class="panel">
+          <h2 id="overlay-title">岩浆跑酷</h2>
+          <p id="overlay-msg">后面有 5 只僵尸在追你。<br />砖块下是滚烫岩浆——掉下去就完了。<br />冲到终点，拿到发光的五角星！</p>
+          <div id="name-form" class="name-form hidden">
+            <label for="player-name-input">给你的角色起个名字</label>
+            <input id="player-name-input" type="text" maxlength="8" placeholder="最多 8 个字" autocomplete="off" />
+          </div>
+          <button id="start-btn" type="button">开始逃亡</button>
+          <p id="overlay-hint" class="hint">← → / A D 移动 · 空格 / W / ↑ 跳跃 · R 重开</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="hud">
+      <span>关卡 <strong id="level-label">1</strong></span>
+      <span>五角星 <strong id="star-label">0</strong></span>
+      <span>状态 <strong id="status-label">准备</strong></span>
+    </div>
+  </div>
+  <script src="audio.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
