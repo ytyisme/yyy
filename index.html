@@ -2,7 +2,10 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>岩浆跑酷 · 五星逃亡</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -26,6 +29,16 @@
       </div>
 
       <button id="home-btn" class="home-btn hidden" type="button">主页</button>
+
+      <div id="touch-pad" class="touch-pad hidden" aria-hidden="true">
+        <div class="touch-move">
+          <button type="button" class="touch-btn" data-dir="left" aria-label="向左">◀</button>
+          <button type="button" class="touch-btn" data-dir="right" aria-label="向右">▶</button>
+        </div>
+        <div class="touch-actions">
+          <button type="button" class="touch-btn touch-jump" data-action="jump" aria-label="跳跃">跳</button>
+        </div>
+      </div>
 
       <div id="level-select" class="level-select hidden" aria-hidden="true">
         <div class="level-select-card">
@@ -89,7 +102,7 @@
             <input id="player-name-input" type="text" maxlength="8" placeholder="最多 8 个字" autocomplete="off" />
           </div>
           <button id="start-btn" type="button">开始逃亡</button>
-          <p id="overlay-hint" class="hint">← → / A D 移动 · 空格 / W / ↑ 跳跃 · R 重开</p>
+          <p id="overlay-hint" class="hint">电脑：方向键 / WASD · 手机：屏幕下方按钮</p>
         </div>
       </div>
     </div>

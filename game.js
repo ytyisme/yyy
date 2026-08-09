@@ -33,6 +33,7 @@
   const loginPaneAccount = document.getElementById("login-pane-account");
   const loginPanePhone = document.getElementById("login-pane-phone");
   const loginPaneIdcard = document.getElementById("login-pane-idcard");
+  const touchPad = document.getElementById("touch-pad");
 
   const W = canvas.width;
   const H = canvas.height;
@@ -43,6 +44,7 @@
   const LAVA_Y = H - 52;
 
   const keys = new Set();
+  const touch = { left: false, right: false, jump: false };
   let state = "login"; // login | select | menu | naming | playing | dead | win
   let level = 1;
   let stars = 0;
@@ -88,6 +90,19 @@
 
   function clamp(v, a, b) {
     return Math.max(a, Math.min(b, v));
+  }
+
+  function preferTouchControls() {
+    return (
+      window.matchMedia("(pointer: coarse)").matches ||
+      window.matchMedia("(max-width: 820px)").matches
+    );
+  }
+
+  function controlHintText() {
+    return preferTouchControls()
+      ? "下方按钮：左右移动 · 跳跃 · 点屏幕可交互"
+      : "← → / A D 移动 · 空格 / W / ↑ 跳跃 · R 重开";
   }
 
   function rectsOverlap(a, b) {
@@ -869,10 +884,22 @@
       return;
     }
 
-    const left = keys.has("ArrowLeft") || keys.has("a") || keys.has("A");
-    const right = keys.has("ArrowRight") || keys.has("d") || keys.has("D");
+    const left =
+      keys.has("ArrowLeft") ||
+      keys.has("a") ||
+      keys.has("A") ||
+      touch.left;
+    const right =
+      keys.has("ArrowRight") ||
+      keys.has("d") ||
+      keys.has("D") ||
+      touch.right;
     const jump =
-      keys.has(" ") || keys.has("ArrowUp") || keys.has("w") || keys.has("W");
+      keys.has(" ") ||
+      keys.has("ArrowUp") ||
+      keys.has("w") ||
+      keys.has("W") ||
+      touch.jump;
     let ax = (right ? 1 : 0) - (left ? 1 : 0);
 
     // Eating animation locks player movement
@@ -1140,14 +1167,15 @@
         overlayHint.classList.add("hidden");
       } else {
         overlayHint.classList.remove("hidden");
-        overlayHint.textContent = "← → / A D 移动 · 空格 / W / ↑ 跳跃 · R 重开";
+        overlayHint.textContent = controlHintText();
       }
     }
     overlay.classList.remove("hidden");
     syncPuzzleTools();
+    syncTouchPad();
     if (showName) {
       nameInput.value = playerName || "";
-      setTimeout(() => nameInput.focus(), 50);
+      if (!preferTouchControls()) setTimeout(() => nameInput.focus(), 50);
     }
   }
 
@@ -1165,9 +1193,72 @@
 
   function syncHomeBtn() {
     if (!homeBtn) return;
-    // Home button on every level (top-right) while playing
     const show = state === "playing";
     homeBtn.classList.toggle("hidden", !show);
+    syncTouchPad();
+  }
+
+  function syncTouchPad() {
+    if (!touchPad) return;
+    const show = state === "playing" && preferTouchControls();
+    touchPad.classList.toggle("hidden", !show);
+    touchPad.setAttribute("aria-hidden", show ? "false" : "true");
+    if (!show) {
+      touch.left = false;
+      touch.right = false;
+      touch.jump = false;
+      for (const btn of touchPad.querySelectorAll(".touch-btn")) {
+        btn.classList.remove("pressed");
+      }
+    }
+  }
+
+  function clearInput() {
+    keys.clear();
+    touch.left = false;
+    touch.right = false;
+    touch.jump = false;
+    if (touchPad) {
+      for (const btn of touchPad.querySelectorAll(".touch-btn")) {
+        btn.classList.remove("pressed");
+      }
+    }
+  }
+
+  function setupTouchControls() {
+    if (!touchPad) return;
+
+    const bindHold = (btn, setOn) => {
+      const press = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        btn.classList.add("pressed");
+        setOn(true);
+        if (window.GameAudio) GameAudio.unlock();
+        try {
+          btn.setPointerCapture(e.pointerId);
+        } catch (_) {
+          /* ignore */
+        }
+      };
+      const release = () => {
+        btn.classList.remove("pressed");
+        setOn(false);
+      };
+      btn.addEventListener("pointerdown", press);
+      btn.addEventListener("pointerup", release);
+      btn.addEventListener("pointercancel", release);
+      btn.addEventListener("lostpointercapture", release);
+    };
+
+    const leftBtn = touchPad.querySelector('[data-dir="left"]');
+    const rightBtn = touchPad.querySelector('[data-dir="right"]');
+    const jumpBtn = touchPad.querySelector('[data-action="jump"]');
+    if (leftBtn) bindHold(leftBtn, (v) => (touch.left = v));
+    if (rightBtn) bindHold(rightBtn, (v) => (touch.right = v));
+    if (jumpBtn) bindHold(jumpBtn, (v) => (touch.jump = v));
+
+    touchPad.addEventListener("contextmenu", (e) => e.preventDefault());
   }
 
   function hideLevelSelect() {
@@ -2772,14 +2863,18 @@
     return false;
   }
 
-  canvas.addEventListener("click", (e) => {
+  canvas.addEventListener("pointerup", (e) => {
+    if (e.button != null && e.button !== 0) return;
     if (tryClickLevel6(e.clientX, e.clientY)) return;
     if (tryClickLevel7(e.clientX, e.clientY)) return;
     if (tryClickLevel8(e.clientX, e.clientY)) return;
     tryClickEndSign(e.clientX, e.clientY);
   });
 
-  canvas.addEventListener("mousemove", (e) => {
+  canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  canvas.addEventListener("pointermove", (e) => {
+    if (e.pointerType !== "mouse") return;
     if (state !== "playing") {
       canvas.style.cursor = "default";
       return;
@@ -2883,8 +2978,20 @@
     }
   });
 
+  window.addEventListener("blur", () => clearInput());
+  window.addEventListener("resize", () => syncTouchPad());
+  window.addEventListener("orientationchange", () => syncTouchPad());
+
+  // Unlock audio on first interaction (needed on mobile)
+  const unlockOnce = () => {
+    if (window.GameAudio) GameAudio.unlock();
+  };
+  window.addEventListener("pointerdown", unlockOnce, { once: true });
+  window.addEventListener("keydown", unlockOnce, { once: true });
+
   // Prep first level visuals; login is required before playing
   setupPuzzleDrag();
+  setupTouchControls();
   makeLevel(1);
   levelLabel.textContent = "1";
   starLabel.textContent = "0";
@@ -2892,6 +2999,6 @@
   syncPuzzleTools();
   syncHomeBtn();
   setLoginMode("account");
-  setTimeout(() => loginUser.focus(), 50);
+  if (!preferTouchControls()) setTimeout(() => loginUser.focus(), 50);
   requestAnimationFrame(loop);
 })();
