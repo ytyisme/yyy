@@ -307,6 +307,125 @@
     }
   }
 
+  let adBed = null;
+  let adStreamDest = null;
+
+  function stopAdBed() {
+    if (adBed) {
+      try {
+        adBed.gain.gain.cancelScheduledValues(now());
+        adBed.gain.gain.setValueAtTime(0.0001, now());
+      } catch (_) {
+        /* ignore */
+      }
+      for (const n of adBed.nodes) {
+        try {
+          n.stop();
+        } catch (_) {
+          /* ignore */
+        }
+        try {
+          n.disconnect();
+        } catch (_) {
+          /* ignore */
+        }
+      }
+      try {
+        adBed.gain.disconnect();
+      } catch (_) {
+        /* ignore */
+      }
+      adBed = null;
+    }
+    if (adStreamDest) {
+      try {
+        adStreamDest.disconnect();
+      } catch (_) {
+        /* ignore */
+      }
+      adStreamDest = null;
+    }
+  }
+
+  function startAdBed(theme, durationSec = 15) {
+    if (!ensure()) return null;
+    stopAdBed();
+    stopAllAmbience();
+
+    const gain = ctx.createGain();
+    gain.gain.value = 0.0001;
+    gain.gain.exponentialRampToValueAtTime(0.45, now() + 0.08);
+    gain.connect(master);
+
+    adStreamDest = ctx.createMediaStreamDestination();
+    gain.connect(adStreamDest);
+
+    const nodes = [];
+    const t0 = now();
+    const patterns = {
+      soda: [523, 659, 784, 659, 587, 523, 440, 523],
+      food: [392, 494, 587, 494, 440, 392, 330, 392],
+      game: [660, 880, 990, 880, 740, 660, 554, 660],
+      shop: [349, 440, 523, 440, 392, 349, 294, 349],
+    };
+    const seq = patterns[theme] || patterns.soda;
+
+    // Soft pad
+    const pad = ctx.createOscillator();
+    const padGain = ctx.createGain();
+    pad.type = "sine";
+    pad.frequency.value = theme === "game" ? 110 : 98;
+    padGain.gain.value = 0.04;
+    pad.connect(padGain);
+    padGain.connect(gain);
+    pad.start(t0);
+    pad.stop(t0 + durationSec + 0.05);
+    nodes.push(pad);
+
+    // Melodic jingle loop
+    let beat = 0;
+    const beatLen = 0.28;
+    while (beat * beatLen < durationSec - 0.2) {
+      const freq = seq[beat % seq.length];
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = beat % 4 === 0 ? "square" : "triangle";
+      const start = t0 + beat * beatLen;
+      const dur = 0.2;
+      o.frequency.setValueAtTime(freq, start);
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(0.12, start + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+      o.connect(g);
+      g.connect(gain);
+      o.start(start);
+      o.stop(start + dur + 0.02);
+      nodes.push(o);
+      beat += 1;
+    }
+
+    // Percussion ticks
+    for (let i = 0; i < durationSec * 2; i++) {
+      const start = t0 + i * 0.5;
+      const len = Math.floor(ctx.sampleRate * 0.04);
+      const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let s = 0; s < len; s++) data[s] = (Math.random() * 2 - 1) * (1 - s / len);
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.08, start);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + 0.04);
+      src.connect(g);
+      g.connect(gain);
+      src.start(start);
+      nodes.push(src);
+    }
+
+    adBed = { gain, nodes };
+    return adStreamDest.stream;
+  }
+
   // Unlock audio on first interaction
   const unlock = () => {
     ensure();
@@ -328,5 +447,16 @@
     syncAmbience,
     stopAllAmbience,
     updateGameplay,
+    startAdBed,
+    stopAdBed,
+    setVolume(v) {
+      const vol = Math.max(0, Math.min(1, Number(v) || 0));
+      if (!ensure()) return vol;
+      master.gain.value = vol;
+      return vol;
+    },
+    getVolume() {
+      return master ? master.gain.value : 0.35;
+    },
   };
 })();

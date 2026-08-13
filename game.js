@@ -13,11 +13,38 @@
   const nameForm = document.getElementById("name-form");
   const nameInput = document.getElementById("player-name-input");
   const overlayHint = document.getElementById("overlay-hint");
+  const cornerActions = document.getElementById("corner-actions");
   const homeBtn = document.getElementById("home-btn");
+  const settingsBtn = document.getElementById("settings-btn");
+  const settingsPanel = document.getElementById("settings-panel");
+  const settingsClose = document.getElementById("settings-close");
+  const brightnessSlider = document.getElementById("brightness-slider");
+  const volumeSlider = document.getElementById("volume-slider");
+  const brightnessValue = document.getElementById("brightness-value");
+  const volumeValue = document.getElementById("volume-value");
+  const skipBtn = document.getElementById("skip-btn");
+  const shopBtn = document.getElementById("shop-btn");
+  const shopPanel = document.getElementById("shop-panel");
+  const shopClose = document.getElementById("shop-close");
+  const shopStarCount = document.getElementById("shop-star-count");
+  const shopTip = document.getElementById("shop-tip");
+  const itemBar = document.getElementById("item-bar");
+  const adPanel = document.getElementById("ad-panel");
+  const adVideo = document.getElementById("ad-video");
+  const adTitle = document.getElementById("ad-title");
+  const adDesc = document.getElementById("ad-desc");
+  const adCountdown = document.getElementById("ad-countdown");
+  const adProgressBar = document.getElementById("ad-progress-bar");
+  const adCloseBtn = document.getElementById("ad-close");
+  const adTimerHint = document.getElementById("ad-timer-hint");
   const levelSelect = document.getElementById("level-select");
   const levelGrid = document.getElementById("level-grid");
   const levelTip = document.getElementById("level-tip");
   const logoutBtn = document.getElementById("logout-btn");
+  const unlockDialog = document.getElementById("unlock-dialog");
+  const unlockMsg = document.getElementById("unlock-msg");
+  const unlockSkipBtn = document.getElementById("unlock-skip");
+  const unlockCancelBtn = document.getElementById("unlock-cancel");
   const loginScreen = document.getElementById("login-screen");
   const loginUser = document.getElementById("login-user");
   const loginPass = document.getElementById("login-pass");
@@ -45,13 +72,104 @@
 
   const keys = new Set();
   const touch = { left: false, right: false, jump: false };
+  let settingsOpen = false;
+  let shopOpen = false;
+  let adOpen = false;
+  let adTimerId = null;
+  let adEndsAt = 0;
+  let adAnimId = 0;
+  let adCanvas = null;
+  let adDrawCtx = null;
+  let adCurrent = null;
+  let adStartPerf = 0;
+  let brightness = 100;
+  let volumePct = 35;
+  let inventory = {
+    skipCard: 0,
+    potion: 0,
+    sword: 0,
+    pickaxe: 0,
+    bucket: 0,
+  };
+  let levelUses = {
+    potion: 0,
+    sword: 0,
+    pickaxe: 0,
+    bucket: 0,
+  };
+  let toolMode = null; // sword | pickaxe | null
+  let lavaDrains = [];
+
+  const SHOP_CATALOG = {
+    skipCard: { cost: 5, name: "免费跳过关卡卡" },
+    potion: { cost: 10, name: "加速药水" },
+    sword: { cost: 19, name: "宝剑" },
+    pickaxe: { cost: 35, name: "稿子" },
+    bucket: { cost: 17, name: "桶" },
+  };
+
+  const AD_DURATION = 25;
+  let adMode = "level"; // level | unlock
+  let adTargetLevel = 0;
+  const ADS = [
+    {
+      theme: "soda",
+      mark: "冰爽",
+      title: "岩浆可乐 · 限时特供",
+      desc: "一口冷静，两口起飞。今日下单立减岩浆税 50%。",
+    },
+    {
+      theme: "food",
+      mark: "外卖",
+      title: "僵尸烧烤摊上线了",
+      desc: "炭火慢烤，绝不追人（大概）。满 30 减 8，骑士 3 分钟到。",
+    },
+    {
+      theme: "game",
+      mark: "手游",
+      title: "五角星连连看 Pro",
+      desc: "下载即送传说皮肤「假岩浆」。先到先得，手慢无星。",
+    },
+    {
+      theme: "shop",
+      mark: "商城",
+      title: "防烫靴超级折扣周",
+      desc: "踩岩浆不烫脚（广告效果）。全场跑酷装备 2 件 8 折。",
+    },
+    {
+      theme: "soda",
+      mark: "APP",
+      title: "砖块贷 · 秒借秒跳",
+      desc: "额度高达 9999 星，当天放款。过桥费？我们帮你垫。",
+    },
+    {
+      theme: "food",
+      mark: "饮品",
+      title: "狼牙棒奶茶新品",
+      desc: "旋转搅拌，口感暴击。第三杯半价，打工人续命首选。",
+    },
+    {
+      theme: "game",
+      mark: "直播",
+      title: "主播今晚通关第 9 关",
+      desc: "关注领加速药水。弹幕刷「跳」送火箭表情包。",
+    },
+    {
+      theme: "shop",
+      mark: "保险",
+      title: "岩浆意外险上线",
+      desc: "掉坑包赔，僵尸啃一口也赔。月缴 1 星，安心逃亡。",
+    },
+  ];
   let state = "login"; // login | select | menu | naming | playing | dead | win
   let level = 1;
   let stars = 0;
   let playerName = "";
   let loggedIn = false;
+  let maxCleared = 0; // highest cleared level; level 1 always open
+  let pendingUnlockLevel = 0;
   const TOTAL_LEVELS = 35;
-  const MAX_PLAYABLE = 9; // current content ends at level 9
+  const MAX_PLAYABLE = 10; // current content ends at level 10
   let cameraX = 0;
   let worldMin = 0;
   let worldWidth = 3200;
@@ -69,6 +187,7 @@
   let star = null;
   let endSign = null;
   let comingSoon = null;
+  let shopScene = null; // level 10 star shop
   let homeMode = false;
   let spikes = [];
   let maces = [];
@@ -129,6 +248,8 @@
     zombies = [];
     reverseGoal = false;
     fakeLava = false;
+    lavaDrains = [];
+    toolMode = null;
     puzzleMode = false;
     pitStart = 0;
     pitWidth = 0;
@@ -138,6 +259,7 @@
     speedBoost = 0;
     endSign = null;
     comingSoon = null;
+    shopScene = null;
     homeMode = false;
     spikes = [];
     maces = [];
@@ -574,8 +696,68 @@
         collected: false,
         pulse: 0,
       };
+    } else if (n === 10) {
+      // Flat road + 五角星专卖店. Boss says opens at 12:00. Clock 11:58.
+      // At noon a crowd buys everything — but clicking 五角星 on the sign wins.
+      reverseGoal = false;
+      homeMode = true;
+      spawnX = 90;
+      const roadLen = 1600;
+      platforms.push({ x: 0, y: startY, w: roadLen, h: 28, lane: "ground" });
+      worldWidth = roadLen + 80;
+      worldMin = 0;
+
+      player = {
+        x: spawnX,
+        y: startY - 40,
+        w: 28,
+        h: 40,
+        vx: 0,
+        vy: 0,
+        onGround: false,
+        facing: 1,
+        alive: true,
+      };
+
+      star = null;
+      const shopX = 520;
+      shopScene = {
+        x: shopX,
+        y: startY,
+        w: 260,
+        h: 170,
+        phase: "waiting", // waiting | rush | soldout
+        hour: 11,
+        minute: 58,
+        second: 0,
+        clockAcc: 0,
+        // ~10 real seconds from 11:58 → 12:00
+        timeScale: 12,
+        customers: [],
+        stock: 12,
+        talk: "商店12:00开门",
+        talkTimer: 0,
+        pulse: 0,
+        starHit: null,
+        doorOpen: false,
+      };
+      // Pre-create off-screen customers that will rush in at noon
+      for (let i = 0; i < 18; i++) {
+        shopScene.customers.push({
+          x: shopX + shopScene.w + 420 + i * 46,
+          y: startY - 38,
+          w: 22 + (i % 3) * 2,
+          h: 36 + (i % 2) * 2,
+          vx: 0,
+          targetX: shopX + 40 + (i % 5) * 28,
+          inShop: false,
+          bought: false,
+          color: ["#4a90d9", "#d94a4a", "#4ad98a", "#d9c24a", "#9a4ad9"][i % 5],
+          hair: ["#2a1a10", "#5a3a20", "#1a1a1a", "#8a6a40"][i % 4],
+        });
+      }
     } else {
-      const aboveHunt = n > 9;
+      const aboveHunt = n > 10;
       const gapBase = aboveHunt ? 70 + n * 10 : 48 + n * 8;
       const jumpLen = 90 + Math.min(40, n * 4);
       let x = 40;
@@ -869,6 +1051,10 @@
         if (actor.y > H + 120) {
           actor.alive = false;
         }
+      } else if (lavaDrainAt(actor.x + actor.w / 2)) {
+        actor.y = LAVA_Y - actor.h;
+        actor.vy = 0;
+        actor.onGround = true;
       } else {
         actor.alive = false;
         actor.y = LAVA_Y - actor.h;
@@ -878,9 +1064,11 @@
 
   function update(dt) {
     time += dt;
-    if (state !== "playing") {
+    if (state !== "playing" || settingsOpen || adOpen || shopOpen) {
       updateParticles(dt);
-      if (window.GameAudio) GameAudio.stopAllAmbience();
+      if (!settingsOpen && !adOpen && !shopOpen && window.GameAudio) {
+        GameAudio.stopAllAmbience();
+      }
       return;
     }
 
@@ -1017,6 +1205,7 @@
       if (!star.collected && rectsOverlap(player, starBox)) {
         star.collected = true;
         stars += 1;
+        saveStars();
         starLabel.textContent = String(stars);
         spawnBurst(star.x, star.y, "#ffe566", 28);
         spawnBurst(star.x, star.y, "#ff9a2a", 16);
@@ -1027,6 +1216,7 @@
     }
     if (endSign) endSign.pulse += dt * 3;
     if (comingSoon) comingSoon.pulse += dt * 2;
+    if (shopScene) updateShopScene(dt);
 
     cameraX = clamp(
       player.x - W * 0.35,
@@ -1101,6 +1291,7 @@
   function winLevel() {
     state = "win";
     statusLabel.textContent = "通关";
+    markLevelCleared(level);
     if (window.GameAudio) {
       GameAudio.stopAllAmbience();
       GameAudio.playStar();
@@ -1112,7 +1303,7 @@
     if (level >= MAX_PLAYABLE) {
       showOverlay(
         "到达终点！",
-        `第 ${level} 关完成！<br />第 9 关是目前的终点，后面作者还在做，敬请期待。`,
+        `第 ${level} 关完成！<br />第 10 关是目前的终点，后面作者还在做，敬请期待。`,
         "回主页",
         { hideHint: true }
       );
@@ -1135,20 +1326,24 @@
         `<br /><span style="color:#ffb347">第 5 关：简单跑酷。终点……好像有点不对劲？</span>`;
     } else if (next === 6) {
       warn =
-        `<br /><span style="color:#ffb347">第 6 关：尖刺与假僵尸。终点有五角星。</span>`;
+        `<br /><span style="color:#ffb347">第 6 关：尖刺缝隙。上方有僵尸……也许点一点？</span>`;
     } else if (next === 7) {
       warn =
-        `<br /><span style="color:#ffb347">第 7 关：平路上有旋转的大狼牙棒。</span>`;
+        `<br /><span style="color:#ffb347">第 7 关：狼牙棒挡路。有的东西……可以拆？</span>`;
     } else if (next === 8) {
       warn =
-        `<br /><span style="color:#ffb347">第 8 关：城市里，火箭挡住了五角星。</span>`;
+        `<br /><span style="color:#ffb347">第 8 关：城市里的火箭。试试点击？</span>`;
     } else if (next === 9) {
       warn =
-        `<br /><span style="color:#ffb347">第 9 关：路断了……岩浆下也许有秘密。这是目前终点。</span>`;
+        `<br /><span style="color:#ffb347">第 9 关：路断了……岩浆下也许有秘密。</span>`;
+    } else if (next === 10) {
+      warn =
+        `<br /><span style="color:#ffb347">第 10 关：五角星专卖店。现在是 11:58……这是目前终点。</span>`;
     }
+
     showOverlay(
-      "获得五角星！",
-      `第 ${level} 关完成！<br />发光的五角星已到手，准备冲击第 ${next} 关。${warn}`,
+      "通关！",
+      `第 ${level} 关完成！五角星 +1${warn}`,
       "下一关"
     );
   }
@@ -1192,15 +1387,751 @@
   }
 
   function syncHomeBtn() {
-    if (!homeBtn) return;
     const show = state === "playing";
-    homeBtn.classList.toggle("hidden", !show);
+    if (cornerActions) {
+      cornerActions.classList.toggle("hidden", !show);
+      cornerActions.setAttribute("aria-hidden", show ? "false" : "true");
+    } else if (homeBtn) {
+      homeBtn.classList.toggle("hidden", !show);
+    }
+    if (!show) {
+      closeSettings();
+      closeShop();
+      cancelAd(false);
+    }
     syncTouchPad();
+    syncItemBar();
+  }
+
+  function applyBrightness(v) {
+    brightness = clamp(Math.round(Number(v) || 100), 40, 150);
+    canvas.style.filter = `brightness(${brightness}%)`;
+    if (brightnessSlider) brightnessSlider.value = String(brightness);
+    if (brightnessValue) brightnessValue.textContent = `${brightness}%`;
+    try {
+      localStorage.setItem("yyy_brightness", String(brightness));
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  function applyVolume(v) {
+    volumePct = clamp(Math.round(Number(v) || 0), 0, 100);
+    if (volumeSlider) volumeSlider.value = String(volumePct);
+    if (volumeValue) volumeValue.textContent = `${volumePct}%`;
+    if (window.GameAudio) GameAudio.setVolume(volumePct / 100);
+    if (adVideo) adVideo.volume = volumePct / 100;
+    try {
+      localStorage.setItem("yyy_volume", String(volumePct));
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  function loadSettings() {
+    let b = 100;
+    let vol = 35;
+    try {
+      const sb = localStorage.getItem("yyy_brightness");
+      const sv = localStorage.getItem("yyy_volume");
+      if (sb != null) b = Number(sb);
+      if (sv != null) vol = Number(sv);
+    } catch (_) {
+      /* ignore */
+    }
+    applyBrightness(b);
+    applyVolume(vol);
+  }
+
+  function saveStars() {
+    try {
+      localStorage.setItem("yyy_stars", String(stars));
+    } catch (_) {
+      /* ignore */
+    }
+    if (starLabel) starLabel.textContent = String(stars);
+  }
+
+  function saveInventory() {
+    try {
+      localStorage.setItem("yyy_inventory", JSON.stringify(inventory));
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  function loadProgress() {
+    try {
+      const s = localStorage.getItem("yyy_stars");
+      if (s != null && Number.isFinite(Number(s))) stars = Math.max(0, Math.floor(Number(s)));
+      const inv = localStorage.getItem("yyy_inventory");
+      if (inv) {
+        const parsed = JSON.parse(inv);
+        for (const key of Object.keys(inventory)) {
+          const n = Math.floor(Number(parsed[key]) || 0);
+          inventory[key] = Math.max(0, n);
+        }
+      }
+      const cleared = localStorage.getItem("yyy_cleared");
+      if (cleared != null && Number.isFinite(Number(cleared))) {
+        maxCleared = Math.max(0, Math.floor(Number(cleared)));
+      }
+    } catch (_) {
+      /* ignore */
+    }
+    if (starLabel) starLabel.textContent = String(stars);
+  }
+
+  function saveCleared() {
+    try {
+      localStorage.setItem("yyy_cleared", String(maxCleared));
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  function markLevelCleared(n) {
+    const lv = Math.floor(Number(n) || 0);
+    if (lv > maxCleared) {
+      maxCleared = lv;
+      saveCleared();
+    }
+  }
+
+  function isLevelUnlocked(n) {
+    if (n <= 1) return true;
+    return maxCleared >= n - 1;
+  }
+
+  function resetLevelUses() {
+    levelUses = {
+      potion: inventory.potion * 1,
+      sword: inventory.sword * 2,
+      pickaxe: inventory.pickaxe * 25,
+      bucket: inventory.bucket * 10,
+    };
+    toolMode = null;
+    syncItemBar();
+  }
+
+  function lavaDrainAt(x) {
+    for (const d of lavaDrains) {
+      if (x >= d.x && x <= d.x + d.w) return true;
+    }
+    return false;
+  }
+
+  function remainingFor(item) {
+    if (item === "skipCard") return inventory.skipCard;
+    return levelUses[item] || 0;
+  }
+
+  function syncItemBar() {
+    if (!itemBar) return;
+    const show = state === "playing" && !adOpen && !settingsOpen && !shopOpen;
+    itemBar.classList.toggle("hidden", !show);
+    itemBar.setAttribute("aria-hidden", show ? "false" : "true");
+    if (!show) return;
+    for (const btn of itemBar.querySelectorAll(".item-btn")) {
+      const key = btn.dataset.use;
+      const countEl = btn.querySelector("[data-count]");
+      const left = remainingFor(key);
+      if (countEl) countEl.textContent = String(left);
+      btn.disabled = left <= 0;
+      btn.classList.toggle("active", toolMode === key);
+    }
+  }
+
+  function refreshShopUI() {
+    if (shopStarCount) shopStarCount.textContent = String(stars);
+    if (!shopPanel) return;
+    for (const btn of shopPanel.querySelectorAll(".shop-buy")) {
+      const key = btn.dataset.buy;
+      const item = SHOP_CATALOG[key];
+      if (!item) continue;
+      btn.disabled = stars < item.cost;
+      const owned = inventory[key] || 0;
+      btn.textContent = `${item.cost}★ 兑换（拥有 ${owned}）`;
+    }
+  }
+
+  function buyItem(key) {
+    const item = SHOP_CATALOG[key];
+    if (!item) return;
+    if (stars < item.cost) {
+      if (shopTip) shopTip.textContent = "五角星不够！";
+      return;
+    }
+    stars -= item.cost;
+    inventory[key] = (inventory[key] || 0) + 1;
+    saveStars();
+    saveInventory();
+    // Refresh this level's remaining uses for newly bought gear
+    if (key === "potion") levelUses.potion += 1;
+    if (key === "sword") levelUses.sword += 2;
+    if (key === "pickaxe") levelUses.pickaxe += 25;
+    if (key === "bucket") levelUses.bucket += 10;
+    if (shopTip) shopTip.textContent = `已兑换：${item.name}`;
+    refreshShopUI();
+    syncItemBar();
+    if (window.GameAudio) GameAudio.playStar();
+  }
+
+  function openShop() {
+    if (state !== "playing" || !shopPanel || adOpen) return;
+    closeSettings();
+    shopOpen = true;
+    toolMode = null;
+    clearInput();
+    if (shopTip) shopTip.textContent = "";
+    refreshShopUI();
+    shopPanel.classList.remove("hidden");
+    shopPanel.setAttribute("aria-hidden", "false");
+    statusLabel.textContent = "商城";
+    syncTouchPad();
+    syncItemBar();
+  }
+
+  function closeShop() {
+    shopOpen = false;
+    if (shopPanel) {
+      shopPanel.classList.add("hidden");
+      shopPanel.setAttribute("aria-hidden", "true");
+    }
+    if (state === "playing" && !adOpen && !settingsOpen) {
+      statusLabel.textContent = "逃亡中";
+    }
+    syncTouchPad();
+    syncItemBar();
+  }
+
+  function useSkipCard() {
+    if (inventory.skipCard <= 0) {
+      statusLabel.textContent = "没有跳过卡";
+      return;
+    }
+    inventory.skipCard -= 1;
+    saveInventory();
+    syncItemBar();
+    closeShop();
+    closeSettings();
+    cancelAd(false);
+    statusLabel.textContent = "使用跳过卡";
+    if (window.GameAudio) GameAudio.playWin();
+    finishSkipAd();
+  }
+
+  function usePotionItem() {
+    if (levelUses.potion <= 0) {
+      statusLabel.textContent = "本关加速次数用完了";
+      return;
+    }
+    levelUses.potion -= 1;
+    speedBoost = Math.max(speedBoost, 7.5);
+    statusLabel.textContent = "加速药水！";
+    spawnBurst(player.x + player.w / 2, player.y, "#7aefff", 16);
+    if (window.GameAudio) GameAudio.playClick();
+    syncItemBar();
+  }
+
+  function useBucketItem() {
+    if (levelUses.bucket <= 0) {
+      statusLabel.textContent = "本关桶次数用完了";
+      return;
+    }
+    if (fakeLava) {
+      statusLabel.textContent = "这里的岩浆吸不动…";
+      return;
+    }
+    levelUses.bucket -= 1;
+    const dir = player.facing || 1;
+    const x = player.x + player.w / 2 + dir * 40 - 60;
+    lavaDrains.push({ x, w: 140 });
+    spawnBurst(x + 70, LAVA_Y - 10, "#6ec8ff", 20);
+    shake = 6;
+    statusLabel.textContent = `吸走岩浆！剩余 ${levelUses.bucket} 次`;
+    if (window.GameAudio) GameAudio.playClick();
+    syncItemBar();
+  }
+
+  function armSword() {
+    if (levelUses.sword <= 0) {
+      statusLabel.textContent = "本关宝剑次数用完了";
+      return;
+    }
+    toolMode = toolMode === "sword" ? null : "sword";
+    statusLabel.textContent = toolMode === "sword" ? "宝剑已举起：点击僵尸" : "取消宝剑";
+    syncItemBar();
+  }
+
+  function armPickaxe() {
+    if (levelUses.pickaxe <= 0) {
+      statusLabel.textContent = "本关稿子次数用完了";
+      return;
+    }
+    toolMode = toolMode === "pickaxe" ? null : "pickaxe";
+    statusLabel.textContent = toolMode === "pickaxe" ? "稿子已举起：点击拆除" : "取消稿子";
+    syncItemBar();
+  }
+
+  function killZombieWithSword(world) {
+    if (levelUses.sword <= 0) return false;
+    for (let i = zombies.length - 1; i >= 0; i--) {
+      const z = zombies[i];
+      if (z.alive === false) continue;
+      if (!pointInRect(world.x, world.y, z)) continue;
+      // Harmless scare zombies on level 6 still killable by sword
+      spawnBurst(z.x + z.w / 2, z.y + z.h / 2, "#ffe566", 20);
+      spawnBurst(z.x + z.w / 2, z.y + z.h / 2, "#ff5533", 14);
+      shake = 10;
+      zombies.splice(i, 1);
+      levelUses.sword -= 1;
+      toolMode = levelUses.sword > 0 ? "sword" : null;
+      statusLabel.textContent = `斩杀！宝剑剩余 ${levelUses.sword}`;
+      if (window.GameAudio) GameAudio.playClick();
+      syncItemBar();
+      return true;
+    }
+    statusLabel.textContent = "没有点到僵尸";
+    return true; // consumed the click while armed
+  }
+
+  function breakWithPickaxe(world) {
+    if (levelUses.pickaxe <= 0) return false;
+
+    const tryBreak = (list, hitFn, onBreak) => {
+      for (let i = list.length - 1; i >= 0; i--) {
+        const obj = list[i];
+        if (!hitFn(obj)) continue;
+        onBreak(obj, i);
+        return true;
+      }
+      return false;
+    };
+
+    let broke = false;
+    broke =
+      tryBreak(
+        rockets,
+        (r) => !r.eaten && pointInRect(world.x, world.y, r),
+        (r, i) => {
+          spawnBurst(r.x + r.w / 2, r.y + r.h / 2, "#ff9a2a", 18);
+          rockets.splice(i, 1);
+        }
+      ) ||
+      tryBreak(
+        maces,
+        (m) => pointInRect(world.x, world.y, { x: m.x - 20, y: m.y - 20, w: 80, h: 120 }),
+        (_m, i) => {
+          const m = maces[i];
+          spawnBurst(m.x + 20, m.y + 40, "#c0c0c0", 18);
+          maces.splice(i, 1);
+        }
+      ) ||
+      tryBreak(
+        spikes,
+        (s) => pointInRect(world.x, world.y, { x: s.x - 6, y: s.y - 8, w: s.w + 12, h: s.h + 12 }),
+        (s, i) => {
+          spawnBurst(s.x + s.w / 2, s.y, "#d0d0d0", 14);
+          spikes.splice(i, 1);
+        }
+      ) ||
+      tryBreak(
+        platforms,
+        (p) => pointInRect(world.x, world.y, p),
+        (p, i) => {
+          spawnBurst(p.x + p.w / 2, p.y + 8, "#c47a30", 16);
+          platforms.splice(i, 1);
+        }
+      );
+
+    if (crate && pointInRect(world.x, world.y, crate)) {
+      spawnBurst(crate.x + crate.w / 2, crate.y + crate.h / 2, "#c47a30", 14);
+      crate = null;
+      broke = true;
+    }
+
+    if (!broke) {
+      statusLabel.textContent = "没有点到可拆的东西";
+      return true;
+    }
+
+    levelUses.pickaxe -= 1;
+    toolMode = levelUses.pickaxe > 0 ? "pickaxe" : null;
+    statusLabel.textContent = `拆掉了！稿子剩余 ${levelUses.pickaxe}`;
+    shake = 8;
+    if (window.GameAudio) GameAudio.playClick();
+    syncItemBar();
+    return true;
+  }
+
+  function tryUseToolClick(clientX, clientY) {
+    if (state !== "playing" || !toolMode) return false;
+    const world = clientToWorld(clientX, clientY);
+    if (toolMode === "sword") return killZombieWithSword(world);
+    if (toolMode === "pickaxe") return breakWithPickaxe(world);
+    return false;
+  }
+
+  function useInventoryItem(key) {
+    if (state !== "playing" || adOpen || settingsOpen || shopOpen) return;
+    if (key === "skipCard") useSkipCard();
+    else if (key === "potion") usePotionItem();
+    else if (key === "sword") armSword();
+    else if (key === "pickaxe") armPickaxe();
+    else if (key === "bucket") useBucketItem();
+  }
+
+  function openSettings() {
+    if (state !== "playing" || !settingsPanel || adOpen || shopOpen) return;
+    settingsOpen = true;
+    settingsPanel.classList.remove("hidden");
+    settingsPanel.setAttribute("aria-hidden", "false");
+    if (brightnessSlider) brightnessSlider.value = String(brightness);
+    if (volumeSlider) volumeSlider.value = String(volumePct);
+    if (brightnessValue) brightnessValue.textContent = `${brightness}%`;
+    if (volumeValue) volumeValue.textContent = `${volumePct}%`;
+    clearInput();
+    statusLabel.textContent = "设置";
+    syncTouchPad();
+    syncItemBar();
+  }
+
+  function closeSettings() {
+    settingsOpen = false;
+    if (settingsPanel) {
+      settingsPanel.classList.add("hidden");
+      settingsPanel.setAttribute("aria-hidden", "true");
+    }
+    if (state === "playing" && !adOpen && !shopOpen) statusLabel.textContent = "逃亡中";
+    syncTouchPad();
+    syncItemBar();
+  }
+
+  function pickRandomAd() {
+    return ADS[Math.floor(Math.random() * ADS.length)];
+  }
+
+  function themeColors(theme) {
+    if (theme === "soda") return { a: "#123048", b: "#1a6088", text: "#9ef0ff", accent: "#ffe08a" };
+    if (theme === "food") return { a: "#4a1808", b: "#8a3010", text: "#ffb070", accent: "#ffe07a" };
+    if (theme === "game") return { a: "#201038", b: "#5030a0", text: "#e0b0ff", accent: "#ffd24a" };
+    return { a: "#103020", b: "#206040", text: "#a8ffc0", accent: "#ffe07a" };
+  }
+
+  function drawAdVideoFrame(t) {
+    if (!adDrawCtx || !adCurrent || !adCanvas) return;
+    const w = adCanvas.width;
+    const h = adCanvas.height;
+    const c = adDrawCtx;
+    const colors = themeColors(adCurrent.theme);
+    const g = c.createLinearGradient(0, 0, w, h);
+    g.addColorStop(0, colors.a);
+    g.addColorStop(0.55, "#0a0604");
+    g.addColorStop(1, colors.b);
+    c.fillStyle = g;
+    c.fillRect(0, 0, w, h);
+
+    // Moving light sweep
+    const sweep = ((t * 0.35) % 1) * (w + 200) - 100;
+    const lg = c.createLinearGradient(sweep, 0, sweep + 180, 0);
+    lg.addColorStop(0, "rgba(255,255,255,0)");
+    lg.addColorStop(0.5, "rgba(255,255,255,0.12)");
+    lg.addColorStop(1, "rgba(255,255,255,0)");
+    c.fillStyle = lg;
+    c.fillRect(0, 0, w, h);
+
+    // Theme particles
+    for (let i = 0; i < 18; i++) {
+      const px = ((i * 97 + t * (40 + i * 3)) % (w + 40)) - 20;
+      const py = (i * 53 + Math.sin(t * 2 + i) * 30 + h * 0.35) % h;
+      c.fillStyle =
+        adCurrent.theme === "soda"
+          ? "rgba(160, 230, 255, 0.45)"
+          : adCurrent.theme === "food"
+            ? "rgba(255, 140, 60, 0.4)"
+            : adCurrent.theme === "game"
+              ? "rgba(200, 140, 255, 0.4)"
+              : "rgba(140, 255, 180, 0.4)";
+      c.beginPath();
+      c.arc(px, py, 3 + (i % 4), 0, Math.PI * 2);
+      c.fill();
+    }
+
+    // Brand mark
+    const bounce = Math.sin(t * 4) * 8;
+    c.fillStyle = colors.text;
+    c.font = "bold 54px 'Noto Sans SC', sans-serif";
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    c.shadowColor = colors.accent;
+    c.shadowBlur = 18;
+    c.fillText(adCurrent.mark, w / 2, h * 0.34 + bounce);
+    c.shadowBlur = 0;
+
+    // Title
+    c.fillStyle = colors.accent;
+    c.font = "bold 28px 'Noto Sans SC', sans-serif";
+    c.fillText(adCurrent.title, w / 2, h * 0.58);
+
+    // Scrolling desc
+    c.save();
+    c.beginPath();
+    c.rect(40, h * 0.68, w - 80, 36);
+    c.clip();
+    c.fillStyle = "rgba(255, 243, 230, 0.9)";
+    c.font = "18px 'Noto Sans SC', sans-serif";
+    const scrollX = w - ((t * 90) % (w + c.measureText(adCurrent.desc).width + 80));
+    c.textAlign = "left";
+    c.fillText(adCurrent.desc, scrollX, h * 0.68 + 24);
+    c.restore();
+
+    // Fake player chrome
+    c.fillStyle = "rgba(0,0,0,0.45)";
+    c.fillRect(0, h - 28, w, 28);
+    c.fillStyle = "#ffd24a";
+    c.font = "12px 'Noto Sans SC', sans-serif";
+    c.textAlign = "left";
+    c.fillText("▶ 视频广告播放中", 12, h - 10);
+    const left = Math.max(0, Math.ceil((adEndsAt - Date.now()) / 1000));
+    c.textAlign = "right";
+    c.fillText(`${left}s`, w - 12, h - 10);
+    c.fillStyle = "rgba(255, 210, 74, 0.85)";
+    c.fillRect(0, h - 3, w * (1 - left / AD_DURATION), 3);
+  }
+
+  function loopAdVideo() {
+    if (!adOpen) return;
+    const t = (performance.now() - adStartPerf) / 1000;
+    drawAdVideoFrame(t);
+    adAnimId = requestAnimationFrame(loopAdVideo);
+  }
+
+  function stopAdVoice() {
+    try {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  function playAdVoice(ad) {
+    stopAdVoice();
+    if (!window.speechSynthesis || volumePct <= 0) return;
+    try {
+      const u = new SpeechSynthesisUtterance(`${ad.title}。${ad.desc}。现在下单更划算。`);
+      u.lang = "zh-CN";
+      u.rate = 1.05;
+      u.pitch = 1.05;
+      u.volume = Math.max(0, Math.min(1, volumePct / 100));
+      window.speechSynthesis.speak(u);
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  function stopAdMedia() {
+    if (adAnimId) {
+      cancelAnimationFrame(adAnimId);
+      adAnimId = 0;
+    }
+    stopAdVoice();
+    if (window.GameAudio) GameAudio.stopAdBed();
+    if (adVideo) {
+      try {
+        adVideo.pause();
+      } catch (_) {
+        /* ignore */
+      }
+      adVideo.removeAttribute("src");
+      adVideo.srcObject = null;
+      try {
+        adVideo.load();
+      } catch (_) {
+        /* ignore */
+      }
+    }
+    adCurrent = null;
+  }
+
+  function startAdMedia(ad) {
+    stopAdMedia();
+    adCurrent = ad;
+    adStartPerf = performance.now();
+
+    if (!adCanvas) {
+      adCanvas = document.createElement("canvas");
+      adCanvas.width = 640;
+      adCanvas.height = 360;
+      adDrawCtx = adCanvas.getContext("2d");
+    }
+
+    let audioStream = null;
+    if (window.GameAudio) {
+      GameAudio.unlock();
+      GameAudio.stopAllAmbience();
+      audioStream = GameAudio.startAdBed(ad.theme, AD_DURATION);
+    }
+
+    const videoStream = adCanvas.captureStream(30);
+    if (audioStream) {
+      try {
+        const tracks = audioStream.getAudioTracks();
+        if (tracks[0]) videoStream.addTrack(tracks[0]);
+      } catch (_) {
+        /* some browsers reject mixed tracks; WebAudio still plays */
+      }
+    }
+
+    if (adVideo) {
+      adVideo.srcObject = videoStream;
+      adVideo.muted = false;
+      adVideo.volume = Math.max(0, Math.min(1, volumePct / 100));
+      const playPromise = adVideo.play();
+      if (playPromise && playPromise.catch) {
+        playPromise.catch(() => {
+          // If element autoplay-with-sound fails, keep picture; bed still via WebAudio
+          adVideo.muted = true;
+          adVideo.play().catch(() => {});
+        });
+      }
+    }
+
+    playAdVoice(ad);
+    loopAdVideo();
+  }
+
+  function cancelAd(advance) {
+    if (adTimerId) {
+      clearInterval(adTimerId);
+      adTimerId = null;
+    }
+    stopAdMedia();
+    adOpen = false;
+    adEndsAt = 0;
+    if (adPanel) {
+      adPanel.classList.add("hidden");
+      adPanel.setAttribute("aria-hidden", "true");
+    }
+    if (adProgressBar) adProgressBar.style.width = "0%";
+    const mode = adMode;
+    const target = adTargetLevel;
+    adMode = "level";
+    adTargetLevel = 0;
+    if (advance) {
+      finishAdSuccess(mode, target);
+    } else if (state === "playing" && !settingsOpen && !shopOpen) {
+      statusLabel.textContent = "逃亡中";
+    }
+    syncTouchPad();
+    syncItemBar();
+  }
+
+  function finishAdSuccess(mode, target) {
+    if (mode === "unlock") {
+      const n = target || 1;
+      markLevelCleared(Math.max(1, n - 1));
+      enterLevel(n);
+      return;
+    }
+    finishSkipAd();
+  }
+
+  function closeAdEarly() {
+    if (!adOpen) return;
+    const mode = adMode;
+    const target = adTargetLevel;
+    cancelAd(false);
+    if (mode === "unlock") {
+      // Back to the previous level of the one you wanted to enter
+      const prev = Math.max(1, (target || 2) - 1);
+      if (isLevelUnlocked(prev)) {
+        enterLevel(prev);
+      } else {
+        showLevelSelect();
+        showUnlockDialog(prev);
+      }
+      return;
+    }
+    // In-level skip cancelled — stay on current level
+    if (state === "playing") statusLabel.textContent = "已取消跳过";
+  }
+
+  function finishSkipAd() {
+    markLevelCleared(level);
+    if (window.GameAudio) GameAudio.stopAllAmbience();
+    if (level >= MAX_PLAYABLE) {
+      statusLabel.textContent = "已是终点";
+      showLevelSelect();
+      if (levelTip) {
+        levelTip.textContent = "已经是目前最后一关啦";
+        levelTip.classList.remove("hidden");
+      }
+      return;
+    }
+    startGame("next");
+  }
+
+  function tickAd() {
+    if (!adOpen) return;
+    const leftMs = Math.max(0, adEndsAt - Date.now());
+    const leftSec = Math.ceil(leftMs / 1000);
+    if (adCountdown) adCountdown.textContent = String(leftSec);
+    const done = 1 - leftMs / (AD_DURATION * 1000);
+    if (adProgressBar) {
+      adProgressBar.style.width = `${clamp(done * 100, 0, 100)}%`;
+    }
+    if (leftMs <= 0) {
+      cancelAd(true);
+    }
+  }
+
+  function beginAdPlayback(mode, targetLevel, timerHint) {
+    if (adOpen || !adPanel) return;
+    closeSettings();
+    closeShop();
+    clearInput();
+    adMode = mode;
+    adTargetLevel = targetLevel || 0;
+    const ad = pickRandomAd();
+    adOpen = true;
+    adEndsAt = Date.now() + AD_DURATION * 1000;
+    if (adTitle) adTitle.textContent = ad.title;
+    if (adDesc) adDesc.textContent = ad.desc;
+    if (adCountdown) adCountdown.textContent = String(AD_DURATION);
+    if (adTimerHint) adTimerHint.textContent = timerHint;
+    if (adProgressBar) adProgressBar.style.width = "0%";
+    adPanel.classList.remove("hidden");
+    adPanel.setAttribute("aria-hidden", "false");
+    statusLabel.textContent = "广告中";
+    startAdMedia(ad);
+    if (adTimerId) clearInterval(adTimerId);
+    adTimerId = setInterval(tickAd, 200);
+    tickAd();
+    syncTouchPad();
+    syncItemBar();
+  }
+
+  function startSkipAd() {
+    if (state !== "playing" || adOpen) return;
+    beginAdPlayback("level", 0, "观看完整广告后进入下一关");
+  }
+
+  function startUnlockSkipAd(targetLevel) {
+    if (adOpen || !targetLevel) return;
+    hideUnlockDialog();
+    hideLevelSelect();
+    beginAdPlayback("unlock", targetLevel, "观看完整广告后解锁并进入关卡");
   }
 
   function syncTouchPad() {
     if (!touchPad) return;
-    const show = state === "playing" && preferTouchControls();
+    const show =
+      state === "playing" &&
+      preferTouchControls() &&
+      !adOpen &&
+      !settingsOpen &&
+      !shopOpen;
     touchPad.classList.toggle("hidden", !show);
     touchPad.setAttribute("aria-hidden", show ? "false" : "true");
     if (!show) {
@@ -1279,25 +2210,82 @@
       btn.type = "button";
       btn.className = "level-cell";
       btn.dataset.level = String(i);
-      if (i < MAX_PLAYABLE) {
-        btn.classList.add("playable");
-        btn.innerHTML = `${i}`;
+      if (i > MAX_PLAYABLE) {
+        btn.classList.add("locked");
+        btn.innerHTML = `${i}<span class="badge">未开放</span>`;
+      } else if (!isLevelUnlocked(i)) {
+        btn.classList.add("locked-progress");
+        btn.innerHTML = `${i}<span class="badge">未解锁</span>`;
       } else if (i === MAX_PLAYABLE) {
         btn.classList.add("endpoint");
         btn.innerHTML = `${i}<span class="badge">终点</span>`;
+      } else if (maxCleared >= i) {
+        btn.classList.add("playable");
+        btn.innerHTML = `${i}<span class="badge">已通关</span>`;
       } else {
-        btn.classList.add("locked");
-        btn.innerHTML = `${i}<span class="badge">未开放</span>`;
+        btn.classList.add("playable");
+        btn.innerHTML = `${i}`;
       }
       btn.addEventListener("click", () => selectLevel(i));
       levelGrid.appendChild(btn);
     }
   }
 
+  function showUnlockDialog(n) {
+    pendingUnlockLevel = n;
+    const prev = Math.max(1, n - 1);
+    if (unlockMsg) {
+      unlockMsg.textContent = `您上一关还没有通关，请通关第${prev}关`;
+    }
+    if (unlockDialog) {
+      unlockDialog.classList.remove("hidden");
+      unlockDialog.setAttribute("aria-hidden", "false");
+    }
+  }
+
+  function hideUnlockDialog() {
+    pendingUnlockLevel = 0;
+    if (unlockDialog) {
+      unlockDialog.classList.add("hidden");
+      unlockDialog.setAttribute("aria-hidden", "true");
+    }
+  }
+
+  function skipPreviousAndEnter() {
+    const n = pendingUnlockLevel;
+    if (!n || n < 2) {
+      hideUnlockDialog();
+      return;
+    }
+    // Keep target; hide dialog then play unlock ad
+    pendingUnlockLevel = 0;
+    if (unlockDialog) {
+      unlockDialog.classList.add("hidden");
+      unlockDialog.setAttribute("aria-hidden", "true");
+    }
+    startUnlockSkipAd(n);
+  }
+
+  function enterLevel(n) {
+    if (levelTip) {
+      levelTip.classList.add("hidden");
+    }
+    hideLevelSelect();
+    hideUnlockDialog();
+    level = n;
+    levelLabel.textContent = String(level);
+    if (needsPlayerName(level) && !playerName) {
+      showNamePrompt();
+      return;
+    }
+    beginPlaying();
+  }
+
   function showLevelSelect() {
     closeLoginScreen();
     hideOverlay();
     hideLevelSelect();
+    hideUnlockDialog();
     buildLevelGrid();
     state = "select";
     statusLabel.textContent = "选关";
@@ -1308,7 +2296,6 @@
   }
 
   function needsPlayerName(n) {
-    // Level 4 introduces naming; levels 5–35 always require a name overhead
     return n === 4 || n >= 5;
   }
 
@@ -1319,19 +2306,15 @@
   function selectLevel(n) {
     playUiClick();
     if (n > MAX_PLAYABLE) {
-      levelTip.textContent = "后面作者还在做，敬请期待（第 9 关是目前终点）";
+      levelTip.textContent = "后面作者还在做，敬请期待（第 10 关是目前终点）";
       levelTip.classList.remove("hidden");
       return;
     }
-    levelTip.classList.add("hidden");
-    hideLevelSelect();
-    level = n;
-    levelLabel.textContent = String(level);
-    if (needsPlayerName(level) && !playerName) {
-      showNamePrompt();
+    if (!isLevelUnlocked(n)) {
+      showUnlockDialog(n);
       return;
     }
-    beginPlaying();
+    enterLevel(n);
   }
 
   function openLoginScreen() {
@@ -1342,6 +2325,7 @@
     syncHomeBtn();
     hideOverlay();
     hideLevelSelect();
+    hideUnlockDialog();
     loginError.classList.add("hidden");
     minorNotice.classList.add("hidden");
     loginSubmit.classList.remove("hidden");
@@ -1363,6 +2347,9 @@
   }
 
   function goHome() {
+    cancelAd(false);
+    closeSettings();
+    closeShop();
     if (loggedIn) showLevelSelect();
     else openLoginScreen();
   }
@@ -1666,11 +2653,13 @@
     statusLabel.textContent = "逃亡中";
     makeLevel(level);
     resetPuzzleButtons();
+    resetLevelUses();
     state = "playing";
     hideOverlay();
     hideLevelSelect();
     syncPuzzleTools();
     syncHomeBtn();
+    syncItemBar();
     if (window.GameAudio) {
       GameAudio.unlock();
       GameAudio.syncAmbience({
@@ -1699,7 +2688,7 @@
   }
 
   function confirmPlayerName() {
-    const name = (nameInput.value || "").trim().slice(0, 8);
+    const name = (nameInput.value || "").trim().slice(0, 30000);
     if (!name) {
       nameInput.focus();
       statusLabel.textContent = "先起个名字";
@@ -1851,6 +2840,19 @@
     glow.addColorStop(1, under ? "rgba(255, 60, 10, 0.14)" : "rgba(255, 60, 10, 0.28)");
     ctx.fillStyle = glow;
     ctx.fillRect(0, base - 60, W, 60);
+
+    // Drained magma pockets (bucket)
+    for (const d of lavaDrains) {
+      const x = d.x - cameraX;
+      if (x + d.w < 0 || x > W) continue;
+      ctx.fillStyle = "#1a100c";
+      ctx.fillRect(x, base - 2, d.w, H - base + 2);
+      ctx.fillStyle = "rgba(80, 140, 180, 0.25)";
+      ctx.fillRect(x, base - 2, d.w, 10);
+      ctx.fillStyle = "rgba(160, 210, 255, 0.35)";
+      ctx.font = "11px 'Noto Sans SC', sans-serif";
+      ctx.fillText("已吸干", x + 8, base + 14);
+    }
   }
 
   function drawBrick(p) {
@@ -1952,7 +2954,8 @@
     ctx.fillRect(x + 16, y + 30 + hop, 5, 10 - swing);
 
     if (playerName || level >= 5) {
-      const label = playerName || "???";
+      const raw = playerName || "???";
+      const label = raw.length > 16 ? `${raw.slice(0, 16)}…` : raw;
       ctx.save();
       ctx.font = "12px 'Noto Sans SC', sans-serif";
       ctx.textAlign = "center";
@@ -2147,6 +3150,356 @@
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.restore();
+  }
+
+  function updateShopScene(dt) {
+    if (!shopScene || state !== "playing") return;
+    const s = shopScene;
+    s.pulse += dt * 3;
+    s.talkTimer += dt;
+
+    // Advance shop clock from 11:58 toward noon (and a bit past)
+    if (s.phase === "waiting" || s.phase === "rush") {
+      s.clockAcc += dt * s.timeScale;
+      while (s.clockAcc >= 1) {
+        s.clockAcc -= 1;
+        s.second += 1;
+        if (s.second >= 60) {
+          s.second = 0;
+          s.minute += 1;
+          if (s.minute >= 60) {
+            s.minute = 0;
+            s.hour = (s.hour + 1) % 24;
+          }
+        }
+      }
+    }
+
+    if (s.phase === "waiting" && s.hour >= 12) {
+      s.phase = "rush";
+      s.doorOpen = true;
+      s.talk = "开门啦！快来买五角星！";
+      statusLabel.textContent = "12:00 开门！";
+      if (window.GameAudio) GameAudio.playClick();
+      for (const c of s.customers) {
+        c.vx = -5.5 - Math.random() * 2.5;
+        c.leave = false;
+      }
+      shake = 8;
+    }
+
+    if (s.phase === "rush") {
+      for (const c of s.customers) {
+        if (c.leave) {
+          c.x += 360 * dt;
+          continue;
+        }
+        c.x += c.vx;
+        if (!c.inShop && c.x <= c.targetX) {
+          c.x = c.targetX;
+          c.vx = 0;
+          c.inShop = true;
+          if (s.stock > 0) {
+            s.stock -= 1;
+            spawnBurst(s.x + s.w * 0.5, s.y - 90, "#ffe566", 8);
+            if (window.GameAudio) GameAudio.playClick();
+          }
+          c.bought = true;
+          c.leave = true;
+        }
+      }
+      if (s.stock <= 0) {
+        s.phase = "soldout";
+        s.talk = "排到你了……五角星卖完了";
+        statusLabel.textContent = "五角星卖完了";
+      }
+    }
+  }
+
+  function drawShopClock(s, cx, cy) {
+    const r = 28;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.fillStyle = "#f5e6c8";
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#5a3020";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    // ticks
+    ctx.strokeStyle = "#3a2010";
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * (r - 6), Math.sin(a) * (r - 6));
+      ctx.lineTo(Math.cos(a) * (r - 2), Math.sin(a) * (r - 2));
+      ctx.stroke();
+    }
+    const mins = s.minute + s.second / 60;
+    const hours = (s.hour % 12) + mins / 60;
+    const ha = (hours / 12) * Math.PI * 2 - Math.PI / 2;
+    const ma = (mins / 60) * Math.PI * 2 - Math.PI / 2;
+    ctx.strokeStyle = "#2a1208";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(Math.cos(ha) * 14, Math.sin(ha) * 14);
+    ctx.stroke();
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(Math.cos(ma) * 20, Math.sin(ma) * 20);
+    ctx.stroke();
+    ctx.fillStyle = "#c04020";
+    ctx.beginPath();
+    ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Digital readout under clock
+    const hh = String(s.hour).padStart(2, "0");
+    const mm = String(s.minute).padStart(2, "0");
+    const ss = String(s.second).padStart(2, "0");
+    ctx.fillStyle = "rgba(18, 8, 6, 0.75)";
+    ctx.fillRect(cx - 36, cy + r + 6, 72, 18);
+    ctx.fillStyle = "#ffd24a";
+    ctx.font = "11px 'Press Start 2P', monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`${hh}:${mm}:${ss}`, cx, cy + r + 15);
+  }
+
+  function drawShopNpc(s) {
+    const bx = s.x + 36 - cameraX;
+    const by = s.y - 40;
+    const bob = Math.sin(s.pulse * 1.5) * 1.5;
+    // body pink
+    ctx.fillStyle = "#ff8ab8";
+    ctx.fillRect(bx + 4, by - 22 + bob, 22, 26);
+    // head
+    ctx.fillStyle = "#f0c8a8";
+    ctx.beginPath();
+    ctx.arc(bx + 15, by - 30 + bob, 11, 0, Math.PI * 2);
+    ctx.fill();
+    // orange hair
+    ctx.fillStyle = "#ff7a1a";
+    ctx.beginPath();
+    ctx.ellipse(bx + 15, by - 36 + bob, 13, 9, 0, Math.PI, 0);
+    ctx.fill();
+    ctx.fillRect(bx + 3, by - 36 + bob, 6, 14);
+    ctx.fillRect(bx + 21, by - 36 + bob, 6, 14);
+    // eyes
+    ctx.fillStyle = "#2a1208";
+    ctx.fillRect(bx + 10, by - 32 + bob, 3, 3);
+    ctx.fillRect(bx + 17, by - 32 + bob, 3, 3);
+    // smile
+    ctx.strokeStyle = "#2a1208";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(bx + 15, by - 27 + bob, 3, 0.1, Math.PI - 0.1);
+    ctx.stroke();
+    // legs
+    ctx.fillStyle = "#5a3a28";
+    ctx.fillRect(bx + 6, by + 4 + bob, 6, 10);
+    ctx.fillRect(bx + 18, by + 4 + bob, 6, 10);
+
+    // speech bubble
+    if (s.talk) {
+      const tx = bx + 40;
+      const ty = by - 58 + bob;
+      ctx.font = "13px 'Noto Sans SC', sans-serif";
+      const tw = Math.min(160, ctx.measureText(s.talk).width + 16);
+      ctx.fillStyle = "rgba(255, 248, 235, 0.95)";
+      ctx.fillRect(tx, ty, tw, 28);
+      ctx.strokeStyle = "#8a5a28";
+      ctx.strokeRect(tx, ty, tw, 28);
+      ctx.beginPath();
+      ctx.moveTo(tx + 8, ty + 28);
+      ctx.lineTo(tx + 4, ty + 36);
+      ctx.lineTo(tx + 18, ty + 28);
+      ctx.fill();
+      ctx.fillStyle = "#2a1208";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(s.talk, tx + 8, ty + 14);
+    }
+  }
+
+  function drawShopCustomer(c) {
+    const x = c.x - cameraX;
+    const y = c.y;
+    if (x < -40 || x > W + 40) return;
+    ctx.fillStyle = c.color;
+    ctx.fillRect(x, y - c.h + 12, c.w, c.h - 12);
+    ctx.fillStyle = "#f0c8a8";
+    ctx.beginPath();
+    ctx.arc(x + c.w / 2, y - c.h + 8, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = c.hair;
+    ctx.beginPath();
+    ctx.ellipse(x + c.w / 2, y - c.h + 4, 9, 6, 0, Math.PI, 0);
+    ctx.fill();
+  }
+
+  function drawShopScene() {
+    if (!shopScene) return;
+    const s = shopScene;
+    const x = s.x - cameraX;
+    const y = s.y;
+    if (x > W + 80 || x + s.w < -80) {
+      s.starHit = null;
+      return;
+    }
+
+    // Building
+    ctx.fillStyle = "#5a2e1c";
+    ctx.fillRect(x, y - s.h, s.w, s.h);
+    ctx.fillStyle = "#7a3d24";
+    ctx.fillRect(x + 8, y - s.h + 8, s.w - 16, s.h - 16);
+    // awning
+    ctx.fillStyle = "#c04040";
+    ctx.fillRect(x - 10, y - s.h - 8, s.w + 20, 18);
+    for (let i = 0; i < 8; i++) {
+      ctx.fillStyle = i % 2 ? "#f0e0c0" : "#c04040";
+      ctx.fillRect(x - 10 + i * ((s.w + 20) / 8), y - s.h + 6, (s.w + 20) / 8, 10);
+    }
+    // door
+    ctx.fillStyle = s.doorOpen ? "#1a0c08" : "#3a2218";
+    ctx.fillRect(x + s.w * 0.55, y - 78, 52, 78);
+    if (!s.doorOpen) {
+      ctx.strokeStyle = "#8a5a28";
+      ctx.strokeRect(x + s.w * 0.55, y - 78, 52, 78);
+      ctx.fillStyle = "#ffd24a";
+      ctx.beginPath();
+      ctx.arc(x + s.w * 0.55 + 40, y - 40, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // window shelves with stars (stock)
+    ctx.fillStyle = "#87ceeb";
+    ctx.globalAlpha = 0.35;
+    ctx.fillRect(x + 18, y - 120, 90, 70);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = "#ffe07a";
+    ctx.strokeRect(x + 18, y - 120, 90, 70);
+    const showStars = Math.max(0, Math.min(6, s.stock));
+    for (let i = 0; i < showStars; i++) {
+      const sx = x + 30 + (i % 3) * 26;
+      const sy = y - 100 + Math.floor(i / 3) * 28;
+      drawMiniStar(sx, sy, 7, "#ffe566");
+    }
+    if (s.phase === "soldout") {
+      ctx.fillStyle = "rgba(20,8,6,0.7)";
+      ctx.fillRect(x + 18, y - 120, 90, 70);
+      ctx.fillStyle = "#ff7a5c";
+      ctx.font = "bold 14px 'Noto Sans SC', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("售罄", x + 63, y - 82);
+    }
+
+    // Sign: 五角星专卖店 — 五角星 is clickable
+    ctx.font = "bold 20px 'Noto Sans SC', sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    const mid = "五角星";
+    const suffix = "专卖店";
+    const w1 = ctx.measureText(mid).width;
+    const w2 = ctx.measureText(suffix).width;
+    const signX = x + (s.w - (w1 + w2)) / 2;
+    const signY = y - s.h - 18;
+    ctx.fillStyle = "rgba(18, 8, 6, 0.85)";
+    ctx.fillRect(signX - 12, signY - 26, w1 + w2 + 24, 36);
+    ctx.strokeStyle = "#ffd24a";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(signX - 12, signY - 26, w1 + w2 + 24, 36);
+
+    const glow = 0.4 + Math.sin(s.pulse * 2) * 0.25;
+    ctx.fillStyle = `rgba(255, 210, 74, ${0.8 + glow * 0.2})`;
+    ctx.fillText(mid, signX, signY);
+    ctx.fillStyle = "#fff3e6";
+    ctx.fillText(suffix, signX + w1, signY);
+
+    s.starHit = {
+      x: s.x + (s.w - (w1 + w2)) / 2,
+      y: s.y - s.h - 44,
+      w: w1,
+      h: 34,
+    };
+
+    // Clock beside shop
+    drawShopClock(s, x - 48, y - s.h + 40);
+
+    // Boss NPC
+    drawShopNpc(s);
+
+    // Customers
+    for (const c of s.customers) drawShopCustomer(c);
+
+    // Sold-out banner
+    if (s.phase === "soldout") {
+      ctx.fillStyle = "rgba(255, 120, 60, 0.9)";
+      ctx.font = "bold 16px 'Noto Sans SC', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("排到你了：五角星已经卖完了", x + s.w / 2, y - s.h - 52);
+    }
+  }
+
+  function drawMiniStar(cx, cy, r, color) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+      const b = a + Math.PI / 5;
+      const x1 = Math.cos(a) * r;
+      const y1 = Math.sin(a) * r;
+      const x2 = Math.cos(b) * r * 0.4;
+      const y2 = Math.sin(b) * r * 0.4;
+      if (i === 0) ctx.moveTo(x1, y1);
+      else ctx.lineTo(x1, y1);
+      ctx.lineTo(x2, y2);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function tryClickShopStar(clientX, clientY) {
+    if (state !== "playing" || !shopScene || !shopScene.starHit) return false;
+    const world = clientToWorld(clientX, clientY);
+    const h = shopScene.starHit;
+    if (
+      world.x >= h.x &&
+      world.x <= h.x + h.w &&
+      world.y >= h.y &&
+      world.y <= h.y + h.h
+    ) {
+      if (window.GameAudio) GameAudio.playClick();
+      stars += 1;
+      saveStars();
+      starLabel.textContent = String(stars);
+      spawnBurst(h.x + h.w / 2, h.y + h.h / 2, "#ffe566", 24);
+      spawnBurst(h.x + h.w / 2, h.y + h.h / 2, "#ff9a2a", 14);
+      shake = 10;
+      statusLabel.textContent = "点到五角星了！";
+      winLevel();
+      return true;
+    }
+    return false;
+  }
+
+  function hoverShopStar(clientX, clientY) {
+    if (state !== "playing" || !shopScene || !shopScene.starHit) return false;
+    const world = clientToWorld(clientX, clientY);
+    const h = shopScene.starHit;
+    return (
+      world.x >= h.x &&
+      world.x <= h.x + h.w &&
+      world.y >= h.y &&
+      world.y <= h.y + h.h
+    );
   }
 
   function drawEndSign() {
@@ -2713,7 +4066,15 @@
 
   function drawUI() {
     let progress = 0;
-    const goalX = star ? star.x : endSign ? endSign.x : comingSoon ? comingSoon.x : 1;
+    const goalX = star
+      ? star.x
+      : endSign
+        ? endSign.x
+        : shopScene
+          ? shopScene.x
+          : comingSoon
+            ? comingSoon.x
+            : 1;
     if (reverseGoal && star) {
       const total = Math.max(1, spawnX - star.x);
       progress = clamp((spawnX - player.x) / total, 0, 1);
@@ -2746,6 +4107,7 @@
     drawRockets();
     drawCrate();
     drawPotion();
+    drawShopScene();
     if (!(fakeLava && star && star.y + star.r > LAVA_Y - 20)) drawStar();
     drawEndSign();
     drawComingSoon();
@@ -2852,6 +4214,7 @@
     ) {
       if (window.GameAudio) GameAudio.playClick();
       stars += 1;
+      saveStars();
       starLabel.textContent = String(stars);
       spawnBurst(h.x + h.w / 2, h.y + h.h / 2, "#ffe566", 24);
       spawnBurst(h.x + h.w / 2, h.y + h.h / 2, "#ff9a2a", 14);
@@ -2865,6 +4228,9 @@
 
   canvas.addEventListener("pointerup", (e) => {
     if (e.button != null && e.button !== 0) return;
+    if (settingsOpen || adOpen || shopOpen) return;
+    if (tryUseToolClick(e.clientX, e.clientY)) return;
+    if (tryClickShopStar(e.clientX, e.clientY)) return;
     if (tryClickLevel6(e.clientX, e.clientY)) return;
     if (tryClickLevel7(e.clientX, e.clientY)) return;
     if (tryClickLevel8(e.clientX, e.clientY)) return;
@@ -2881,7 +4247,8 @@
     }
     if (
       hoverLevel6Target(e.clientX, e.clientY) ||
-      hoverLevel8Target(e.clientX, e.clientY)
+      hoverLevel8Target(e.clientX, e.clientY) ||
+      hoverShopStar(e.clientX, e.clientY)
     ) {
       canvas.style.cursor = "pointer";
       return;
@@ -2912,14 +4279,127 @@
     }
   });
 
+  if (settingsBtn) {
+    settingsBtn.addEventListener("click", () => {
+      playUiClick();
+      if (adOpen || shopOpen) return;
+      if (settingsOpen) closeSettings();
+      else openSettings();
+    });
+  }
+  if (skipBtn) {
+    skipBtn.addEventListener("click", () => {
+      playUiClick();
+      if (shopOpen) return;
+      startSkipAd();
+    });
+  }
+  if (shopBtn) {
+    shopBtn.addEventListener("click", () => {
+      playUiClick();
+      if (adOpen) return;
+      if (shopOpen) closeShop();
+      else openShop();
+    });
+  }
+  if (shopClose) {
+    shopClose.addEventListener("click", () => {
+      playUiClick();
+      closeShop();
+    });
+  }
+  if (shopPanel) {
+    shopPanel.addEventListener("click", (e) => {
+      if (e.target === shopPanel) {
+        playUiClick();
+        closeShop();
+      }
+    });
+    for (const btn of shopPanel.querySelectorAll(".shop-buy")) {
+      btn.addEventListener("click", () => {
+        playUiClick();
+        buyItem(btn.dataset.buy);
+      });
+    }
+  }
+  if (itemBar) {
+    for (const btn of itemBar.querySelectorAll(".item-btn")) {
+      btn.addEventListener("click", () => {
+        playUiClick();
+        useInventoryItem(btn.dataset.use);
+      });
+    }
+  }
+  if (settingsClose) {
+    settingsClose.addEventListener("click", () => {
+      playUiClick();
+      closeSettings();
+    });
+  }
+  if (settingsPanel) {
+    settingsPanel.addEventListener("click", (e) => {
+      if (e.target === settingsPanel) {
+        playUiClick();
+        closeSettings();
+      }
+    });
+  }
+  if (brightnessSlider) {
+    brightnessSlider.addEventListener("input", () => {
+      applyBrightness(brightnessSlider.value);
+    });
+  }
+  if (volumeSlider) {
+    volumeSlider.addEventListener("input", () => {
+      applyVolume(volumeSlider.value);
+      if (window.GameAudio) {
+        GameAudio.unlock();
+        GameAudio.playClick();
+      }
+    });
+  }
+
   logoutBtn.addEventListener("click", () => {
     playUiClick();
     stars = 0;
+    inventory = { skipCard: 0, potion: 0, sword: 0, pickaxe: 0, bucket: 0 };
+    maxCleared = 0;
+    saveStars();
+    saveInventory();
+    saveCleared();
     playerName = "";
     starLabel.textContent = "0";
     levelLabel.textContent = "1";
     openLoginScreen();
   });
+
+  if (unlockSkipBtn) {
+    unlockSkipBtn.addEventListener("click", () => {
+      playUiClick();
+      skipPreviousAndEnter();
+    });
+  }
+  if (unlockCancelBtn) {
+    unlockCancelBtn.addEventListener("click", () => {
+      playUiClick();
+      hideUnlockDialog();
+    });
+  }
+  if (unlockDialog) {
+    unlockDialog.addEventListener("click", (e) => {
+      if (e.target === unlockDialog) {
+        playUiClick();
+        hideUnlockDialog();
+      }
+    });
+  }
+  if (adCloseBtn) {
+    adCloseBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      playUiClick();
+      closeAdEarly();
+    });
+  }
 
   loginSubmit.addEventListener("click", () => {
     playUiClick();
@@ -2992,9 +4472,11 @@
   // Prep first level visuals; login is required before playing
   setupPuzzleDrag();
   setupTouchControls();
+  loadSettings();
+  loadProgress();
   makeLevel(1);
   levelLabel.textContent = "1";
-  starLabel.textContent = "0";
+  starLabel.textContent = String(stars);
   statusLabel.textContent = "登录";
   syncPuzzleTools();
   syncHomeBtn();

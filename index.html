@@ -28,7 +28,116 @@
         <button type="button" class="fake-btn" data-label="重开" data-id="restart">重开</button>
       </div>
 
-      <button id="home-btn" class="home-btn hidden" type="button">主页</button>
+      <div id="corner-actions" class="corner-actions hidden" aria-hidden="true">
+        <button id="home-btn" class="corner-btn" type="button">主页</button>
+        <button id="settings-btn" class="corner-btn" type="button">设置</button>
+        <button id="skip-btn" class="corner-btn" type="button">跳过</button>
+        <button id="shop-btn" class="corner-btn" type="button">商城</button>
+      </div>
+
+      <div id="item-bar" class="item-bar hidden" aria-hidden="true">
+        <button type="button" class="item-btn" data-use="skipCard" title="免费跳过（无广告）">
+          跳过卡 <strong data-count="skipCard">0</strong>
+        </button>
+        <button type="button" class="item-btn" data-use="potion" title="本关加速（限 1 次/拥有数）">
+          加速 <strong data-count="potion">0</strong>
+        </button>
+        <button type="button" class="item-btn" data-use="sword" title="点击僵尸斩杀">
+          宝剑 <strong data-count="sword">0</strong>
+        </button>
+        <button type="button" class="item-btn" data-use="pickaxe" title="点击拆除砖块等">
+          稿子 <strong data-count="pickaxe">0</strong>
+        </button>
+        <button type="button" class="item-btn" data-use="bucket" title="吸走前方岩浆">
+          桶 <strong data-count="bucket">0</strong>
+        </button>
+      </div>
+
+      <div id="shop-panel" class="shop-panel hidden" aria-hidden="true">
+        <div class="shop-card">
+          <h3>五角星商城</h3>
+          <p class="shop-stars">当前五角星：<strong id="shop-star-count">0</strong></p>
+          <div class="shop-list">
+            <div class="shop-item" data-buy="skipCard">
+              <div>
+                <strong>免费跳过关卡卡</strong>
+                <p>跳过本关，无广告。消耗 1 张。</p>
+              </div>
+              <button type="button" class="shop-buy" data-buy="skipCard">5★ 兑换</button>
+            </div>
+            <div class="shop-item" data-buy="potion">
+              <div>
+                <strong>加速药水</strong>
+                <p>每瓶每关可用 1 次。</p>
+              </div>
+              <button type="button" class="shop-buy" data-buy="potion">10★ 兑换</button>
+            </div>
+            <div class="shop-item" data-buy="sword">
+              <div>
+                <strong>宝剑</strong>
+                <p>每把每关可斩杀僵尸 2 次。</p>
+              </div>
+              <button type="button" class="shop-buy" data-buy="sword">19★ 兑换</button>
+            </div>
+            <div class="shop-item" data-buy="pickaxe">
+              <div>
+                <strong>稿子</strong>
+                <p>每把每关可拆 25 次（砖块等都能拆）。</p>
+              </div>
+              <button type="button" class="shop-buy" data-buy="pickaxe">35★ 兑换</button>
+            </div>
+            <div class="shop-item" data-buy="bucket">
+              <div>
+                <strong>桶</strong>
+                <p>每只每关可吸岩浆 10 次。</p>
+              </div>
+              <button type="button" class="shop-buy" data-buy="bucket">17★ 兑换</button>
+            </div>
+          </div>
+          <p id="shop-tip" class="shop-tip"></p>
+          <button id="shop-close" type="button">关闭</button>
+        </div>
+      </div>
+
+      <div id="settings-panel" class="settings-panel hidden" aria-hidden="true">
+        <div class="settings-card">
+          <h3>设置</h3>
+          <label class="settings-row" for="brightness-slider">
+            <span>亮度</span>
+            <input id="brightness-slider" type="range" min="40" max="150" value="100" />
+            <strong id="brightness-value">100%</strong>
+          </label>
+          <label class="settings-row" for="volume-slider">
+            <span>声音</span>
+            <input id="volume-slider" type="range" min="0" max="100" value="35" />
+            <strong id="volume-value">35%</strong>
+          </label>
+          <button id="settings-close" type="button">关闭</button>
+        </div>
+      </div>
+
+      <div id="ad-panel" class="ad-panel hidden" aria-hidden="true">
+        <div class="ad-card">
+          <button id="ad-close" class="ad-close" type="button" aria-label="关闭广告">×</button>
+          <div class="ad-badge">视频广告</div>
+          <div class="ad-video-wrap">
+            <video
+              id="ad-video"
+              class="ad-video"
+              playsinline
+              webkit-playsinline
+              autoplay
+            ></video>
+            <div class="ad-sound-tag">有声</div>
+          </div>
+          <h3 id="ad-title">精彩推荐</h3>
+          <p id="ad-desc">加载中…</p>
+          <p class="ad-timer"><span id="ad-timer-hint">观看完整广告</span> · 剩余 <strong id="ad-countdown">25</strong> 秒</p>
+          <div class="ad-progress" aria-hidden="true">
+            <div id="ad-progress-bar" class="ad-progress-bar"></div>
+          </div>
+        </div>
+      </div>
 
       <div id="touch-pad" class="touch-pad hidden" aria-hidden="true">
         <div class="touch-move">
@@ -43,10 +152,20 @@
       <div id="level-select" class="level-select hidden" aria-hidden="true">
         <div class="level-select-card">
           <h2>选择关卡</h2>
-          <p class="level-select-desc">共 35 关 · 第 9 关为目前终点，后面还在制作</p>
+          <p class="level-select-desc">共 35 关 · 第 10 关为目前终点，后面还在制作</p>
           <div id="level-grid" class="level-grid"></div>
           <p id="level-tip" class="level-tip hidden"></p>
           <button id="logout-btn" type="button">退出登录</button>
+        </div>
+      </div>
+
+      <div id="unlock-dialog" class="unlock-dialog hidden" aria-hidden="true">
+        <div class="unlock-card">
+          <p id="unlock-msg">您上一关还没有通关，请通关第一关</p>
+          <div class="unlock-actions">
+            <button id="unlock-skip" type="button">跳过上一关</button>
+            <button id="unlock-cancel" type="button">取消</button>
+          </div>
         </div>
       </div>
 
@@ -99,7 +218,7 @@
           <p id="overlay-msg">后面有 5 只僵尸在追你。<br />砖块下是滚烫岩浆——掉下去就完了。<br />冲到终点，拿到发光的五角星！</p>
           <div id="name-form" class="name-form hidden">
             <label for="player-name-input">给你的角色起个名字</label>
-            <input id="player-name-input" type="text" maxlength="8" placeholder="最多 8 个字" autocomplete="off" />
+            <input id="player-name-input" type="text" maxlength="30000" placeholder="最多 30000 个字" autocomplete="off" />
           </div>
           <button id="start-btn" type="button">开始逃亡</button>
           <p id="overlay-hint" class="hint">电脑：方向键 / WASD · 手机：屏幕下方按钮</p>
