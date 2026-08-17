@@ -1,6 +1,7 @@
 (() => {
   const canvas = document.getElementById("game");
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true }) || canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
   const overlay = document.getElementById("overlay");
   const overlayTitle = document.getElementById("overlay-title");
   const overlayMsg = document.getElementById("overlay-msg");
@@ -10,6 +11,14 @@
   const statusLabel = document.getElementById("status-label");
   const puzzleTools = document.getElementById("puzzle-tools");
   const fakeButtons = [...puzzleTools.querySelectorAll(".fake-btn")];
+  const chatBtn = document.getElementById("chat-btn");
+  const chatDock = document.getElementById("chat-dock");
+  const joinNoticesEl = document.getElementById("join-notices");
+  const chatPanel = document.getElementById("chat-panel");
+  const chatInput = document.getElementById("chat-input");
+  const chatSend = document.getElementById("chat-send");
+  const chatClose = document.getElementById("chat-close");
+  const chatLogEl = document.getElementById("chat-log");
   const nameForm = document.getElementById("name-form");
   const nameInput = document.getElementById("player-name-input");
   const overlayHint = document.getElementById("overlay-hint");
@@ -38,9 +47,48 @@
   const adCloseBtn = document.getElementById("ad-close");
   const adTimerHint = document.getElementById("ad-timer-hint");
   const levelSelect = document.getElementById("level-select");
+  const homeNoticesEl = document.getElementById("home-notices");
   const levelGrid = document.getElementById("level-grid");
   const levelTip = document.getElementById("level-tip");
   const logoutBtn = document.getElementById("logout-btn");
+  const friendsBtn = document.getElementById("friends-btn");
+  const globalChatBtn = document.getElementById("global-chat-btn");
+  const globalChatPanel = document.getElementById("global-chat-panel");
+  const globalChatLogEl = document.getElementById("global-chat-log");
+  const globalChatInput = document.getElementById("global-chat-input");
+  const globalChatSend = document.getElementById("global-chat-send");
+  const globalChatClose = document.getElementById("global-chat-close");
+  const inboxBtn = document.getElementById("inbox-btn");
+  const inboxPanel = document.getElementById("inbox-panel");
+  const inboxListEl = document.getElementById("inbox-list");
+  const inboxClose = document.getElementById("inbox-close");
+  const inboxClear = document.getElementById("inbox-clear");
+  const chatUserDialog = document.getElementById("chat-user-dialog");
+  const chatUserMsg = document.getElementById("chat-user-msg");
+  const chatUserFriend = document.getElementById("chat-user-friend");
+  const chatUserReport = document.getElementById("chat-user-report");
+  const chatUserCancel = document.getElementById("chat-user-cancel");
+  const reportDialog = document.getElementById("report-dialog");
+  const reportMsg = document.getElementById("report-msg");
+  const reportCancel = document.getElementById("report-cancel");
+  const friendCenter = document.getElementById("friend-center");
+  const friendsClose = document.getElementById("friends-close");
+  const friendListEl = document.getElementById("friend-list");
+  const friendChatTitle = document.getElementById("friend-chat-title");
+  const friendChatLogEl = document.getElementById("friend-chat-log");
+  const friendChatInput = document.getElementById("friend-chat-input");
+  const friendChatSend = document.getElementById("friend-chat-send");
+  const friendInviteLevel = document.getElementById("friend-invite-level");
+  const friendInviteBtn = document.getElementById("friend-invite-btn");
+  const friendReqDialog = document.getElementById("friend-req-dialog");
+  const friendReqMsg = document.getElementById("friend-req-msg");
+  const friendReqYes = document.getElementById("friend-req-yes");
+  const friendReqNo = document.getElementById("friend-req-no");
+  const inviteDialog = document.getElementById("invite-dialog");
+  const inviteMsg = document.getElementById("invite-msg");
+  const inviteYes = document.getElementById("invite-yes");
+  const inviteNo = document.getElementById("invite-no");
+  const socialToastEl = document.getElementById("social-toast");
   const moonCoopBtn = document.getElementById("moon-coop-btn");
   const loginMoonBtn = document.getElementById("login-moon-btn");
   const unlockDialog = document.getElementById("unlock-dialog");
@@ -51,6 +99,9 @@
   const portraitDecline = document.getElementById("portrait-decline");
   const portraitAccept = document.getElementById("portrait-accept");
   const loginScreen = document.getElementById("login-screen");
+  const banScreen = document.getElementById("ban-screen");
+  const banMsg = document.getElementById("ban-msg");
+  const banLeft = document.getElementById("ban-left");
   const loginUser = document.getElementById("login-user");
   const loginPass = document.getElementById("login-pass");
   const loginPhone = document.getElementById("login-phone");
@@ -84,6 +135,7 @@
   const touch = { left: false, right: false, jump: false };
   let settingsOpen = false;
   let shopOpen = false;
+  let socialOpen = false;
   let adOpen = false;
   let adTimerId = null;
   let adEndsAt = 0;
@@ -178,6 +230,28 @@
   let loggedIn = false;
   let maxCleared = 0; // highest cleared level; level 1 always open
   let pendingUnlockLevel = 0;
+  let levelPlayerCounts = {};
+  let friends = [];
+  let selectedFriendId = "";
+  let friendUnread = {};
+  let pendingFriend = {};
+  let friendReqQueue = [];
+  let friendReqCurrent = null;
+  let inviteQueue = [];
+  let inviteCurrent = null;
+  let friendCenterOpen = false;
+  let socialToastTimer = 0;
+  let globalChat = [];
+  let globalChatOpen = false;
+  let globalChatUnread = 0;
+  let chatUserTarget = null;
+  let inboxReports = [];
+  let inboxOpen = false;
+  let inboxUnread = 0;
+  let homeNotices = [];
+  let homePeerQuietUntil = 0;
+  let homePeerReady = false;
+  let banTimerId = 0;
   const TOTAL_LEVELS = 35;
   const MAX_PLAYABLE = 11;
   let cameraX = 0;
@@ -210,7 +284,17 @@
   let remotePlayers = new Map();
   let coopCount = 1;
   let coopAcc = 0;
+  let lastCoopPos = { x: 0, y: 0 };
+  let localChat = "";
+  let localChatUntil = 0;
+  let joinNotices = [];
+  let coopAnnounceAt = 0;
+  let chatLog = [];
+  let chatLogLevel = 0;
   const COOP_COLORS = ["#ff8a5c", "#b8ff6a", "#d47aff", "#ffd36a", "#6ad4ff"];
+  let moonSkyGrad = null;
+  let moonVoidGrad = null;
+  let moonEarthGrad = null;
   let crate = null;
   let potion = null;
   let speedBoost = 0;
@@ -904,13 +988,13 @@
             id: pickups.length + 1,
             x: px,
             y: plat.y - 22,
-            r: 10,
+            r: 8,
             collected: false,
             pulse: rng() * 5,
           });
         }
       };
-      addPickups(platforms[0], 4);
+      addPickups(platforms[0], 1);
 
       for (let i = 0; i < 14; i++) {
         const pit = 78 + Math.floor(rng() * 64);
@@ -920,7 +1004,7 @@
         const y = clamp(groundY + Math.floor(rng() * 56 - 28), 328, 408);
         const plat = { x, y, w, h: 26, lane: "ground", theme: "moon" };
         platforms.push(plat);
-        addPickups(plat, rng() > 0.35 ? 2 : 1);
+        if (i % 2 === 0) addPickups(plat, 1);
         x += w;
       }
 
@@ -930,7 +1014,7 @@
       craters.push({ x, w: lastGap });
       x += lastGap;
       platforms.push({ x, y: endY, w: endW, h: 28, lane: "ground", theme: "moon" });
-      addPickups(platforms[platforms.length - 1], 3);
+      addPickups(platforms[platforms.length - 1], 1);
       worldWidth = x + endW + 80;
       worldMin = 0;
 
@@ -1059,11 +1143,11 @@
 
   function localCoopId() {
     try {
-      let id = sessionStorage.getItem("yyy_coop_id");
+      let id = localStorage.getItem("yyy_coop_id") || sessionStorage.getItem("yyy_coop_id");
       if (!id) {
         id = "p" + Math.random().toString(36).slice(2, 10);
-        sessionStorage.setItem("yyy_coop_id", id);
       }
+      localStorage.setItem("yyy_coop_id", id);
       return id;
     } catch {
       return "p" + Math.random().toString(36).slice(2, 10);
@@ -1078,96 +1162,1250 @@
     return COOP_COLORS[Math.abs(h) % COOP_COLORS.length];
   }
 
+  function applyLevelCounts(counts) {
+    levelPlayerCounts = counts || {};
+    if (levelGrid) {
+      for (const btn of levelGrid.querySelectorAll(".level-cell")) {
+        const n = Number(btn.dataset.level);
+        const el = btn.querySelector(".online");
+        if (el) el.textContent = `${levelPlayerCounts[n] || 0}人在玩`;
+      }
+    }
+    const moonOnline = document.getElementById("moon-online");
+    if (moonOnline) moonOnline.textContent = `${levelPlayerCounts[11] || 0}人在玩`;
+    if (friendCenterOpen) renderFriendList();
+  }
+
+  function watchLobbyCounts() {
+    if (!window.LevelCoop || typeof LevelCoop.watch !== "function") return;
+    if (!homePeerReady) homePeerQuietUntil = Date.now() + 3500;
+    if (typeof LevelCoop.setName === "function") LevelCoop.setName(myDisplayName());
+    LevelCoop.watch(localCoopId(), {
+      onPresence: applyLevelCounts,
+      onSocial: handleSocial,
+      onPeer: handleHomePeer,
+      name: myDisplayName(),
+    });
+  }
+
+  function renderHomeNotices() {
+    if (!homeNoticesEl) return;
+    const now = Date.now();
+    homeNotices = homeNotices.filter((n) => now < n.until);
+    homeNoticesEl.innerHTML = homeNotices
+      .map((n) => `<p class="${n.off ? "off" : ""}">${escapeHtml(n.text)}</p>`)
+      .join("");
+  }
+
+  function pushHomeNotice(text, off) {
+    if (state !== "select") return;
+    const line = String(text || "").trim();
+    if (!line) return;
+    homeNotices.unshift({ text: line, off: !!off, until: Date.now() + 4200 });
+    homeNotices = homeNotices.slice(0, 4);
+    renderHomeNotices();
+    window.setTimeout(renderHomeNotices, 4300);
+  }
+
+  function handleHomePeer(ev) {
+    if (!ev || ev.id === localCoopId()) return;
+    if (!homePeerReady && Date.now() < homePeerQuietUntil) return;
+    homePeerReady = true;
+    if (state !== "select") return;
+    const name = playerLabel(ev.name);
+    if (ev.type === "online") pushHomeNotice(`${name}上线了`, false);
+    else if (ev.type === "offline") pushHomeNotice(`${name}下线了`, true);
+  }
+
+  function myDisplayName() {
+    return (playerName || "玩家").slice(0, 12);
+  }
+
+  function loadFriends() {
+    try {
+      const raw = localStorage.getItem("yyy_friends");
+      const arr = raw ? JSON.parse(raw) : [];
+      friends = Array.isArray(arr)
+        ? arr
+            .filter((f) => f && f.id)
+            .map((f) => ({ id: String(f.id), name: String(f.name || "玩家") }))
+        : [];
+    } catch {
+      friends = [];
+    }
+  }
+
+  function saveFriends() {
+    try {
+      localStorage.setItem("yyy_friends", JSON.stringify(friends));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function isFriend(id) {
+    return friends.some((f) => f.id === id);
+  }
+
+  function addFriend(id, name) {
+    if (!id || id === localCoopId()) return;
+    const label = String(name || "玩家").slice(0, 16) || "玩家";
+    const i = friends.findIndex((f) => f.id === id);
+    if (i >= 0) {
+      if (label && label !== "玩家") friends[i].name = label;
+    } else {
+      friends.unshift({ id, name: label });
+    }
+    saveFriends();
+    renderFriendList();
+    syncFriendsBtn();
+  }
+
+  function friendChatKey(id) {
+    return "yyy_fchat_" + id;
+  }
+
+  function loadFriendChat(id) {
+    try {
+      const raw = localStorage.getItem(friendChatKey(id));
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr.slice(-80) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveFriendChat(id, logs) {
+    try {
+      localStorage.setItem(friendChatKey(id), JSON.stringify((logs || []).slice(-80)));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function appendFriendChat(id, from, text) {
+    const line = String(text || "").trim().slice(0, 40);
+    if (!id || !line) return;
+    const logs = loadFriendChat(id);
+    logs.push({ from, text: line, t: Date.now() });
+    saveFriendChat(id, logs);
+    if (selectedFriendId === id) renderFriendChat();
+  }
+
+  function sendSocial(msg) {
+    if (!window.LevelCoop || typeof LevelCoop.sendSocial !== "function") return;
+    LevelCoop.sendSocial(msg);
+  }
+
+  function socialToast(text) {
+    const line = String(text || "").trim();
+    if (!line) return;
+    pushJoinNotice(line);
+    if (!socialToastEl) return;
+    socialToastEl.textContent = line;
+    socialToastEl.classList.remove("hidden");
+    window.clearTimeout(socialToastTimer);
+    socialToastTimer = window.setTimeout(() => {
+      socialToastEl.classList.add("hidden");
+    }, 2800);
+  }
+
+  function unreadTotal() {
+    return Object.values(friendUnread).reduce((sum, n) => sum + (Number(n) || 0), 0);
+  }
+
+  function syncFriendsBtn() {
+    if (!friendsBtn) return;
+    const n = unreadTotal();
+    friendsBtn.textContent = n > 0 ? `好友中心（${n}）` : "好友中心";
+  }
+
+  function peerMap() {
+    if (!window.LevelCoop || typeof LevelCoop.peerLevels !== "function") return {};
+    try {
+      return LevelCoop.peerLevels() || {};
+    } catch {
+      return {};
+    }
+  }
+
+  function friendStatusText(id) {
+    const peers = peerMap();
+    if (!(id in peers)) return { text: "离线", on: false };
+    const lv = Number(peers[id]) || 0;
+    if (lv < 1) return { text: "在线 · 选关中", on: true };
+    return { text: `在线 · 第${lv}关`, on: true };
+  }
+
+  function renderFriendList() {
+    if (!friendListEl) return;
+    if (!friends.length) {
+      friendListEl.innerHTML = `<p class="chat-empty">还没有好友<br />点别人头顶的名字申请</p>`;
+      return;
+    }
+    friendListEl.innerHTML = friends
+      .map((f) => {
+        const st = friendStatusText(f.id);
+        const unread = Number(friendUnread[f.id]) || 0;
+        const badge = unread > 0 ? `<i class="unread">${unread > 9 ? "9+" : unread}</i>` : "";
+        const sel = f.id === selectedFriendId ? " selected" : "";
+        return `<button type="button" class="friend-item${sel}" data-id="${escapeHtml(f.id)}"><strong>${escapeHtml(playerLabel(f.name))}${badge}</strong><span class="${st.on ? "on" : ""}">${escapeHtml(st.text)}</span></button>`;
+      })
+      .join("");
+  }
+
+  function renderFriendChat() {
+    if (!friendChatLogEl) return;
+    if (!selectedFriendId) {
+      if (friendChatTitle) friendChatTitle.textContent = "选择一个好友";
+      friendChatLogEl.innerHTML = `<p class="chat-empty">选择一个好友发消息或邀请一起玩</p>`;
+      if (friendChatInput) friendChatInput.disabled = true;
+      if (friendChatSend) friendChatSend.disabled = true;
+      if (friendInviteLevel) friendInviteLevel.disabled = true;
+      if (friendInviteBtn) friendInviteBtn.disabled = true;
+      return;
+    }
+    const f = friends.find((x) => x.id === selectedFriendId);
+    const name = playerLabel(f && f.name);
+    if (friendChatTitle) friendChatTitle.textContent = `和 ${name} 聊天`;
+    if (friendChatInput) friendChatInput.disabled = false;
+    if (friendChatSend) friendChatSend.disabled = false;
+    if (friendInviteLevel) friendInviteLevel.disabled = false;
+    if (friendInviteBtn) friendInviteBtn.disabled = false;
+    const logs = loadFriendChat(selectedFriendId);
+    if (!logs.length) {
+      friendChatLogEl.innerHTML = `<p class="chat-empty">还没有消息</p>`;
+      return;
+    }
+    const me = localCoopId();
+    friendChatLogEl.innerHTML = logs
+      .map((m) => {
+        const who = m.from === me || m.from === "me" ? "我" : name;
+        return `<p><span>${escapeHtml(who)}</span>：${escapeHtml(m.text)}</p>`;
+      })
+      .join("");
+    friendChatLogEl.scrollTop = friendChatLogEl.scrollHeight;
+  }
+
+  function selectFriend(id) {
+    selectedFriendId = id || "";
+    if (selectedFriendId) delete friendUnread[selectedFriendId];
+    syncFriendsBtn();
+    renderFriendList();
+    renderFriendChat();
+  }
+
+  function fillInviteLevels() {
+    if (!friendInviteLevel) return;
+    friendInviteLevel.innerHTML = "";
+    for (let i = 1; i <= MAX_PLAYABLE; i++) {
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = `第 ${i} 关`;
+      friendInviteLevel.appendChild(opt);
+    }
+  }
+
+  function openFriendCenter() {
+    if (!friendCenter) return;
+    playUiClick();
+    closeGlobalChat();
+    closeInboxPanel();
+    friendCenterOpen = true;
+    renderFriendList();
+    renderFriendChat();
+    friendCenter.classList.remove("hidden");
+    friendCenter.setAttribute("aria-hidden", "false");
+  }
+
+  function closeFriendCenter() {
+    friendCenterOpen = false;
+    if (!friendCenter) return;
+    friendCenter.classList.add("hidden");
+    friendCenter.setAttribute("aria-hidden", "true");
+  }
+
+  function loadGlobalChat() {
+    try {
+      const raw = localStorage.getItem("yyy_gchat");
+      const arr = raw ? JSON.parse(raw) : [];
+      globalChat = Array.isArray(arr)
+        ? arr
+            .filter((m) => m && String(m.text || "").trim())
+            .map((m) => ({
+              id: m.id ? String(m.id) : "",
+              name: String(m.name || "玩家"),
+              text: String(m.text),
+            }))
+        : [];
+    } catch {
+      globalChat = [];
+    }
+  }
+
+  function saveGlobalChat() {
+    let arr = globalChat;
+    while (arr.length) {
+      try {
+        localStorage.setItem("yyy_gchat", JSON.stringify(arr));
+        return;
+      } catch {
+        if (arr.length <= 1) return;
+        arr = arr.slice(Math.ceil(arr.length / 5));
+      }
+    }
+  }
+
+  function syncGlobalChatBtn() {
+    if (!globalChatBtn) return;
+    globalChatBtn.textContent =
+      globalChatUnread > 0 ? `全游戏聊天（${globalChatUnread}）` : "全游戏聊天";
+  }
+
+  function renderGlobalChat() {
+    if (!globalChatLogEl) return;
+    if (!globalChat.length) {
+      globalChatLogEl.innerHTML = `<p class="chat-empty">还没有全服消息</p>`;
+      return;
+    }
+    const me = localCoopId();
+    globalChatLogEl.innerHTML = globalChat
+      .map((m) => {
+        const label = escapeHtml(playerLabel(m.name));
+        const nameHtml =
+          m.id && m.id !== me
+            ? `<button type="button" class="gchat-name" data-id="${escapeHtml(m.id)}" data-name="${escapeHtml(m.name)}">${label}</button>`
+            : `<span>${label}</span>`;
+        return `<p>${nameHtml}：${escapeHtml(m.text)}</p>`;
+      })
+      .join("");
+    globalChatLogEl.scrollTop = globalChatLogEl.scrollHeight;
+  }
+
+  function appendGlobalChat(name, text, id) {
+    const line = String(text || "").replace(/^\s+|\s+$/g, "");
+    if (!line) return;
+    globalChat.push({
+      id: id ? String(id) : "",
+      name: playerLabel(name),
+      text: line,
+    });
+    saveGlobalChat();
+    if (globalChatOpen) renderGlobalChat();
+  }
+
+  function openGlobalChat() {
+    if (!globalChatPanel) return;
+    playUiClick();
+    closeFriendCenter();
+    closeInboxPanel();
+    globalChatOpen = true;
+    globalChatUnread = 0;
+    syncGlobalChatBtn();
+    renderGlobalChat();
+    globalChatPanel.classList.remove("hidden");
+    globalChatPanel.setAttribute("aria-hidden", "false");
+    if (globalChatInput) {
+      setTimeout(() => globalChatInput.focus(), 30);
+    }
+  }
+
+  function closeGlobalChat() {
+    globalChatOpen = false;
+    closeChatUserFlow();
+    if (!globalChatPanel) return;
+    globalChatPanel.classList.add("hidden");
+    globalChatPanel.setAttribute("aria-hidden", "true");
+    if (globalChatInput) globalChatInput.blur();
+  }
+
+  function sendGlobalChat() {
+    if (!globalChatInput) return;
+    if (blockIfMuted()) return;
+    const text = (globalChatInput.value || "").replace(/^\s+|\s+$/g, "");
+    if (!text) {
+      globalChatInput.focus();
+      return;
+    }
+    playUiClick();
+    appendGlobalChat(myDisplayName(), text, localCoopId());
+    sendSocial({ type: "gchat", text, name: myDisplayName() });
+    globalChatInput.value = "";
+    globalChatInput.focus();
+    renderGlobalChat();
+  }
+
+  function hideChatUserDialog() {
+    if (chatUserDialog) {
+      chatUserDialog.classList.add("hidden");
+      chatUserDialog.setAttribute("aria-hidden", "true");
+    }
+  }
+
+  function hideReportDialog() {
+    if (reportDialog) {
+      reportDialog.classList.add("hidden");
+      reportDialog.setAttribute("aria-hidden", "true");
+    }
+  }
+
+  function closeChatUserFlow() {
+    chatUserTarget = null;
+    hideChatUserDialog();
+    hideReportDialog();
+  }
+
+  function showChatUserDialog(id, name) {
+    if (!id || id === localCoopId()) return;
+    chatUserTarget = { id, name: name || "玩家" };
+    hideReportDialog();
+    if (chatUserMsg) {
+      chatUserMsg.textContent = `要对「${playerLabel(chatUserTarget.name)}」做什么？`;
+    }
+    if (chatUserFriend) {
+      chatUserFriend.textContent = isFriend(id) ? "已经是好友" : "加好友";
+    }
+    if (chatUserDialog) {
+      chatUserDialog.classList.remove("hidden");
+      chatUserDialog.setAttribute("aria-hidden", "false");
+    }
+  }
+
+  function showReportDialog() {
+    if (!chatUserTarget) return;
+    hideChatUserDialog();
+    if (reportMsg) {
+      reportMsg.textContent = `举报「${playerLabel(chatUserTarget.name)}」，请选择原因`;
+    }
+    if (reportDialog) {
+      reportDialog.classList.remove("hidden");
+      reportDialog.setAttribute("aria-hidden", "false");
+    }
+  }
+
+  function submitReport(reason) {
+    const target = chatUserTarget;
+    if (!target) return;
+    const why = String(reason || "其他");
+    const packed = {
+      type: "reportlog",
+      reporter: localCoopId(),
+      reporterName: myDisplayName(),
+      target: target.id,
+      targetName: target.name,
+      reason: why,
+      at: Date.now(),
+    };
+    sendSocial(packed);
+    if (isOwner()) addInboxReport({ id: localCoopId(), ...packed });
+    closeChatUserFlow();
+    socialToast(`已举报${playerLabel(target.name)}（${why}）`);
+  }
+
+  function markOwner() {
+    try {
+      localStorage.setItem("yyy_mod", "ok");
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function isOwner() {
+    try {
+      if (localStorage.getItem("yyy_mod") === "ok") return true;
+      if (/(?:^|; )yyy_mod=ok(?:;|$)/.test(document.cookie || "")) {
+        markOwner();
+        return true;
+      }
+      const host = location.hostname;
+      if (host === "127.0.0.1" || host === "localhost" || host === "::1") {
+        markOwner();
+        return true;
+      }
+      if (new URLSearchParams(location.search).get("mod") === "ok") {
+        markOwner();
+        return true;
+      }
+    } catch {
+      /* ignore */
+    }
+    return false;
+  }
+
+  function loadInboxReports() {
+    if (!isOwner()) {
+      inboxReports = [];
+      return;
+    }
+    try {
+      const raw = localStorage.getItem("yyy_inbox_reports");
+      const arr = raw ? JSON.parse(raw) : [];
+      inboxReports = Array.isArray(arr) ? arr.filter((r) => r && r.reason) : [];
+    } catch {
+      inboxReports = [];
+    }
+  }
+
+  function saveInboxReports() {
+    if (!isOwner()) return;
+    try {
+      localStorage.setItem("yyy_inbox_reports", JSON.stringify(inboxReports.slice(-300)));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function formatReportTime(t) {
+    const d = new Date(Number(t) || Date.now());
+    if (Number.isNaN(d.getTime())) return "";
+    const p = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  function syncInboxBtn() {
+    if (!inboxBtn) return;
+    const show = isOwner();
+    inboxBtn.classList.toggle("hidden", !show);
+    if (!show) {
+      closeInboxPanel();
+      return;
+    }
+    inboxBtn.textContent = inboxUnread > 0 ? `举报内容（${inboxUnread}）` : "举报内容";
+  }
+
+  function renderInboxList() {
+    if (!inboxListEl) return;
+    if (!inboxReports.length) {
+      inboxListEl.innerHTML = `<p class="chat-empty">还没有举报</p>`;
+      return;
+    }
+    inboxListEl.innerHTML = inboxReports
+      .slice()
+      .reverse()
+      .map((r) => {
+        const who = escapeHtml(playerLabel(r.reporterName));
+        const target = escapeHtml(playerLabel(r.targetName));
+        const why = escapeHtml(r.reason || "其他");
+        const when = escapeHtml(formatReportTime(r.at));
+        const rows = [];
+        if (r.target) rows.push(modButtons(r.target, r.targetName));
+        if (r.reporter && r.reporter !== r.target) rows.push(modButtons(r.reporter, r.reporterName));
+        return `<div class="inbox-item"><p>举报者：<strong>${who}</strong></p><p>被举报者：<strong>${target}</strong></p><p>举报内容：<strong>${why}</strong></p><p class="inbox-time">${when}</p>${rows.join("")}</div>`;
+      })
+      .join("");
+  }
+
+  function addInboxReport(msg) {
+    if (!isOwner() || !msg) return;
+    const row = {
+      rid: String(msg.rid || `${msg.id || msg.reporter || ""}-${msg.target || ""}-${msg.at || Date.now()}`),
+      reporter: String(msg.reporter || msg.id || ""),
+      reporterName: String(msg.reporterName || msg.name || "玩家"),
+      target: String(msg.target || ""),
+      targetName: String(msg.targetName || "玩家"),
+      reason: String(msg.reason || "其他"),
+      at: Number(msg.at) || Date.now(),
+    };
+    if (inboxReports.some((r) => r.rid === row.rid)) return;
+    inboxReports.push(row);
+    if (inboxReports.length > 300) inboxReports = inboxReports.slice(-300);
+    saveInboxReports();
+    if (inboxOpen) renderInboxList();
+    else {
+      inboxUnread += 1;
+      syncInboxBtn();
+      socialToast(`新举报：${playerLabel(row.reporterName)} 举报 ${playerLabel(row.targetName)}`);
+    }
+  }
+
+  function openInboxPanel() {
+    if (!isOwner() || !inboxPanel) return;
+    playUiClick();
+    closeFriendCenter();
+    closeGlobalChat();
+    inboxOpen = true;
+    inboxUnread = 0;
+    syncInboxBtn();
+    renderInboxList();
+    inboxPanel.classList.remove("hidden");
+    inboxPanel.setAttribute("aria-hidden", "false");
+  }
+
+  function closeInboxPanel() {
+    inboxOpen = false;
+    if (!inboxPanel) return;
+    inboxPanel.classList.add("hidden");
+    inboxPanel.setAttribute("aria-hidden", "true");
+  }
+
+  function modButtons(id, name) {
+    if (!id) return "";
+    return `<div class="inbox-mod" data-id="${escapeHtml(id)}" data-name="${escapeHtml(name || "玩家")}">
+      <p>处理「${escapeHtml(playerLabel(name))}」</p>
+      <div class="inbox-mod-row">
+        <button type="button" data-mod="ban" data-mins="1">封号1分钟</button>
+        <button type="button" data-mod="ban" data-mins="10">封号10分钟</button>
+        <button type="button" data-mod="mute">禁言</button>
+        <button type="button" data-mod="unmute">解除禁言</button>
+        <button type="button" data-mod="kick">退出登录</button>
+      </div>
+    </div>`;
+  }
+
+  function banUntil() {
+    try {
+      return Number(localStorage.getItem("yyy_ban_until") || 0);
+    } catch {
+      return 0;
+    }
+  }
+
+  function isBanned() {
+    if (isOwner()) return false;
+    return Date.now() < banUntil();
+  }
+
+  function isMuted() {
+    if (isOwner()) return false;
+    try {
+      return localStorage.getItem("yyy_mute") === "1";
+    } catch {
+      return false;
+    }
+  }
+
+  function setMuted(on) {
+    try {
+      if (on) localStorage.setItem("yyy_mute", "1");
+      else localStorage.removeItem("yyy_mute");
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function hideBanScreen() {
+    if (banTimerId) {
+      window.clearInterval(banTimerId);
+      banTimerId = 0;
+    }
+    if (!banScreen) return;
+    banScreen.classList.add("hidden");
+    banScreen.setAttribute("aria-hidden", "true");
+  }
+
+  function tickBanScreen() {
+    const left = Math.max(0, Math.ceil((banUntil() - Date.now()) / 1000));
+    if (banLeft) banLeft.textContent = String(left);
+    if (left <= 0) {
+      try {
+        localStorage.removeItem("yyy_ban_until");
+      } catch {
+        /* ignore */
+      }
+      hideBanScreen();
+      openLoginScreen();
+      showLoginError("封号已结束，可以重新登录");
+    }
+  }
+
+  function showBanScreen(reason) {
+    closeFriendCenter();
+    closeGlobalChat();
+    closeInboxPanel();
+    closeChatUserFlow();
+    hideOverlay();
+    hideLevelSelect();
+    closeLoginScreen();
+    stopLevelCoop();
+    if (window.LevelCoop) {
+      try {
+        LevelCoop.leave();
+      } catch {
+        /* ignore */
+      }
+    }
+    loggedIn = false;
+    playerName = "";
+    state = "login";
+    statusLabel.textContent = "封号";
+    if (banMsg) banMsg.textContent = reason || "你被封号了";
+    if (banScreen) {
+      banScreen.classList.remove("hidden");
+      banScreen.setAttribute("aria-hidden", "false");
+    }
+    tickBanScreen();
+    if (!banTimerId) banTimerId = window.setInterval(tickBanScreen, 400);
+    syncPuzzleTools();
+    syncHomeBtn();
+  }
+
+  function forceLogout(reason) {
+    hideBanScreen();
+    closeFriendCenter();
+    closeGlobalChat();
+    closeInboxPanel();
+    closeChatUserFlow();
+    stopLevelCoop();
+    if (window.LevelCoop) {
+      try {
+        LevelCoop.leave();
+      } catch {
+        /* ignore */
+      }
+    }
+    playerName = "";
+    loggedIn = false;
+    openLoginScreen();
+    showLoginError(reason || "你已被要求退出登录");
+  }
+
+  function sendModAction(action, id, name, mins) {
+    if (!isOwner() || !id) return;
+    playUiClick();
+    const packed = {
+      type: "mod",
+      to: id,
+      action,
+      mins: Number(mins) || 0,
+      name: myDisplayName(),
+    };
+    sendSocial(packed);
+    const who = playerLabel(name);
+    if (action === "ban") socialToast(`已封号 ${who} ${packed.mins || 1} 分钟`);
+    else if (action === "mute") socialToast(`已禁言 ${who}`);
+    else if (action === "unmute") socialToast(`已解除 ${who} 的禁言`);
+    else if (action === "kick") socialToast(`已让 ${who} 退出登录`);
+  }
+
+  function applyModAction(msg) {
+    if (!msg || isOwner()) return;
+    const act = msg.action;
+    if (act === "ban") {
+      const mins = Math.max(1, Number(msg.mins) || 1);
+      const until = Date.now() + mins * 60 * 1000;
+      try {
+        localStorage.setItem("yyy_ban_until", String(until));
+      } catch {
+        /* ignore */
+      }
+      showBanScreen(`你被封号 ${mins} 分钟`);
+      return;
+    }
+    if (act === "mute") {
+      setMuted(true);
+      closeChat();
+      closeGlobalChat();
+      socialToast("你已被禁言，不能发消息");
+      return;
+    }
+    if (act === "unmute") {
+      setMuted(false);
+      socialToast("禁言已解除");
+      return;
+    }
+    if (act === "kick") {
+      forceLogout("你已被要求退出登录");
+    }
+  }
+
+  function blockIfMuted() {
+    if (!isMuted()) return false;
+    socialToast("你已被禁言，不能发消息");
+    return true;
+  }
+
+  function blockIfBanned() {
+    if (!isBanned()) return false;
+    showBanScreen("你被封号了");
+    return true;
+  }
+
+  function syncSocialPause() {
+    socialOpen = !!(friendReqCurrent || inviteCurrent);
+    syncTouchPad();
+    syncItemBar();
+  }
+
+  function showFriendReq(msg) {
+    if (!msg || !msg.id) return;
+    if (friendReqCurrent) {
+      if (!friendReqQueue.some((q) => q.id === msg.id) && friendReqCurrent.id !== msg.id) {
+        friendReqQueue.push(msg);
+      }
+      return;
+    }
+    friendReqCurrent = msg;
+    if (friendReqMsg) {
+      friendReqMsg.textContent = `${playerLabel(msg.name)}想和你成为好友`;
+    }
+    if (friendReqDialog) {
+      friendReqDialog.classList.remove("hidden");
+      friendReqDialog.setAttribute("aria-hidden", "false");
+    }
+    syncSocialPause();
+  }
+
+  function hideFriendReq() {
+    friendReqCurrent = null;
+    if (friendReqDialog) {
+      friendReqDialog.classList.add("hidden");
+      friendReqDialog.setAttribute("aria-hidden", "true");
+    }
+    syncSocialPause();
+    if (friendReqQueue.length) showFriendReq(friendReqQueue.shift());
+  }
+
+  function answerFriendReq(ok) {
+    const msg = friendReqCurrent;
+    if (!msg) return;
+    playUiClick();
+    if (ok) {
+      addFriend(msg.id, msg.name);
+      sendSocial({ type: "friendok", to: msg.id, name: myDisplayName() });
+      socialToast(`你和${playerLabel(msg.name)}成为了好友`);
+    } else {
+      sendSocial({ type: "friendno", to: msg.id, name: myDisplayName() });
+    }
+    hideFriendReq();
+  }
+
+  function showInvite(msg) {
+    if (!msg || !msg.id) return;
+    if (inviteCurrent) {
+      if (!inviteQueue.some((q) => q.id === msg.id && q.lv === msg.lv)) inviteQueue.push(msg);
+      return;
+    }
+    inviteCurrent = msg;
+    const lv = Math.max(1, Math.floor(Number(msg.lv) || 1));
+    if (inviteMsg) {
+      inviteMsg.textContent = `${playerLabel(msg.name)}邀请你一起玩第 ${lv} 关`;
+    }
+    if (inviteDialog) {
+      inviteDialog.classList.remove("hidden");
+      inviteDialog.setAttribute("aria-hidden", "false");
+    }
+    syncSocialPause();
+  }
+
+  function hideInvite() {
+    inviteCurrent = null;
+    if (inviteDialog) {
+      inviteDialog.classList.add("hidden");
+      inviteDialog.setAttribute("aria-hidden", "true");
+    }
+    syncSocialPause();
+    if (inviteQueue.length) showInvite(inviteQueue.shift());
+  }
+
+  function joinInvitedLevel(n) {
+    if (blockIfBanned()) return;
+    const lv = Math.max(1, Math.min(MAX_PLAYABLE, Math.floor(Number(n) || 1)));
+    closeFriendCenter();
+    hideUnlockDialog();
+    if (!playerName) playerName = "玩家";
+    loggedIn = true;
+    closeLoginScreen();
+    enterLevel(lv);
+  }
+
+  function answerInvite(ok) {
+    const msg = inviteCurrent;
+    if (!msg) return;
+    playUiClick();
+    const lv = Math.max(1, Math.min(MAX_PLAYABLE, Math.floor(Number(msg.lv) || 1)));
+    if (ok) {
+      sendSocial({ type: "inviteok", to: msg.id, lv, name: myDisplayName() });
+      hideInvite();
+      joinInvitedLevel(lv);
+      return;
+    }
+    sendSocial({ type: "inviteno", to: msg.id, lv, name: myDisplayName() });
+    hideInvite();
+  }
+
+  function requestFriend(rp) {
+    if (!rp || !rp.id) return;
+    if (rp.id === localCoopId()) return;
+    if (isFriend(rp.id)) {
+      socialToast("已经是好友了，去主页好友中心发消息");
+      return;
+    }
+    const now = Date.now();
+    if (pendingFriend[rp.id] && now - pendingFriend[rp.id] < 8000) {
+      socialToast("已经发过申请了，等对方回应");
+      return;
+    }
+    pendingFriend[rp.id] = now;
+    sendSocial({ type: "friendreq", to: rp.id, name: myDisplayName() });
+    socialToast(`已向${playerLabel(rp.name)}发送好友申请`);
+  }
+
+  function sendFriendChat() {
+    if (!selectedFriendId || !friendChatInput) return;
+    if (blockIfMuted()) return;
+    const text = (friendChatInput.value || "").trim().slice(0, 40);
+    if (!text) return;
+    playUiClick();
+    appendFriendChat(selectedFriendId, "me", text);
+    sendSocial({ type: "dm", to: selectedFriendId, text, name: myDisplayName() });
+    friendChatInput.value = "";
+    renderFriendChat();
+  }
+
+  function sendFriendInvite() {
+    if (!selectedFriendId || !friendInviteLevel) return;
+    const lv = Math.max(1, Math.min(MAX_PLAYABLE, Number(friendInviteLevel.value) || 1));
+    playUiClick();
+    sendSocial({ type: "invite", to: selectedFriendId, lv, name: myDisplayName() });
+    socialToast(`已邀请一起玩第 ${lv} 关`);
+  }
+
+  function handleSocial(msg) {
+    if (!msg || !msg.id || msg.id === localCoopId()) return;
+    const type = msg.type;
+    if (type === "mod") {
+      applyModAction(msg);
+      return;
+    }
+    if (type === "reportlog") {
+      if (!isOwner()) return;
+      addInboxReport(msg);
+      return;
+    }
+    if (type === "gchat") {
+      const text = String(msg.text || "").replace(/^\s+|\s+$/g, "");
+      if (!text) return;
+      appendGlobalChat(playerLabel(msg.name), text, msg.id);
+      if (!globalChatOpen) {
+        globalChatUnread += 1;
+        syncGlobalChatBtn();
+        const preview = text.replace(/\s+/g, " ").slice(0, 40);
+        socialToast(`全服「${playerLabel(msg.name)}」：${preview}`);
+      }
+      return;
+    }
+    if (type === "friendreq") {
+      if (isFriend(msg.id) || pendingFriend[msg.id]) {
+        addFriend(msg.id, msg.name);
+        sendSocial({ type: "friendok", to: msg.id, name: myDisplayName() });
+        delete pendingFriend[msg.id];
+        socialToast(`你和${playerLabel(msg.name)}成为了好友`);
+        return;
+      }
+      showFriendReq(msg);
+      return;
+    }
+    if (type === "friendok") {
+      addFriend(msg.id, msg.name);
+      delete pendingFriend[msg.id];
+      socialToast(`${playerLabel(msg.name)}同意了好友申请`);
+      return;
+    }
+    if (type === "friendno") {
+      delete pendingFriend[msg.id];
+      socialToast(`${playerLabel(msg.name)}拒绝了好友申请`);
+      return;
+    }
+    if (type === "dm") {
+      if (!isFriend(msg.id)) return;
+      const text = String(msg.text || "").trim().slice(0, 40);
+      if (!text) return;
+      addFriend(msg.id, msg.name);
+      appendFriendChat(msg.id, msg.id, text);
+      if (selectedFriendId !== msg.id || !friendCenterOpen) {
+        friendUnread[msg.id] = (friendUnread[msg.id] || 0) + 1;
+        syncFriendsBtn();
+        renderFriendList();
+      }
+      socialToast(`${playerLabel(msg.name)}：${text}`);
+      return;
+    }
+    if (type === "invite") {
+      if (!isFriend(msg.id)) return;
+      showInvite(msg);
+      return;
+    }
+    if (type === "inviteok") {
+      const lv = Math.max(1, Math.floor(Number(msg.lv) || 1));
+      socialToast(`${playerLabel(msg.name)}同意了，一起去第 ${lv} 关`);
+      if (state === "select" || state === "login") joinInvitedLevel(lv);
+      return;
+    }
+    if (type === "inviteno") {
+      socialToast(`${playerLabel(msg.name)}拒绝了一起玩`);
+    }
+  }
+
+  function hitRemotePlayer(world) {
+    ctx.save();
+    ctx.font = "12px 'Noto Sans SC', sans-serif";
+    let found = null;
+    for (const rp of remotePlayers.values()) {
+      if (rp.x == null || rp.y == null) continue;
+      const px = rp.drawX != null ? rp.drawX : rp.x;
+      const py = rp.drawY != null ? rp.drawY : rp.y;
+      const label = String(rp.name || "玩家").slice(0, 16);
+      const tw = Math.max(ctx.measureText(label).width, 36);
+      const nx = px + 14 - tw / 2;
+      const ny = py - 28;
+      const inName = world.x >= nx && world.x <= nx + tw && world.y >= ny && world.y <= ny + 22;
+      const inBody = world.x >= px + 4 && world.x <= px + 24 && world.y >= py && world.y <= py + 42;
+      if (inName || inBody) {
+        found = rp;
+        break;
+      }
+    }
+    ctx.restore();
+    return found;
+  }
+
+  function tryClickPlayerName(clientX, clientY) {
+    if (state !== "playing") return false;
+    const world = clientToWorld(clientX, clientY);
+    const rp = hitRemotePlayer(world);
+    if (!rp) return false;
+    requestFriend(rp);
+    return true;
+  }
+
   function stopLevelCoop() {
-    if (window.LevelCoop) LevelCoop.leave();
+    if (window.LevelCoop) {
+      if (typeof LevelCoop.leaveLevel === "function") LevelCoop.leaveLevel();
+      else LevelCoop.leave();
+    }
     remotePlayers = new Map();
     coopCount = 1;
     coopAcc = 0;
+    localChat = "";
+    localChatUntil = 0;
+    joinNotices = [];
+    renderJoinNotices();
+    closeChat();
+  }
+
+  function playerLabel(name) {
+    const raw = String(name || "玩家").trim() || "玩家";
+    return raw.length > 12 ? `${raw.slice(0, 12)}…` : raw;
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function renderJoinNotices() {
+    if (!joinNoticesEl) return;
+    const live = joinNotices.filter((n) => time < n.until);
+    joinNotices = live;
+    joinNoticesEl.innerHTML = live
+      .map((n) => `<p>${escapeHtml(n.text)}</p>`)
+      .join("");
+  }
+
+  function pushJoinNotice(text) {
+    if (state !== "playing") return;
+    joinNotices.unshift({ text, until: time + 4.2 });
+    joinNotices = joinNotices.slice(0, 3);
+    renderJoinNotices();
+  }
+
+  function announceJoin(name) {
+    if (time < coopAnnounceAt) return;
+    pushJoinNotice(`${playerLabel(name)}加入了游戏`);
+  }
+
+  function announceLeave(name) {
+    if (time < coopAnnounceAt) return;
+    pushJoinNotice(`${playerLabel(name)}退出了游戏`);
+  }
+
+  function deathLine(name, cause) {
+    const who = playerLabel(name);
+    if (cause === "zombie") return `${who}被僵尸吃掉了`;
+    if (cause === "spike") return `${who}被尖刺扎死了`;
+    if (cause === "mace") return `${who}被狼牙棒砸中了`;
+    if (cause === "crater") return `${who}掉进陨石坑了`;
+    return `${who}烫死了`;
+  }
+
+  function announceChat(name, text) {
+    const line = String(text || "").trim();
+    if (!line) return;
+    const who = playerLabel(name);
+    chatLog.push({ name: who, text: line.slice(0, 12) });
+    if (chatLog.length > 40) chatLog = chatLog.slice(-40);
+    renderChatLog();
+    pushJoinNotice(`「${who}」：${line}`);
+  }
+
+  function renderChatLog() {
+    if (!chatLogEl) return;
+    if (!chatLog.length) {
+      chatLogEl.innerHTML = `<p class="chat-empty">还没有消息</p>`;
+      return;
+    }
+    chatLogEl.innerHTML = chatLog
+      .map((m) => `<p><span>「${escapeHtml(m.name)}」：</span>${escapeHtml(m.text)}</p>`)
+      .join("");
+    chatLogEl.scrollTop = chatLogEl.scrollHeight;
+  }
+
+  function announceDeath(name, cause) {
+    pushJoinNotice(deathLine(name, cause));
+  }
+
+  function syncCoopStatus() {
+    if (state !== "playing") return;
+    const n = remotePlayers.size + 1;
+    const text = n > 1 ? `联机 ${n} 人` : "独自闯关 · 可与手机/电脑联机";
+    if (statusLabel.textContent !== text) statusLabel.textContent = text;
   }
 
   function handleCoopMessage(msg) {
+    if (msg && msg.lv != null && Number(msg.lv) !== level) return;
     if (!msg || msg.type === "bye") {
-      if (msg && msg.id) remotePlayers.delete(msg.id);
-      if (state === "playing" && level === 11) {
-        const n = remotePlayers.size + 1;
-        statusLabel.textContent = n > 1 ? `联机 ${n} 人` : "独自闯关";
+      if (msg && msg.id) {
+        const gone = remotePlayers.get(msg.id);
+        if (gone && !gone.dead) announceLeave(gone.name);
+        remotePlayers.delete(msg.id);
       }
+      syncCoopStatus();
+      return;
+    }
+    if (msg.type === "dead") {
+      const prev = remotePlayers.get(msg.id);
+      const name = msg.name || (prev && prev.name) || "玩家";
+      if (prev) prev.dead = true;
+      announceDeath(name, msg.cause);
       return;
     }
     if (msg.type === "pickup" && msg.starId != null) {
       const p = pickups.find((s) => s.id === msg.starId);
       if (p && !p.collected) {
         p.collected = true;
-        spawnBurst(p.x, p.y, "#ffe566", 10);
+        spawnBurst(p.x, p.y, "#ffe566", 6);
       }
       return;
     }
+    if (msg.type === "chat" && msg.text) {
+      const prev = remotePlayers.get(msg.id) || { id: msg.id, color: colorForCoopId(msg.id) };
+      const text = String(msg.text).slice(0, 12);
+      prev.chat = text;
+      prev.chatUntil = time + 4.5;
+      if (msg.name) prev.name = msg.name;
+      remotePlayers.set(msg.id, prev);
+      announceChat(prev.name || msg.name || "玩家", text);
+      return;
+    }
     if (msg.type === "hello" || msg.type === "state") {
+      const existed = remotePlayers.has(msg.id);
       const prev = remotePlayers.get(msg.id) || {};
+      const nx = msg.x != null ? msg.x : prev.x;
+      const ny = msg.y != null ? msg.y : prev.y;
       remotePlayers.set(msg.id, {
         ...prev,
         id: msg.id,
-        x: msg.x != null ? msg.x : prev.x,
-        y: msg.y != null ? msg.y : prev.y,
+        x: nx,
+        y: ny,
+        drawX: prev.drawX != null ? prev.drawX : nx,
+        drawY: prev.drawY != null ? prev.drawY : ny,
         vx: msg.vx || 0,
         vy: msg.vy || 0,
         facing: msg.facing || prev.facing || 1,
         alive: msg.alive !== false,
         name: msg.name || prev.name || "玩家",
         color: prev.color || colorForCoopId(msg.id),
+        pendingJoin: existed ? prev.pendingJoin && !msg.name : !msg.name,
         last: time,
       });
-      if (state === "playing" && level === 11) {
-        const n = remotePlayers.size + 1;
-        statusLabel.textContent = n > 1 ? `联机 ${n} 人` : "独自闯关";
+      if (!existed) {
+        syncCoopStatus();
+        if (msg.name) announceJoin(msg.name);
+      } else if (prev.pendingJoin && msg.name) {
+        announceJoin(msg.name);
       }
     }
   }
 
   function startLevelCoop() {
-    stopLevelCoop();
+    remotePlayers = new Map();
+    coopCount = 1;
+    coopAcc = 0;
+    coopAnnounceAt = time + 1.2;
+    joinNotices = [];
+    renderJoinNotices();
+    if (chatLogLevel !== level) {
+      chatLog = [];
+      chatLogLevel = level;
+      renderChatLog();
+    }
     if (!window.LevelCoop) return;
     LevelCoop.join(localCoopId(), {
+      level,
       onMessage: handleCoopMessage,
+      onPresence: applyLevelCounts,
+      onSocial: handleSocial,
+      onPeer: handleHomePeer,
+      name: myDisplayName(),
       onCount: (n) => {
         coopCount = Math.max(1, Number(n) || 1);
       },
       onStatus: (status) => {
-        if (state !== "playing" || level !== 11) return;
+        if (state !== "playing") return;
         if (status === "connecting") {
-          statusLabel.textContent = "正在连接联机…";
+          if (statusLabel.textContent !== "正在连接联机…") {
+            statusLabel.textContent = "正在连接联机…";
+          }
           return;
         }
-        const n = remotePlayers.size + 1;
-        if (n > 1) statusLabel.textContent = `联机 ${n} 人`;
-        else if (status === "online") statusLabel.textContent = "独自闯关 · 可与手机/电脑联机";
-        else statusLabel.textContent = "独自闯关";
+        syncCoopStatus();
       },
     });
     statusLabel.textContent = "正在连接联机…";
   }
 
   function updateCoop(dt) {
-    if (level !== 11 || state !== "playing" || !window.LevelCoop || !LevelCoop.isJoined()) {
+    if (state !== "playing" || !window.LevelCoop || !LevelCoop.isJoined()) {
       return;
     }
     coopAcc += dt;
-    if (coopAcc >= 0.08 && player) {
+    const moved =
+      !player ||
+      Math.abs(player.x - lastCoopPos.x) > 0.8 ||
+      Math.abs(player.y - lastCoopPos.y) > 0.8;
+    if (coopAcc >= (moved ? 0.08 : 0.32) && player) {
       coopAcc = 0;
+      lastCoopPos = { x: player.x, y: player.y };
       LevelCoop.send({
         type: "state",
-        x: player.x,
-        y: player.y,
-        vx: player.vx,
-        vy: player.vy,
+        lv: level,
+        x: player.x | 0,
+        y: player.y | 0,
+        vx: Math.round((player.vx || 0) * 10) / 10,
+        vy: Math.round((player.vy || 0) * 10) / 10,
         facing: player.facing,
         alive: player.alive !== false,
-        name: (playerName || "玩家").slice(0, 16),
+        name: (playerName || "玩家").slice(0, 12),
       });
     }
+    const follow = Math.min(1, dt * 14);
     for (const [id, rp] of [...remotePlayers]) {
-      if (time - (rp.last || 0) > 4) remotePlayers.delete(id);
+      if (time - (rp.last || 0) > 4) {
+        announceLeave(rp.name);
+        remotePlayers.delete(id);
+        continue;
+      }
+      if (rp.x == null || rp.y == null) continue;
+      const predX = rp.x + (rp.vx || 0) * 2;
+      const predY = rp.y + (rp.vy || 0) * 2;
+      rp.drawX = rp.drawX == null ? rp.x : rp.drawX + (predX - rp.drawX) * follow;
+      rp.drawY = rp.drawY == null ? rp.y : rp.drawY + (predY - rp.drawY) * follow;
     }
+    if (localChat && time > localChatUntil) localChat = "";
+    if (joinNotices.length && joinNotices.some((n) => time >= n.until)) renderJoinNotices();
   }
 
   function extendEndlessParkour() {
@@ -1209,6 +2447,8 @@
   }
 
   function spawnBurst(x, y, color, count = 12) {
+    if (level === 11) count = Math.min(count, 6);
+    if (particles.length > 48) return;
     for (let i = 0; i < count; i++) {
       particles.push({
         x,
@@ -1374,9 +2614,9 @@
 
   function update(dt) {
     time += dt;
-    if (state !== "playing" || settingsOpen || adOpen || shopOpen || portraitPromptOpen) {
+    if (state !== "playing" || settingsOpen || adOpen || shopOpen || portraitPromptOpen || socialOpen) {
       updateParticles(dt);
-      if (!settingsOpen && !adOpen && !shopOpen && window.GameAudio) {
+      if (!settingsOpen && !adOpen && !shopOpen && !socialOpen && window.GameAudio) {
         GameAudio.stopAllAmbience();
       }
       return;
@@ -1457,9 +2697,9 @@
           stars += 1;
           saveStars();
           starLabel.textContent = String(stars);
-          spawnBurst(p.x, p.y, "#ffe566", 14);
+          spawnBurst(p.x, p.y, "#ffe566", 6);
           if (window.GameAudio) GameAudio.playStar();
-          if (window.LevelCoop) LevelCoop.send({ type: "pickup", starId: p.id });
+          if (window.LevelCoop) LevelCoop.send({ type: "pickup", lv: level, starId: p.id });
         }
       }
     }
@@ -1587,6 +2827,11 @@
   }
 
   function die(cause) {
+    const name = playerName || "玩家";
+    if (window.LevelCoop && LevelCoop.isJoined()) {
+      LevelCoop.send({ type: "dead", lv: level, cause, name: name.slice(0, 12) });
+    }
+    announceDeath(name, cause);
     stopLevelCoop();
     state = "dead";
     statusLabel.textContent = "失败";
@@ -1600,13 +2845,7 @@
     syncHomeBtn();
 
     if (playerName) {
-      let title;
-      if (cause === "zombie") title = `${playerName}被僵尸吃掉了`;
-      else if (cause === "spike") title = `${playerName}被尖刺扎死了`;
-      else if (cause === "mace") title = `${playerName}被狼牙棒砸中了`;
-      else if (cause === "crater") title = `${playerName}掉进陨石坑了`;
-      else title = `${playerName}烫死了`;
-      showOverlay(title, `关卡 ${level} · 已收集 ${stars} 颗五角星`, "重生", {
+      showOverlay(deathLine(playerName, cause), `关卡 ${level} · 已收集 ${stars} 颗五角星`, "重生", {
         showName: false,
         hideHint: true,
       });
@@ -1739,15 +2978,88 @@
     if (!show) {
       closeSettings();
       closeShop();
+      closeChat();
       cancelAd(false);
     }
     syncTouchPad();
     syncItemBar();
+    syncChatBtn();
+  }
+
+  function syncChatBtn() {
+    if (!chatBtn && !chatDock) return;
+    const show = state === "playing" && !adOpen && !settingsOpen && !shopOpen && !socialOpen;
+    if (chatDock) chatDock.classList.toggle("hidden", !show);
+    else if (chatBtn) chatBtn.classList.toggle("hidden", !show);
+    if (!show) closeChat();
+  }
+
+  function openChat() {
+    if (!chatPanel || state !== "playing") return;
+    chatPanel.classList.remove("hidden");
+    chatPanel.setAttribute("aria-hidden", "false");
+    renderChatLog();
+    if (chatInput) {
+      chatInput.value = "";
+      setTimeout(() => {
+        chatInput.focus();
+        renderChatLog();
+      }, 30);
+    }
+  }
+
+  function closeChat() {
+    if (!chatPanel) return;
+    chatPanel.classList.add("hidden");
+    chatPanel.setAttribute("aria-hidden", "true");
+    if (chatInput) chatInput.blur();
+  }
+
+  function sendChat() {
+    if (blockIfMuted()) return;
+    const text = ((chatInput && chatInput.value) || "").trim().slice(0, 12);
+    if (!text) {
+      if (chatInput) chatInput.focus();
+      return;
+    }
+    localChat = text;
+    localChatUntil = time + 4.5;
+    const name = playerName || "玩家";
+    announceChat(name, text);
+    if (window.LevelCoop && LevelCoop.isJoined()) {
+      LevelCoop.send({ type: "chat", lv: level, text, name: name.slice(0, 12) });
+    }
+    if (window.GameAudio) GameAudio.playClick();
+    if (chatInput) {
+      chatInput.value = "";
+      chatInput.focus();
+    }
+  }
+
+  function drawChatBubble(cx, cy, text, color) {
+    if (!text) return;
+    ctx.save();
+    ctx.font = "13px 'Noto Sans SC', sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const label = String(text).slice(0, 12);
+    const w = Math.min(170, Math.max(28, ctx.measureText(label).width + 16));
+    const h = 22;
+    const x = cx - w / 2;
+    const y = cy - 20;
+    ctx.fillStyle = "rgba(16, 8, 6, 0.88)";
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = color || "#ffd24a";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, w, h);
+    ctx.fillStyle = "#fff6d0";
+    ctx.fillText(label, cx, y + h / 2 + 0.5);
+    ctx.restore();
   }
 
   function applyBrightness(v) {
     brightness = clamp(Math.round(Number(v) || 100), 40, 150);
-    canvas.style.filter = `brightness(${brightness}%)`;
+    canvas.style.filter = brightness === 100 ? "none" : `brightness(${brightness}%)`;
     if (brightnessSlider) brightnessSlider.value = String(brightness);
     if (brightnessValue) brightnessValue.textContent = `${brightness}%`;
     try {
@@ -1870,7 +3182,7 @@
 
   function syncItemBar() {
     if (!itemBar) return;
-    const show = state === "playing" && !adOpen && !settingsOpen && !shopOpen && !portraitPromptOpen;
+    const show = state === "playing" && !adOpen && !settingsOpen && !shopOpen && !portraitPromptOpen && !socialOpen;
     itemBar.classList.toggle("hidden", !show);
     itemBar.setAttribute("aria-hidden", show ? "false" : "true");
     if (!show) return;
@@ -1932,6 +3244,7 @@
     statusLabel.textContent = "商城";
     syncTouchPad();
     syncItemBar();
+    syncChatBtn();
   }
 
   function closeShop() {
@@ -1945,6 +3258,7 @@
     }
     syncTouchPad();
     syncItemBar();
+    syncChatBtn();
   }
 
   function useSkipCard() {
@@ -2137,6 +3451,7 @@
     statusLabel.textContent = "设置";
     syncTouchPad();
     syncItemBar();
+    syncChatBtn();
   }
 
   function closeSettings() {
@@ -2148,6 +3463,7 @@
     if (state === "playing" && !adOpen && !shopOpen) statusLabel.textContent = "逃亡中";
     syncTouchPad();
     syncItemBar();
+    syncChatBtn();
   }
 
   function pickRandomAd() {
@@ -2474,6 +3790,7 @@
       !adOpen &&
       !settingsOpen &&
       !shopOpen &&
+      !socialOpen &&
       !portraitPromptOpen;
     touchPad.classList.toggle("hidden", !show);
     touchPad.setAttribute("aria-hidden", show ? "false" : "true");
@@ -2572,6 +3889,10 @@
         btn.classList.add("playable");
         btn.innerHTML = `${i}`;
       }
+      const online = document.createElement("span");
+      online.className = "online";
+      online.textContent = `${levelPlayerCounts[i] || 0}人在玩`;
+      btn.appendChild(online);
       btn.addEventListener("click", () => selectLevel(i));
       levelGrid.appendChild(btn);
     }
@@ -2613,9 +3934,13 @@
   }
 
   function enterLevel(n) {
+    if (blockIfBanned()) return;
     if (levelTip) {
       levelTip.classList.add("hidden");
     }
+    closeFriendCenter();
+    closeGlobalChat();
+    closeInboxPanel();
     hideLevelSelect();
     hideUnlockDialog();
     level = n;
@@ -2632,14 +3957,18 @@
     hideOverlay();
     hideLevelSelect();
     hideUnlockDialog();
-    buildLevelGrid();
     state = "select";
     statusLabel.textContent = "选关";
+    watchLobbyCounts();
+    buildLevelGrid();
+    applyLevelCounts(levelPlayerCounts);
     levelSelect.classList.remove("hidden");
     levelSelect.setAttribute("aria-hidden", "false");
     syncPuzzleTools();
     syncHomeBtn();
     maybeShowPortraitPrompt();
+    syncInboxBtn();
+    renderHomeNotices();
   }
 
   function needsPlayerName(n) {
@@ -2652,6 +3981,7 @@
 
   function playMoonCoopNow() {
     playUiClick();
+    if (blockIfBanned()) return;
     loggedIn = true;
     if (!playerName) playerName = "玩家";
     closeLoginScreen();
@@ -2675,6 +4005,11 @@
   }
 
   function openLoginScreen() {
+    if (isBanned()) {
+      showBanScreen("你被封号了");
+      return;
+    }
+    hideBanScreen();
     state = "login";
     loggedIn = false;
     statusLabel.textContent = "登录";
@@ -2714,6 +4049,7 @@
   }
 
   function returnToHomeMenu() {
+    if (blockIfBanned()) return;
     loggedIn = true;
     closeLoginScreen();
     stopLevelCoop();
@@ -2809,6 +4145,7 @@
 
   function submitLogin() {
     loginError.style.color = "#ff7a5c";
+    if (blockIfBanned()) return;
     if (loginMode === "account") {
       const user = (loginUser.value || "").trim();
       const pass = loginPass.value || "";
@@ -2816,6 +4153,8 @@
         showLoginError("请输入账号和密码");
         return;
       }
+      const key = user.toLowerCase();
+      if (key === "yangtianyu" || user === "杨天宇" || key === "yyy") markOwner();
       returnToHomeMenu();
       return;
     }
@@ -3021,8 +4360,7 @@
     syncHomeBtn();
     syncItemBar();
     maybeShowPortraitPrompt();
-    if (level === 11) startLevelCoop();
-    else stopLevelCoop();
+    startLevelCoop();
     if (window.GameAudio) {
       GameAudio.unlock();
       GameAudio.syncAmbience({
@@ -3060,6 +4398,9 @@
       return false;
     }
     playerName = name;
+    if (window.LevelCoop && typeof LevelCoop.setName === "function") {
+      LevelCoop.setName(myDisplayName());
+    }
     beginPlaying();
     return true;
   }
@@ -3090,52 +4431,45 @@
   }
 
   function drawMoonBackground() {
-    const sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, "#070814");
-    sky.addColorStop(0.45, "#121528");
-    sky.addColorStop(1, "#2a2a32");
-    ctx.fillStyle = sky;
+    if (!moonSkyGrad) {
+      moonSkyGrad = ctx.createLinearGradient(0, 0, 0, H);
+      moonSkyGrad.addColorStop(0, "#070814");
+      moonSkyGrad.addColorStop(0.45, "#121528");
+      moonSkyGrad.addColorStop(1, "#2a2a32");
+    }
+    ctx.fillStyle = moonSkyGrad;
     ctx.fillRect(0, 0, W, H);
 
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
-    for (let i = 0; i < 48; i++) {
-      const ax = ((i * 137 + cameraX * 0.08) % (W + 20)) - 10;
-      const ay = (i * 47) % (H * 0.62);
-      ctx.fillRect(ax, ay, i % 5 === 0 ? 2 : 1, i % 5 === 0 ? 2 : 1);
+    ctx.fillStyle = "#d8d8e8";
+    const starShift = (cameraX * 0.06) | 0;
+    for (let i = 0; i < 18; i++) {
+      const ax = ((i * 137 - starShift) % (W + 20) + (W + 20)) % (W + 20) - 10;
+      const ay = (i * 47) % ((H * 0.62) | 0);
+      ctx.fillRect(ax, ay, 1, 1);
     }
 
     const ex = W * 0.78;
     const ey = H * 0.18;
-    const eg = ctx.createRadialGradient(ex, ey, 6, ex, ey, 34);
-    eg.addColorStop(0, "#7ec8ff");
-    eg.addColorStop(0.45, "#3a7ab8");
-    eg.addColorStop(1, "rgba(20, 40, 80, 0)");
-    ctx.fillStyle = eg;
-    ctx.beginPath();
-    ctx.arc(ex, ey, 34, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#4aa0e0";
-    ctx.beginPath();
-    ctx.arc(ex, ey, 16, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#3d8a4a";
-    ctx.beginPath();
-    ctx.arc(ex - 4, ey + 2, 6, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.save();
-    ctx.translate(-cameraX * 0.18, 0);
-    ctx.fillStyle = "rgba(160, 160, 168, 0.28)";
-    for (let i = 0; i < 10; i++) {
-      const bx = i * 340;
-      ctx.beginPath();
-      ctx.ellipse(bx + 80, 300, 90, 28, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(bx + 220, 250, 50, 16, 0, 0, Math.PI * 2);
-      ctx.fill();
+    if (!moonEarthGrad) {
+      moonEarthGrad = ctx.createRadialGradient(ex, ey, 6, ex, ey, 28);
+      moonEarthGrad.addColorStop(0, "#7ec8ff");
+      moonEarthGrad.addColorStop(0.5, "#3a7ab8");
+      moonEarthGrad.addColorStop(1, "rgba(20, 40, 80, 0)");
     }
-    ctx.restore();
+    ctx.fillStyle = moonEarthGrad;
+    ctx.fillRect(ex - 28, ey - 28, 56, 56);
+    ctx.fillStyle = "#4aa0e0";
+    ctx.fillRect(ex - 12, ey - 12, 24, 24);
+    ctx.fillStyle = "#3d8a4a";
+    ctx.fillRect(ex - 8, ey - 2, 8, 8);
+
+    ctx.fillStyle = "rgba(160, 160, 168, 0.22)";
+    const hillShift = cameraX * 0.18;
+    for (let i = 0; i < 6; i++) {
+      const bx = i * 340 - hillShift;
+      ctx.fillRect(bx + 40, 278, 160, 40);
+      ctx.fillRect(bx + 190, 248, 90, 28);
+    }
   }
 
   function drawBackground() {
@@ -3279,32 +4613,20 @@
 
   function drawMoonVoid() {
     const base = LAVA_Y;
-    const g = ctx.createLinearGradient(0, base - 30, 0, H);
-    g.addColorStop(0, "rgba(8, 8, 14, 0)");
-    g.addColorStop(0.2, "#14141c");
-    g.addColorStop(1, "#050508");
-    ctx.fillStyle = g;
+    if (!moonVoidGrad) {
+      moonVoidGrad = ctx.createLinearGradient(0, base - 30, 0, H);
+      moonVoidGrad.addColorStop(0, "rgba(8, 8, 14, 0)");
+      moonVoidGrad.addColorStop(0.2, "#14141c");
+      moonVoidGrad.addColorStop(1, "#050508");
+    }
+    ctx.fillStyle = moonVoidGrad;
     ctx.fillRect(0, base - 8, W, H - base + 8);
 
-    ctx.fillStyle = "rgba(255,255,255,0.18)";
-    for (let i = 0; i < 18; i++) {
-      const ax = ((i * 83 + time * 8) % (W + 10)) - 5;
-      const ay = base + 12 + (i * 17) % (H - base - 16);
-      ctx.fillRect(ax, ay, 1, 1);
-    }
-
+    ctx.fillStyle = "#2a2a34";
     for (const c of craters) {
       const x = c.x - cameraX;
-      if (x + c.w < -40 || x > W + 40) continue;
-      ctx.fillStyle = "rgba(20, 20, 28, 0.95)";
-      ctx.beginPath();
-      ctx.ellipse(x + c.w / 2, base + 6, c.w * 0.52, 22, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(190, 190, 198, 0.45)";
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.ellipse(x + c.w / 2, base - 2, c.w * 0.5, 10, 0, Math.PI, 0);
-      ctx.stroke();
+      if (x + c.w < -20 || x > W + 20) continue;
+      ctx.fillRect(x, base - 4, c.w, 18);
     }
   }
 
@@ -3318,14 +4640,8 @@
       ctx.fillRect(x, y, p.w, p.h + 8);
       ctx.fillStyle = "#9a9aa3";
       ctx.fillRect(x + 2, y + 2, p.w - 4, p.h - 4);
-      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.fillStyle = "rgba(255,255,255,0.16)";
       ctx.fillRect(x + 2, y + 2, p.w - 4, 3);
-      ctx.fillStyle = "rgba(40, 40, 48, 0.35)";
-      for (let i = 8; i < p.w - 10; i += 22) {
-        ctx.beginPath();
-        ctx.arc(x + i, y + 12, 3 + (i % 7) * 0.2, 0, Math.PI * 2);
-        ctx.fill();
-      }
       return;
     }
 
@@ -3436,6 +4752,9 @@
       ctx.strokeText(label, labelX, labelY);
       ctx.fillText(label, labelX, labelY);
       ctx.restore();
+      if (localChat && time < localChatUntil) {
+        drawChatBubble(x + player.w / 2, y - 18 + hop, localChat, "#ffe07a");
+      }
     }
   }
 
@@ -3582,23 +4901,24 @@
     if (!star || star.collected) return;
     const x = star.x - cameraX;
     const y = star.y + Math.sin(star.pulse) * 6;
-    const glow = 0.45 + Math.sin(star.pulse * 1.5) * 0.25;
+    if (x < -40 || x > W + 40) return;
 
     ctx.save();
     ctx.translate(x, y);
-    ctx.shadowColor = `rgba(255, 220, 80, ${glow})`;
-    ctx.shadowBlur = 24 + Math.sin(star.pulse) * 10;
+    if (level !== 11) {
+      const glow = 0.45 + Math.sin(star.pulse * 1.5) * 0.25;
+      ctx.shadowColor = `rgba(255, 220, 80, ${glow})`;
+      ctx.shadowBlur = 24 + Math.sin(star.pulse) * 10;
+      const rg = ctx.createRadialGradient(0, 0, 2, 0, 0, 40);
+      rg.addColorStop(0, `rgba(255, 240, 120, ${0.35 + glow * 0.3})`);
+      rg.addColorStop(1, "rgba(255, 160, 40, 0)");
+      ctx.fillStyle = rg;
+      ctx.beginPath();
+      ctx.arc(0, 0, 40, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
 
-    // Outer glow circle
-    const rg = ctx.createRadialGradient(0, 0, 2, 0, 0, 40);
-    rg.addColorStop(0, `rgba(255, 240, 120, ${0.35 + glow * 0.3})`);
-    rg.addColorStop(1, "rgba(255, 160, 40, 0)");
-    ctx.fillStyle = rg;
-    ctx.beginPath();
-    ctx.arc(0, 0, 40, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Five-point star
     ctx.beginPath();
     for (let i = 0; i < 5; i++) {
       const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
@@ -3609,56 +4929,31 @@
       ctx.lineTo(Math.cos(b) * r2, Math.sin(b) * r2);
     }
     ctx.closePath();
-    const sg = ctx.createLinearGradient(0, -20, 0, 20);
-    sg.addColorStop(0, "#fff6a8");
-    sg.addColorStop(0.5, "#ffd24a");
-    sg.addColorStop(1, "#ff9a1a");
-    ctx.fillStyle = sg;
+    ctx.fillStyle = "#ffd24a";
     ctx.fill();
-    ctx.strokeStyle = "rgba(255, 255, 220, 0.8)";
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
     ctx.restore();
   }
 
   function drawPickupStars() {
     if (level !== 11) return;
+    ctx.fillStyle = "#ffe566";
     for (const p of pickups) {
       if (p.collected) continue;
       const x = p.x - cameraX;
-      const y = p.y + Math.sin(p.pulse) * 3;
-      if (x < -30 || x > W + 30) continue;
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.fillStyle = "rgba(255, 230, 120, 0.28)";
-      ctx.beginPath();
-      ctx.arc(0, 0, 16, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      for (let i = 0; i < 5; i++) {
-        const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
-        const b = a + Math.PI / 5;
-        ctx.lineTo(Math.cos(a) * (p.r + 2), Math.sin(a) * (p.r + 2));
-        ctx.lineTo(Math.cos(b) * p.r * 0.42, Math.sin(b) * p.r * 0.42);
-      }
-      ctx.closePath();
-      ctx.fillStyle = "#ffe566";
-      ctx.fill();
-      ctx.restore();
+      if (x < -20 || x > W + 20) continue;
+      const y = p.y + Math.sin(p.pulse) * 2;
+      ctx.fillRect(x - 4, y - 4, 8, 8);
     }
   }
 
   function drawRemotePlayers() {
-    if (level !== 11) return;
     for (const rp of remotePlayers.values()) {
       if (rp.x == null || rp.y == null) continue;
-      const x = rp.x - cameraX;
-      const y = rp.y;
+      const x = (rp.drawX != null ? rp.drawX : rp.x) - cameraX;
+      const y = rp.drawY != null ? rp.drawY : rp.y;
       if (x < -80 || x > W + 80) continue;
       ctx.fillStyle = "rgba(0,0,0,0.25)";
-      ctx.beginPath();
-      ctx.ellipse(x + 14, y + 44, 14, 4, 0, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fillRect(x + 4, y + 40, 20, 4);
       ctx.fillStyle = rp.color || "#ff8a5c";
       ctx.fillRect(x + 6, y + 10, 16, 22);
       ctx.fillStyle = "#ffe0b8";
@@ -3678,6 +4973,9 @@
       ctx.strokeText(label, x + 14, y - 10);
       ctx.fillText(label, x + 14, y - 10);
       ctx.restore();
+      if (rp.chat && time < (rp.chatUntil || 0)) {
+        drawChatBubble(x + 14, y - 18, rp.chat, rp.color || "#ffe07a");
+      }
     }
   }
 
@@ -4618,17 +5916,15 @@
     ctx.fillStyle = "rgba(255,255,255,0.7)";
     ctx.font = "10px 'Press Start 2P', monospace";
     ctx.fillText(reverseGoal ? "???" : "终点", barX + 186, 24);
-    if (level === 11) {
-      ctx.fillStyle = "rgba(255,255,255,0.75)";
-      ctx.font = "11px 'Noto Sans SC', sans-serif";
-      ctx.fillText(
-        coopCount > 1 || remotePlayers.size > 0
-          ? `同行 ${Math.max(coopCount, remotePlayers.size + 1)} 人`
-          : "现在只有你 · 手机和电脑都可以加入",
-        barX,
-        40
-      );
-    }
+    ctx.fillStyle = "rgba(255,255,255,0.75)";
+    ctx.font = "11px 'Noto Sans SC', sans-serif";
+    ctx.fillText(
+      coopCount > 1 || remotePlayers.size > 0
+        ? `同行 ${Math.max(coopCount, remotePlayers.size + 1)} 人`
+        : "现在只有你 · 手机和电脑都可以加入",
+      barX,
+      40
+    );
   }
 
   function draw() {
@@ -4700,6 +5996,13 @@
   }
 
   window.addEventListener("keydown", (e) => {
+    if (chatPanel && !chatPanel.classList.contains("hidden")) {
+      if (e.key === "Escape") {
+        closeChat();
+        e.preventDefault();
+      }
+      return;
+    }
     keys.add(e.key);
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) {
       e.preventDefault();
@@ -4709,8 +6012,8 @@
       resetPuzzleButtons();
       syncPuzzleTools();
       syncHomeBtn();
-      if (level === 11) startLevelCoop();
-      statusLabel.textContent = level === 11 ? "独自闯关" : "重开";
+      startLevelCoop();
+      statusLabel.textContent = "重开";
     }
     if (e.key === "Enter" && state !== "playing" && state !== "login" && state !== "select") {
       if (state === "naming") {
@@ -4771,7 +6074,8 @@
 
   canvas.addEventListener("pointerup", (e) => {
     if (e.button != null && e.button !== 0) return;
-    if (settingsOpen || adOpen || shopOpen) return;
+    if (settingsOpen || adOpen || shopOpen || socialOpen) return;
+    if (!toolMode && tryClickPlayerName(e.clientX, e.clientY)) return;
     if (tryUseToolClick(e.clientX, e.clientY)) return;
     if (tryClickShopStar(e.clientX, e.clientY)) return;
     if (tryClickLevel6(e.clientX, e.clientY)) return;
@@ -4791,7 +6095,8 @@
     if (
       hoverLevel6Target(e.clientX, e.clientY) ||
       hoverLevel8Target(e.clientX, e.clientY) ||
-      hoverShopStar(e.clientX, e.clientY)
+      hoverShopStar(e.clientX, e.clientY) ||
+      hitRemotePlayer(clientToWorld(e.clientX, e.clientY))
     ) {
       canvas.style.cursor = "pointer";
       return;
@@ -4902,9 +6207,74 @@
     });
   }
 
+  function showPhoneJoin(urls) {
+    const url = urls && urls[0];
+    const text = url
+      ? `手机请用相机扫下面二维码，或在 Safari 输入这个地址（必须带 http://）：\n${url}`
+      : "手机请和电脑连同一个 WiFi，用电脑屏幕上显示的地址打开最新版";
+    document.querySelectorAll("[data-phone-url]").forEach((el) => {
+      el.textContent = text;
+    });
+    document.querySelectorAll("[data-phone-qr]").forEach((img) => {
+      if (!url) {
+        img.hidden = true;
+        return;
+      }
+      img.hidden = false;
+      img.src =
+        "https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=" +
+        encodeURIComponent(url);
+    });
+  }
+
+  fetch("lan.json?t=" + Date.now())
+    .then((r) => (r.ok ? r.json() : null))
+    .then((data) => showPhoneJoin(data && data.urls))
+    .catch(() => showPhoneJoin(null));
+
+  if (chatBtn) {
+    chatBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      playUiClick();
+      openChat();
+    });
+  }
+  if (chatSend) {
+    chatSend.addEventListener("click", () => {
+      playUiClick();
+      sendChat();
+    });
+  }
+  if (chatClose) {
+    chatClose.addEventListener("click", () => {
+      playUiClick();
+      closeChat();
+    });
+  }
+  if (chatPanel) {
+    chatPanel.addEventListener("click", (e) => {
+      if (e.target === chatPanel) {
+        playUiClick();
+        closeChat();
+      }
+    });
+  }
+  if (chatInput) {
+    chatInput.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendChat();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        closeChat();
+      }
+    });
+  }
+
   if (moonCoopBtn) {
     moonCoopBtn.addEventListener("click", () => {
-      selectLevel(11);
+      playMoonCoopNow();
     });
   }
   if (loginMoonBtn) {
@@ -4920,10 +6290,206 @@
     saveInventory();
     saveCleared();
     playerName = "";
+    homePeerReady = false;
+    homeNotices = [];
+    renderHomeNotices();
     starLabel.textContent = "0";
     levelLabel.textContent = "1";
+    closeFriendCenter();
+    closeGlobalChat();
+    closeInboxPanel();
+    closeChatUserFlow();
+    friendReqQueue = [];
+    inviteQueue = [];
+    friendReqCurrent = null;
+    inviteCurrent = null;
+    if (friendReqDialog) {
+      friendReqDialog.classList.add("hidden");
+      friendReqDialog.setAttribute("aria-hidden", "true");
+    }
+    if (inviteDialog) {
+      inviteDialog.classList.add("hidden");
+      inviteDialog.setAttribute("aria-hidden", "true");
+    }
+    socialOpen = false;
+    if (window.LevelCoop) LevelCoop.leave();
     openLoginScreen();
   });
+
+  if (friendsBtn) {
+    friendsBtn.addEventListener("click", openFriendCenter);
+  }
+  if (globalChatBtn) {
+    globalChatBtn.addEventListener("click", openGlobalChat);
+  }
+  if (globalChatClose) {
+    globalChatClose.addEventListener("click", () => {
+      playUiClick();
+      closeGlobalChat();
+    });
+  }
+  if (globalChatPanel) {
+    globalChatPanel.addEventListener("click", (e) => {
+      if (e.target === globalChatPanel) {
+        playUiClick();
+        closeGlobalChat();
+      }
+    });
+  }
+  if (globalChatSend) {
+    globalChatSend.addEventListener("click", sendGlobalChat);
+  }
+  if (inboxBtn) {
+    inboxBtn.addEventListener("click", openInboxPanel);
+  }
+  if (inboxClose) {
+    inboxClose.addEventListener("click", () => {
+      playUiClick();
+      closeInboxPanel();
+    });
+  }
+  if (inboxClear) {
+    inboxClear.addEventListener("click", () => {
+      if (!isOwner()) return;
+      playUiClick();
+      inboxReports = [];
+      inboxUnread = 0;
+      saveInboxReports();
+      renderInboxList();
+      syncInboxBtn();
+    });
+  }
+  if (inboxPanel) {
+    inboxPanel.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-mod]");
+      if (btn) {
+        const wrap = btn.closest(".inbox-mod");
+        if (!wrap) return;
+        sendModAction(btn.dataset.mod, wrap.dataset.id, wrap.dataset.name, Number(btn.dataset.mins) || 0);
+        return;
+      }
+      if (e.target === inboxPanel) {
+        playUiClick();
+        closeInboxPanel();
+      }
+    });
+  }
+  if (globalChatInput) {
+    globalChatInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        sendGlobalChat();
+      }
+    });
+  }
+  if (globalChatLogEl) {
+    globalChatLogEl.addEventListener("click", (e) => {
+      const btn = e.target.closest(".gchat-name");
+      if (!btn) return;
+      e.preventDefault();
+      playUiClick();
+      showChatUserDialog(btn.dataset.id, btn.dataset.name);
+    });
+  }
+  if (chatUserFriend) {
+    chatUserFriend.addEventListener("click", () => {
+      const target = chatUserTarget;
+      if (!target) return;
+      playUiClick();
+      hideChatUserDialog();
+      requestFriend(target);
+    });
+  }
+  if (chatUserReport) {
+    chatUserReport.addEventListener("click", () => {
+      playUiClick();
+      showReportDialog();
+    });
+  }
+  if (chatUserCancel) {
+    chatUserCancel.addEventListener("click", () => {
+      playUiClick();
+      closeChatUserFlow();
+    });
+  }
+  if (chatUserDialog) {
+    chatUserDialog.addEventListener("click", (e) => {
+      if (e.target === chatUserDialog) {
+        playUiClick();
+        closeChatUserFlow();
+      }
+    });
+  }
+  if (reportDialog) {
+    reportDialog.addEventListener("click", (e) => {
+      const reasonBtn = e.target.closest(".report-reason");
+      if (reasonBtn) {
+        playUiClick();
+        submitReport(reasonBtn.dataset.reason);
+        return;
+      }
+      if (e.target === reportDialog) {
+        playUiClick();
+        hideReportDialog();
+        if (chatUserTarget) showChatUserDialog(chatUserTarget.id, chatUserTarget.name);
+      }
+    });
+  }
+  if (reportCancel) {
+    reportCancel.addEventListener("click", () => {
+      playUiClick();
+      hideReportDialog();
+      if (chatUserTarget) showChatUserDialog(chatUserTarget.id, chatUserTarget.name);
+    });
+  }
+  if (friendsClose) {
+    friendsClose.addEventListener("click", () => {
+      playUiClick();
+      closeFriendCenter();
+    });
+  }
+  if (friendCenter) {
+    friendCenter.addEventListener("click", (e) => {
+      if (e.target === friendCenter) {
+        playUiClick();
+        closeFriendCenter();
+      }
+    });
+  }
+  if (friendListEl) {
+    friendListEl.addEventListener("click", (e) => {
+      const btn = e.target.closest(".friend-item");
+      if (!btn) return;
+      playUiClick();
+      selectFriend(btn.dataset.id);
+    });
+  }
+  if (friendChatSend) {
+    friendChatSend.addEventListener("click", sendFriendChat);
+  }
+  if (friendChatInput) {
+    friendChatInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendFriendChat();
+      }
+    });
+  }
+  if (friendInviteBtn) {
+    friendInviteBtn.addEventListener("click", sendFriendInvite);
+  }
+  if (friendReqYes) {
+    friendReqYes.addEventListener("click", () => answerFriendReq(true));
+  }
+  if (friendReqNo) {
+    friendReqNo.addEventListener("click", () => answerFriendReq(false));
+  }
+  if (inviteYes) {
+    inviteYes.addEventListener("click", () => answerInvite(true));
+  }
+  if (inviteNo) {
+    inviteNo.addEventListener("click", () => answerInvite(false));
+  }
 
   if (unlockSkipBtn) {
     unlockSkipBtn.addEventListener("click", () => {
@@ -5066,6 +6632,13 @@
   setupTouchControls();
   loadSettings();
   loadProgress();
+  loadFriends();
+  loadGlobalChat();
+  loadInboxReports();
+  fillInviteLevels();
+  syncFriendsBtn();
+  syncGlobalChatBtn();
+  syncInboxBtn();
   syncViewport();
   makeLevel(1);
   levelLabel.textContent = "1";
@@ -5074,6 +6647,10 @@
   syncPuzzleTools();
   syncHomeBtn();
   setLoginMode("account");
-  if (!preferTouchControls()) setTimeout(() => loginUser.focus(), 50);
+  if (isBanned()) {
+    showBanScreen("你被封号了");
+  } else if (!preferTouchControls()) {
+    setTimeout(() => loginUser.focus(), 50);
+  }
   requestAnimationFrame(loop);
 })();

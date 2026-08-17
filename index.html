@@ -4,21 +4,33 @@
   <meta charset="UTF-8" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>岩浆跑酷 · 五星逃亡</title>
+  <meta name="mobile-web-app-capable" content="no" />
+  <meta name="apple-mobile-web-app-capable" content="no" />
+  <title>岩浆跑酷 · 全关联机</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=11d" />
+  <link rel="stylesheet" href="style.css?v=27" />
+  <script>
+    window.GAME_BUILD = "27";
+    (function () {
+      try {
+        var u = new URL(location.href);
+        if (u.protocol !== "http:" && u.protocol !== "https:") return;
+        if (u.searchParams.get("v") === window.GAME_BUILD) return;
+        u.searchParams.set("v", window.GAME_BUILD);
+        location.replace(u.href);
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
   <div class="shell">
     <header class="top">
       <h1>岩浆跑酷</h1>
-      <p class="tag">第十一关月球联机已开放 · 跳上砖块 · 躲开僵尸 · 夺取五角星</p>
+      <p class="tag">每一关都可以联机 · 跳上砖块 · 躲开僵尸 · 夺取五角星</p>
     </header>
 
     <div class="stage-wrap">
@@ -29,6 +41,22 @@
         <button type="button" class="fake-btn" data-label="提示" data-id="hint">提示</button>
         <button type="button" class="fake-btn" data-label="暂停" data-id="pause">暂停</button>
         <button type="button" class="fake-btn" data-label="重开" data-id="restart">重开</button>
+      </div>
+
+      <div id="chat-dock" class="chat-dock hidden">
+        <button id="chat-btn" class="chat-btn" type="button">聊天</button>
+        <div id="join-notices" class="join-notices" aria-live="polite"></div>
+      </div>
+      <div id="chat-panel" class="chat-panel hidden" aria-hidden="true">
+        <div class="chat-card">
+          <p>聊天记录 · 发的字也会出现在头顶</p>
+          <div id="chat-log" class="chat-log"></div>
+          <input id="chat-input" type="text" maxlength="12" placeholder="最多 12 个字" autocomplete="off" />
+          <div class="chat-actions">
+            <button id="chat-send" type="button">发送</button>
+            <button id="chat-close" type="button">关闭</button>
+          </div>
+        </div>
       </div>
 
       <div id="corner-actions" class="corner-actions hidden" aria-hidden="true">
@@ -154,18 +182,119 @@
       </div>
 
       <div id="level-select" class="level-select hidden" aria-hidden="true">
+        <div id="home-notices" class="home-notices" aria-live="polite"></div>
         <div class="level-select-card">
           <h2>选择关卡</h2>
-          <p class="level-select-desc">共 35 关 · 第 11 关月球联机随时可进</p>
+          <p class="level-select-desc">共 35 关 · 每一关都可以联机</p>
+          <p class="phone-join" data-phone-url>手机请和电脑连同一个 WiFi，用电脑弹出的地址打开最新版</p>
+          <img class="phone-qr" data-phone-qr alt="手机扫码进入游戏" hidden />
           <button id="moon-coop-btn" class="moon-coop-btn" type="button">
-            第十一关 · 月球联机
-            <span>手机和电脑都可以一起玩</span>
+            第十一关 · 月球
+            <span>每一关都可以联机 · 这关随时可进</span>
+            <span id="moon-online">0人在玩</span>
           </button>
           <div id="level-grid" class="level-grid"></div>
           <p id="level-tip" class="level-tip hidden"></p>
+          <button id="friends-btn" type="button">好友中心</button>
+          <button id="global-chat-btn" type="button">全游戏聊天</button>
+          <button id="inbox-btn" class="hidden" type="button">举报内容</button>
           <button id="logout-btn" type="button">退出登录</button>
         </div>
       </div>
+
+      <div id="friend-center" class="friend-center hidden" aria-hidden="true">
+        <div class="shop-card friend-card">
+          <h3>好友中心</h3>
+          <p class="shop-stars">点游戏里别人头顶的名字可以申请加好友</p>
+          <div class="friend-layout">
+            <div id="friend-list" class="friend-list"></div>
+            <div class="friend-chat-pane">
+              <p id="friend-chat-title">选择一个好友</p>
+              <div id="friend-chat-log" class="chat-log"></div>
+              <div class="friend-chat-row">
+                <input id="friend-chat-input" type="text" maxlength="40" placeholder="给好友发消息" autocomplete="off" disabled />
+                <button id="friend-chat-send" type="button" disabled>发送</button>
+              </div>
+              <div class="friend-invite-row">
+                <select id="friend-invite-level" disabled></select>
+                <button id="friend-invite-btn" type="button" disabled>邀请一起玩</button>
+              </div>
+            </div>
+          </div>
+          <button id="friends-close" type="button">关闭</button>
+        </div>
+      </div>
+
+      <div id="global-chat-panel" class="friend-center hidden" aria-hidden="true">
+        <div class="shop-card friend-card">
+          <h3>全游戏聊天</h3>
+          <p class="shop-stars">点别人的名字可以加好友或举报 · 所有在线玩家都能看到</p>
+          <div id="global-chat-log" class="chat-log"></div>
+          <div class="global-chat-compose">
+            <textarea id="global-chat-input" rows="8" placeholder="可以换行，没有行数上限 · Ctrl+Enter 发送"></textarea>
+            <button id="global-chat-send" type="button">发送</button>
+          </div>
+          <button id="global-chat-close" type="button">关闭</button>
+        </div>
+      </div>
+
+      <div id="inbox-panel" class="friend-center hidden" aria-hidden="true">
+        <div class="shop-card friend-card">
+          <h3>举报内容</h3>
+          <p class="shop-stars">可以对举报者或被举报者封号、禁言或让他退出登录</p>
+          <div id="inbox-list" class="inbox-list"></div>
+          <div class="friend-chat-row">
+            <button id="inbox-clear" type="button">清空</button>
+            <button id="inbox-close" type="button">关闭</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="chat-user-dialog" class="unlock-dialog hidden" aria-hidden="true">
+        <div class="unlock-card">
+          <p id="chat-user-msg">要对这名玩家做什么？</p>
+          <div class="unlock-actions chat-user-actions">
+            <button id="chat-user-friend" type="button">加好友</button>
+            <button id="chat-user-report" type="button">举报</button>
+            <button id="chat-user-cancel" type="button">取消</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="report-dialog" class="unlock-dialog hidden" aria-hidden="true">
+        <div class="unlock-card">
+          <p id="report-msg">请选择举报原因</p>
+          <div class="unlock-actions chat-user-actions">
+            <button type="button" class="report-reason" data-reason="辱骂骚扰">辱骂骚扰</button>
+            <button type="button" class="report-reason" data-reason="作弊">作弊</button>
+            <button type="button" class="report-reason" data-reason="广告刷屏">广告刷屏</button>
+            <button type="button" class="report-reason" data-reason="其他">其他</button>
+            <button id="report-cancel" type="button">取消</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="friend-req-dialog" class="unlock-dialog hidden" aria-hidden="true">
+        <div class="unlock-card">
+          <p id="friend-req-msg">有人想和你成为好友</p>
+          <div class="unlock-actions">
+            <button id="friend-req-yes" type="button">同意</button>
+            <button id="friend-req-no" type="button">不同意</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="invite-dialog" class="unlock-dialog hidden" aria-hidden="true">
+        <div class="unlock-card">
+          <p id="invite-msg">有人邀请你一起玩</p>
+          <div class="unlock-actions">
+            <button id="invite-yes" type="button">同意</button>
+            <button id="invite-no" type="button">不同意</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="social-toast" class="social-toast hidden" aria-live="polite"></div>
 
       <div id="unlock-dialog" class="unlock-dialog hidden" aria-hidden="true">
         <div class="unlock-card">
@@ -180,10 +309,12 @@
       <div id="login-screen" class="login-screen" aria-hidden="false">
         <div class="login-card">
           <h2>岩浆跑酷 · 登录</h2>
-          <p class="login-desc">请先登录后开始游戏</p>
+          <p class="login-desc">请先登录后开始游戏 · 版本 27</p>
+          <p class="phone-join" data-phone-url>手机请和电脑连同一个 WiFi，用电脑弹出的地址打开最新版</p>
+          <img class="phone-qr" data-phone-qr alt="手机扫码进入游戏" hidden />
           <button id="login-moon-btn" class="moon-coop-btn" type="button">
-            直接进入第十一关 · 月球联机
-            <span>不用登录 · 手机和电脑都能玩</span>
+            直接进入第十一关 · 月球
+            <span>不用登录 · 每一关都可以联机</span>
           </button>
 
           <div class="login-tabs" role="tablist">
@@ -224,6 +355,14 @@
         </div>
       </div>
 
+      <div id="ban-screen" class="login-screen hidden" aria-hidden="true">
+        <div class="login-card">
+          <h2>账号已被封禁</h2>
+          <p id="ban-msg" class="login-desc">你被封号了</p>
+          <p class="login-desc">剩余 <strong id="ban-left">0</strong> 秒后才能登录</p>
+        </div>
+      </div>
+
       <div id="overlay" class="overlay hidden">
         <div class="panel">
           <h2 id="overlay-title">岩浆跑酷</h2>
@@ -253,8 +392,8 @@
       </div>
     </div>
   </div>
-  <script src="audio.js?v=11d"></script>
-  <script src="coop.js?v=11d"></script>
-  <script src="game.js?v=11d"></script>
+  <script src="audio.js?v=27"></script>
+  <script src="coop.js?v=27"></script>
+  <script src="game.js?v=27"></script>
 </body>
 </html>
