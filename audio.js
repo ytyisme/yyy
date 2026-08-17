@@ -266,16 +266,22 @@
     if (!unlocked && !opts.force) return;
     if (!ensure()) return;
     if (opts.playing) {
-      if (!loops.lava) startLavaLoop();
-      if (opts.city) {
-        if (!loops.city) startCityLoop();
-      } else {
+      if (opts.moon) {
+        stopLoop("lava");
         stopLoop("city");
-      }
-      if (opts.zombies) {
-        if (!loops.zombie) startZombieLoop();
-      } else {
         stopLoop("zombie");
+      } else {
+        if (!loops.lava) startLavaLoop();
+        if (opts.city) {
+          if (!loops.city) startCityLoop();
+        } else {
+          stopLoop("city");
+        }
+        if (opts.zombies) {
+          if (!loops.zombie) startZombieLoop();
+        } else {
+          stopLoop("zombie");
+        }
       }
     } else {
       stopAllAmbience();

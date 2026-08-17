@@ -41,10 +41,15 @@
   const levelGrid = document.getElementById("level-grid");
   const levelTip = document.getElementById("level-tip");
   const logoutBtn = document.getElementById("logout-btn");
+  const moonCoopBtn = document.getElementById("moon-coop-btn");
+  const loginMoonBtn = document.getElementById("login-moon-btn");
   const unlockDialog = document.getElementById("unlock-dialog");
   const unlockMsg = document.getElementById("unlock-msg");
   const unlockSkipBtn = document.getElementById("unlock-skip");
   const unlockCancelBtn = document.getElementById("unlock-cancel");
+  const portraitDialog = document.getElementById("portrait-dialog");
+  const portraitDecline = document.getElementById("portrait-decline");
+  const portraitAccept = document.getElementById("portrait-accept");
   const loginScreen = document.getElementById("login-screen");
   const loginUser = document.getElementById("login-user");
   const loginPass = document.getElementById("login-pass");
@@ -62,13 +67,18 @@
   const loginPaneIdcard = document.getElementById("login-pane-idcard");
   const touchPad = document.getElementById("touch-pad");
 
-  const W = canvas.width;
-  const H = canvas.height;
+  const DESIGN_W = 960;
+  const DESIGN_H = 540;
+  const PORTRAIT_W = 720;
+  let W = canvas.width;
+  let H = canvas.height;
   const GRAVITY = 0.55;
   const JUMP = -11.2;
   const MOVE = 4.2;
   const ZOMBIE_COUNT = 5;
-  const LAVA_Y = H - 52;
+  let LAVA_Y = H - 52;
+  const PORTRAIT_PROMPT_KEY = "lava-parkour-portrait-dismissed";
+  let portraitPromptOpen = false;
 
   const keys = new Set();
   const touch = { left: false, right: false, jump: false };
@@ -169,7 +179,7 @@
   let maxCleared = 0; // highest cleared level; level 1 always open
   let pendingUnlockLevel = 0;
   const TOTAL_LEVELS = 35;
-  const MAX_PLAYABLE = 10; // current content ends at level 10
+  const MAX_PLAYABLE = 11;
   let cameraX = 0;
   let worldMin = 0;
   let worldWidth = 3200;
@@ -195,6 +205,12 @@
   let belly = { items: [], revealed: false };
   let eatAnim = null;
   let backpack = { spikes: 0, zombiesKilled: 0, maces: 0, revealed: false };
+  let pickups = [];
+  let craters = [];
+  let remotePlayers = new Map();
+  let coopCount = 1;
+  let coopAcc = 0;
+  const COOP_COLORS = ["#ff8a5c", "#b8ff6a", "#d47aff", "#ffd36a", "#6ad4ff"];
   let crate = null;
   let potion = null;
   let speedBoost = 0;
@@ -207,6 +223,15 @@
     return a + Math.random() * (b - a);
   }
 
+  function seededRng(seed) {
+    let s = seed | 0;
+    return () => {
+      s = Math.imul(s ^ (s >>> 15), 1 | s);
+      s ^= s + Math.imul(s ^ (s >>> 7), 61 | s);
+      return ((s ^ (s >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
   function clamp(v, a, b) {
     return Math.max(a, Math.min(b, v));
   }
@@ -214,13 +239,117 @@
   function preferTouchControls() {
     return (
       window.matchMedia("(pointer: coarse)").matches ||
-      window.matchMedia("(max-width: 820px)").matches
+      window.matchMedia("(max-width: 920px)").matches
     );
+  }
+
+  function isDevicePortrait() {
+    const type = screen.orientation && screen.orientation.type;
+    if (typeof type === "string") return type.startsWith("portrait");
+    if (window.matchMedia("(orientation: portrait)").matches) return true;
+    return window.innerHeight >= window.innerWidth;
+  }
+
+  function isMobileLike() {
+    return (
+      window.matchMedia("(pointer: coarse)").matches ||
+      window.matchMedia("(max-width: 920px)").matches ||
+      window.matchMedia("(max-height: 920px)").matches ||
+      (navigator.maxTouchPoints || 0) > 0 ||
+      "ontouchstart" in window
+    );
+  }
+
+  function isPortraitPlay() {
+    return isDevicePortrait() && isMobileLike();
+  }
+
+  function syncViewport() {
+    const nextW = isPortraitPlay() ? PORTRAIT_W : DESIGN_W;
+    const nextH = DESIGN_H;
+    document.body.classList.toggle("is-portrait", isPortraitPlay());
+    document.body.classList.toggle("is-landscape", !isPortraitPlay());
+    maybeShowPortraitPrompt();
+    if (canvas.width === nextW && canvas.height === nextH && W === nextW && H === nextH) {
+      return;
+    }
+    W = nextW;
+    H = nextH;
+    LAVA_Y = H - 52;
+    canvas.width = W;
+    canvas.height = H;
+    if (player) {
+      cameraX = clamp(
+        player.x - W * 0.35,
+        worldMin,
+        Math.max(worldMin, worldWidth - W)
+      );
+    }
+  }
+
+  function hidePortraitPrompt() {
+    if (!portraitDialog) return;
+    portraitPromptOpen = false;
+    portraitDialog.classList.add("hidden");
+    portraitDialog.setAttribute("aria-hidden", "true");
+    syncTouchPad();
+    syncItemBar();
+  }
+
+  function showPortraitPrompt() {
+    if (!portraitDialog) return;
+    portraitPromptOpen = true;
+    portraitDialog.classList.remove("hidden");
+    portraitDialog.setAttribute("aria-hidden", "false");
+    syncTouchPad();
+    syncItemBar();
+  }
+
+  function portraitPromptDismissed() {
+    try {
+      return sessionStorage.getItem(PORTRAIT_PROMPT_KEY) === "1";
+    } catch {
+      return false;
+    }
+  }
+
+  function maybeShowPortraitPrompt() {
+    if (!isPortraitPlay()) {
+      hidePortraitPrompt();
+      return;
+    }
+    if (portraitPromptDismissed()) {
+      hidePortraitPrompt();
+      return;
+    }
+    showPortraitPrompt();
+  }
+
+  async function requestLandscapePlay() {
+    const tryLock = async () => {
+      if (screen.orientation && screen.orientation.lock) {
+        await screen.orientation.lock("landscape");
+      }
+    };
+    try {
+      await tryLock();
+    } catch {
+      try {
+        const root = document.documentElement;
+        if (!document.fullscreenElement && root.requestFullscreen) {
+          await root.requestFullscreen();
+        }
+        await tryLock();
+      } catch {
+        /* iOS 等环境无法强制横屏，等待玩家自己转过来 */
+      }
+    }
+    maybeShowPortraitPrompt();
   }
 
   function controlHintText() {
     return preferTouchControls()
-      ? "下方按钮：左右移动 · 跳跃 · 点屏幕可交互"
+      ? "竖屏/横屏均可 · 下方按钮移动和跳跃"
       : "← → / A D 移动 · 空格 / W / ↑ 跳跃 · R 重开";
   }
 
@@ -267,6 +396,8 @@
     belly = { items: [], revealed: false };
     eatAnim = null;
     backpack = { spikes: 0, zombiesKilled: 0, maces: 0, revealed: false };
+    pickups = [];
+    craters = [];
     const startY = 380;
     const roofY = 150;
 
@@ -756,6 +887,72 @@
           hair: ["#2a1a10", "#5a3a20", "#1a1a1a", "#8a6a40"][i % 4],
         });
       }
+    } else if (n === 11) {
+      reverseGoal = false;
+      spawnX = 90;
+      const rng = seededRng(11011);
+      const groundY = 380;
+      let x = 0;
+      const startW = 480;
+      platforms.push({ x, y: groundY, w: startW, h: 28, lane: "ground", theme: "moon" });
+      x += startW;
+
+      const addPickups = (plat, count) => {
+        for (let i = 0; i < count; i++) {
+          const px = plat.x + plat.w * ((i + 1) / (count + 1));
+          pickups.push({
+            id: pickups.length + 1,
+            x: px,
+            y: plat.y - 22,
+            r: 10,
+            collected: false,
+            pulse: rng() * 5,
+          });
+        }
+      };
+      addPickups(platforms[0], 4);
+
+      for (let i = 0; i < 14; i++) {
+        const pit = 78 + Math.floor(rng() * 64);
+        craters.push({ x, w: pit });
+        x += pit;
+        const w = 108 + Math.floor(rng() * 120);
+        const y = clamp(groundY + Math.floor(rng() * 56 - 28), 328, 408);
+        const plat = { x, y, w, h: 26, lane: "ground", theme: "moon" };
+        platforms.push(plat);
+        addPickups(plat, rng() > 0.35 ? 2 : 1);
+        x += w;
+      }
+
+      const endW = 360;
+      const endY = 358;
+      const lastGap = 92;
+      craters.push({ x, w: lastGap });
+      x += lastGap;
+      platforms.push({ x, y: endY, w: endW, h: 28, lane: "ground", theme: "moon" });
+      addPickups(platforms[platforms.length - 1], 3);
+      worldWidth = x + endW + 80;
+      worldMin = 0;
+
+      player = {
+        x: spawnX,
+        y: groundY - 40,
+        w: 28,
+        h: 40,
+        vx: 0,
+        vy: 0,
+        onGround: false,
+        facing: 1,
+        alive: true,
+      };
+
+      star = {
+        x: x + endW - 88,
+        y: endY - 70,
+        r: 18,
+        collected: false,
+        pulse: 0,
+      };
     } else {
       const aboveHunt = n > 10;
       const gapBase = aboveHunt ? 70 + n * 10 : 48 + n * 8;
@@ -858,6 +1055,119 @@
     particles = [];
     cameraX = 0;
     shake = 0;
+  }
+
+  function localCoopId() {
+    try {
+      let id = sessionStorage.getItem("yyy_coop_id");
+      if (!id) {
+        id = "p" + Math.random().toString(36).slice(2, 10);
+        sessionStorage.setItem("yyy_coop_id", id);
+      }
+      return id;
+    } catch {
+      return "p" + Math.random().toString(36).slice(2, 10);
+    }
+  }
+
+  function colorForCoopId(id) {
+    let h = 0;
+    for (let i = 0; i < String(id).length; i++) {
+      h = (h * 31 + id.charCodeAt(i)) | 0;
+    }
+    return COOP_COLORS[Math.abs(h) % COOP_COLORS.length];
+  }
+
+  function stopLevelCoop() {
+    if (window.LevelCoop) LevelCoop.leave();
+    remotePlayers = new Map();
+    coopCount = 1;
+    coopAcc = 0;
+  }
+
+  function handleCoopMessage(msg) {
+    if (!msg || msg.type === "bye") {
+      if (msg && msg.id) remotePlayers.delete(msg.id);
+      if (state === "playing" && level === 11) {
+        const n = remotePlayers.size + 1;
+        statusLabel.textContent = n > 1 ? `联机 ${n} 人` : "独自闯关";
+      }
+      return;
+    }
+    if (msg.type === "pickup" && msg.starId != null) {
+      const p = pickups.find((s) => s.id === msg.starId);
+      if (p && !p.collected) {
+        p.collected = true;
+        spawnBurst(p.x, p.y, "#ffe566", 10);
+      }
+      return;
+    }
+    if (msg.type === "hello" || msg.type === "state") {
+      const prev = remotePlayers.get(msg.id) || {};
+      remotePlayers.set(msg.id, {
+        ...prev,
+        id: msg.id,
+        x: msg.x != null ? msg.x : prev.x,
+        y: msg.y != null ? msg.y : prev.y,
+        vx: msg.vx || 0,
+        vy: msg.vy || 0,
+        facing: msg.facing || prev.facing || 1,
+        alive: msg.alive !== false,
+        name: msg.name || prev.name || "玩家",
+        color: prev.color || colorForCoopId(msg.id),
+        last: time,
+      });
+      if (state === "playing" && level === 11) {
+        const n = remotePlayers.size + 1;
+        statusLabel.textContent = n > 1 ? `联机 ${n} 人` : "独自闯关";
+      }
+    }
+  }
+
+  function startLevelCoop() {
+    stopLevelCoop();
+    if (!window.LevelCoop) return;
+    LevelCoop.join(localCoopId(), {
+      onMessage: handleCoopMessage,
+      onCount: (n) => {
+        coopCount = Math.max(1, Number(n) || 1);
+      },
+      onStatus: (status) => {
+        if (state !== "playing" || level !== 11) return;
+        if (status === "connecting") {
+          statusLabel.textContent = "正在连接联机…";
+          return;
+        }
+        const n = remotePlayers.size + 1;
+        if (n > 1) statusLabel.textContent = `联机 ${n} 人`;
+        else if (status === "online") statusLabel.textContent = "独自闯关 · 可与手机/电脑联机";
+        else statusLabel.textContent = "独自闯关";
+      },
+    });
+    statusLabel.textContent = "正在连接联机…";
+  }
+
+  function updateCoop(dt) {
+    if (level !== 11 || state !== "playing" || !window.LevelCoop || !LevelCoop.isJoined()) {
+      return;
+    }
+    coopAcc += dt;
+    if (coopAcc >= 0.08 && player) {
+      coopAcc = 0;
+      LevelCoop.send({
+        type: "state",
+        x: player.x,
+        y: player.y,
+        vx: player.vx,
+        vy: player.vy,
+        facing: player.facing,
+        alive: player.alive !== false,
+        name: (playerName || "玩家").slice(0, 16),
+      });
+    }
+    for (const [id, rp] of [...remotePlayers]) {
+      if (time - (rp.last || 0) > 4) remotePlayers.delete(id);
+    }
   }
 
   function extendEndlessParkour() {
@@ -1018,8 +1328,8 @@
       }
     }
 
-    actor.vy += GRAVITY;
-    actor.vy = Math.min(actor.vy, 16);
+    actor.vy += level === 11 && actor === player ? GRAVITY * 0.45 : GRAVITY;
+    actor.vy = Math.min(actor.vy, level === 11 && actor === player ? 12 : 16);
 
     // Horizontal
     actor.x += actor.vx;
@@ -1064,7 +1374,7 @@
 
   function update(dt) {
     time += dt;
-    if (state !== "playing" || settingsOpen || adOpen || shopOpen) {
+    if (state !== "playing" || settingsOpen || adOpen || shopOpen || portraitPromptOpen) {
       updateParticles(dt);
       if (!settingsOpen && !adOpen && !shopOpen && window.GameAudio) {
         GameAudio.stopAllAmbience();
@@ -1132,6 +1442,28 @@
     }
     if (potion) potion.bob += dt * 5;
 
+    if (level === 11 && pickups.length) {
+      for (const p of pickups) {
+        if (p.collected) continue;
+        p.pulse += dt * 4;
+        const box = {
+          x: p.x - p.r,
+          y: p.y - p.r,
+          w: p.r * 2,
+          h: p.r * 2,
+        };
+        if (rectsOverlap(player, box)) {
+          p.collected = true;
+          stars += 1;
+          saveStars();
+          starLabel.textContent = String(stars);
+          spawnBurst(p.x, p.y, "#ffe566", 14);
+          if (window.GameAudio) GameAudio.playStar();
+          if (window.LevelCoop) LevelCoop.send({ type: "pickup", starId: p.id });
+        }
+      }
+    }
+
     for (const z of zombies) {
       if (!z.alive && z.alive !== false) z.alive = true;
       moveActor(z, 0, false, player);
@@ -1189,7 +1521,7 @@
     }
 
     if (player.alive === false) {
-      die("lava");
+      die(level === 11 ? "crater" : "lava");
       return;
     }
 
@@ -1225,6 +1557,7 @@
     );
     if (shake > 0) shake *= 0.88;
     updateParticles(dt);
+    updateCoop(dt);
 
     if (window.GameAudio) {
       const running =
@@ -1235,6 +1568,7 @@
       GameAudio.updateGameplay(dt, {
         playing: true,
         city: level === 8,
+        moon: level === 11,
         zombies: zombies.some((z) => z.alive !== false),
         running,
         fast: speedBoost > 0,
@@ -1253,6 +1587,7 @@
   }
 
   function die(cause) {
+    stopLevelCoop();
     state = "dead";
     statusLabel.textContent = "失败";
     shake = 14;
@@ -1269,6 +1604,7 @@
       if (cause === "zombie") title = `${playerName}被僵尸吃掉了`;
       else if (cause === "spike") title = `${playerName}被尖刺扎死了`;
       else if (cause === "mace") title = `${playerName}被狼牙棒砸中了`;
+      else if (cause === "crater") title = `${playerName}掉进陨石坑了`;
       else title = `${playerName}烫死了`;
       showOverlay(title, `关卡 ${level} · 已收集 ${stars} 颗五角星`, "重生", {
         showName: false,
@@ -1284,11 +1620,14 @@
           ? "踩到尖刺了！"
           : cause === "mace"
             ? "被旋转的狼牙棒砸中了！"
+            : cause === "crater"
+              ? "掉进陨石坑了！"
             : "掉进岩浆了！";
     showOverlay("游戏结束", `${reason}<br />关卡 ${level} · 已收集 ${stars} 颗五角星`, "再试一次");
   }
 
   function winLevel() {
+    stopLevelCoop();
     state = "win";
     statusLabel.textContent = "通关";
     markLevelCleared(level);
@@ -1303,7 +1642,7 @@
     if (level >= MAX_PLAYABLE) {
       showOverlay(
         "到达终点！",
-        `第 ${level} 关完成！<br />第 10 关是目前的终点，后面作者还在做，敬请期待。`,
+        `第 ${level} 关完成！<br />第 11 关是目前的终点，后面作者还在做，敬请期待。`,
         "回主页",
         { hideHint: true }
       );
@@ -1338,7 +1677,10 @@
         `<br /><span style="color:#ffb347">第 9 关：路断了……岩浆下也许有秘密。</span>`;
     } else if (next === 10) {
       warn =
-        `<br /><span style="color:#ffb347">第 10 关：五角星专卖店。现在是 11:58……这是目前终点。</span>`;
+        `<br /><span style="color:#ffb347">第 10 关：五角星专卖店。现在是 11:58……</span>`;
+    } else if (next === 11) {
+      warn =
+        `<br /><span style="color:#ffb347">第 11 关：月球跑酷。没有僵尸，可以和其他玩家一起跳过陨石坑。</span>`;
     }
 
     showOverlay(
@@ -1499,7 +1841,7 @@
   }
 
   function isLevelUnlocked(n) {
-    if (n <= 1) return true;
+    if (n <= 1 || n === 11) return true;
     return maxCleared >= n - 1;
   }
 
@@ -1528,7 +1870,7 @@
 
   function syncItemBar() {
     if (!itemBar) return;
-    const show = state === "playing" && !adOpen && !settingsOpen && !shopOpen;
+    const show = state === "playing" && !adOpen && !settingsOpen && !shopOpen && !portraitPromptOpen;
     itemBar.classList.toggle("hidden", !show);
     itemBar.setAttribute("aria-hidden", show ? "false" : "true");
     if (!show) return;
@@ -2131,7 +2473,8 @@
       preferTouchControls() &&
       !adOpen &&
       !settingsOpen &&
-      !shopOpen;
+      !shopOpen &&
+      !portraitPromptOpen;
     touchPad.classList.toggle("hidden", !show);
     touchPad.setAttribute("aria-hidden", show ? "false" : "true");
     if (!show) {
@@ -2216,6 +2559,9 @@
       } else if (!isLevelUnlocked(i)) {
         btn.classList.add("locked-progress");
         btn.innerHTML = `${i}<span class="badge">未解锁</span>`;
+      } else if (i === 11) {
+        btn.classList.add("endpoint");
+        btn.innerHTML = `${i}<span class="badge">月球</span>`;
       } else if (i === MAX_PLAYABLE) {
         btn.classList.add("endpoint");
         btn.innerHTML = `${i}<span class="badge">终点</span>`;
@@ -2293,6 +2639,7 @@
     levelSelect.setAttribute("aria-hidden", "false");
     syncPuzzleTools();
     syncHomeBtn();
+    maybeShowPortraitPrompt();
   }
 
   function needsPlayerName(n) {
@@ -2303,10 +2650,20 @@
     if (window.GameAudio) GameAudio.playClick();
   }
 
+  function playMoonCoopNow() {
+    playUiClick();
+    loggedIn = true;
+    if (!playerName) playerName = "玩家";
+    closeLoginScreen();
+    hideUnlockDialog();
+    hidePortraitPrompt();
+    enterLevel(11);
+  }
+
   function selectLevel(n) {
     playUiClick();
     if (n > MAX_PLAYABLE) {
-      levelTip.textContent = "后面作者还在做，敬请期待（第 10 关是目前终点）";
+      levelTip.textContent = "后面作者还在做，敬请期待（第 11 关是目前终点）";
       levelTip.classList.remove("hidden");
       return;
     }
@@ -2326,6 +2683,7 @@
     hideOverlay();
     hideLevelSelect();
     hideUnlockDialog();
+    maybeShowPortraitPrompt();
     loginError.classList.add("hidden");
     minorNotice.classList.add("hidden");
     loginSubmit.classList.remove("hidden");
@@ -2347,6 +2705,7 @@
   }
 
   function goHome() {
+    stopLevelCoop();
     cancelAd(false);
     closeSettings();
     closeShop();
@@ -2357,6 +2716,7 @@
   function returnToHomeMenu() {
     loggedIn = true;
     closeLoginScreen();
+    stopLevelCoop();
     // Keep collected stars; reset only on logout
     statusLabel.textContent = "选关";
     homeMode = false;
@@ -2660,12 +3020,16 @@
     syncPuzzleTools();
     syncHomeBtn();
     syncItemBar();
+    maybeShowPortraitPrompt();
+    if (level === 11) startLevelCoop();
+    else stopLevelCoop();
     if (window.GameAudio) {
       GameAudio.unlock();
       GameAudio.syncAmbience({
         playing: true,
         force: true,
         city: level === 8,
+        moon: level === 11,
         zombies: zombies.length > 0,
       });
     }
@@ -2685,6 +3049,7 @@
         ? `第 ${level} 关起，名字会一直显示在头顶。<br />请先给自己的玩家起个名字。`
         : "先给自己的玩家起个名字。<br />平路上有一只大僵尸在追你——旁边的箱子里藏着速度药水。";
     showOverlay(`第 ${level} 关`, msg, "确认名字", { showName: true });
+    maybeShowPortraitPrompt();
   }
 
   function confirmPlayerName() {
@@ -2724,7 +3089,60 @@
     beginPlaying();
   }
 
+  function drawMoonBackground() {
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, "#070814");
+    sky.addColorStop(0.45, "#121528");
+    sky.addColorStop(1, "#2a2a32");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    for (let i = 0; i < 48; i++) {
+      const ax = ((i * 137 + cameraX * 0.08) % (W + 20)) - 10;
+      const ay = (i * 47) % (H * 0.62);
+      ctx.fillRect(ax, ay, i % 5 === 0 ? 2 : 1, i % 5 === 0 ? 2 : 1);
+    }
+
+    const ex = W * 0.78;
+    const ey = H * 0.18;
+    const eg = ctx.createRadialGradient(ex, ey, 6, ex, ey, 34);
+    eg.addColorStop(0, "#7ec8ff");
+    eg.addColorStop(0.45, "#3a7ab8");
+    eg.addColorStop(1, "rgba(20, 40, 80, 0)");
+    ctx.fillStyle = eg;
+    ctx.beginPath();
+    ctx.arc(ex, ey, 34, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#4aa0e0";
+    ctx.beginPath();
+    ctx.arc(ex, ey, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#3d8a4a";
+    ctx.beginPath();
+    ctx.arc(ex - 4, ey + 2, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(-cameraX * 0.18, 0);
+    ctx.fillStyle = "rgba(160, 160, 168, 0.28)";
+    for (let i = 0; i < 10; i++) {
+      const bx = i * 340;
+      ctx.beginPath();
+      ctx.ellipse(bx + 80, 300, 90, 28, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(bx + 220, 250, 50, 16, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   function drawBackground() {
+    if (level === 11) {
+      drawMoonBackground();
+      return;
+    }
     if (level === 8) {
       drawCityBackground();
       return;
@@ -2806,6 +3224,10 @@
   }
 
   function drawLava() {
+    if (level === 11) {
+      drawMoonVoid();
+      return;
+    }
     const base = LAVA_Y;
     const under =
       fakeLava && player && player.y + player.h > LAVA_Y + 4;
@@ -2855,10 +3277,57 @@
     }
   }
 
+  function drawMoonVoid() {
+    const base = LAVA_Y;
+    const g = ctx.createLinearGradient(0, base - 30, 0, H);
+    g.addColorStop(0, "rgba(8, 8, 14, 0)");
+    g.addColorStop(0.2, "#14141c");
+    g.addColorStop(1, "#050508");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, base - 8, W, H - base + 8);
+
+    ctx.fillStyle = "rgba(255,255,255,0.18)";
+    for (let i = 0; i < 18; i++) {
+      const ax = ((i * 83 + time * 8) % (W + 10)) - 5;
+      const ay = base + 12 + (i * 17) % (H - base - 16);
+      ctx.fillRect(ax, ay, 1, 1);
+    }
+
+    for (const c of craters) {
+      const x = c.x - cameraX;
+      if (x + c.w < -40 || x > W + 40) continue;
+      ctx.fillStyle = "rgba(20, 20, 28, 0.95)";
+      ctx.beginPath();
+      ctx.ellipse(x + c.w / 2, base + 6, c.w * 0.52, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(190, 190, 198, 0.45)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.ellipse(x + c.w / 2, base - 2, c.w * 0.5, 10, 0, Math.PI, 0);
+      ctx.stroke();
+    }
+  }
+
   function drawBrick(p) {
     const x = p.x - cameraX;
     const y = p.y;
     if (x + p.w < -20 || x > W + 20) return;
+
+    if (p.theme === "moon") {
+      ctx.fillStyle = "#6d6d74";
+      ctx.fillRect(x, y, p.w, p.h + 8);
+      ctx.fillStyle = "#9a9aa3";
+      ctx.fillRect(x + 2, y + 2, p.w - 4, p.h - 4);
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.fillRect(x + 2, y + 2, p.w - 4, 3);
+      ctx.fillStyle = "rgba(40, 40, 48, 0.35)";
+      for (let i = 8; i < p.w - 10; i += 22) {
+        ctx.beginPath();
+        ctx.arc(x + i, y + 12, 3 + (i % 7) * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      return;
+    }
 
     if (p.lane === "secret") {
       ctx.fillStyle = "#2a1810";
@@ -3150,6 +3619,66 @@
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.restore();
+  }
+
+  function drawPickupStars() {
+    if (level !== 11) return;
+    for (const p of pickups) {
+      if (p.collected) continue;
+      const x = p.x - cameraX;
+      const y = p.y + Math.sin(p.pulse) * 3;
+      if (x < -30 || x > W + 30) continue;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = "rgba(255, 230, 120, 0.28)";
+      ctx.beginPath();
+      ctx.arc(0, 0, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+        const b = a + Math.PI / 5;
+        ctx.lineTo(Math.cos(a) * (p.r + 2), Math.sin(a) * (p.r + 2));
+        ctx.lineTo(Math.cos(b) * p.r * 0.42, Math.sin(b) * p.r * 0.42);
+      }
+      ctx.closePath();
+      ctx.fillStyle = "#ffe566";
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawRemotePlayers() {
+    if (level !== 11) return;
+    for (const rp of remotePlayers.values()) {
+      if (rp.x == null || rp.y == null) continue;
+      const x = rp.x - cameraX;
+      const y = rp.y;
+      if (x < -80 || x > W + 80) continue;
+      ctx.fillStyle = "rgba(0,0,0,0.25)";
+      ctx.beginPath();
+      ctx.ellipse(x + 14, y + 44, 14, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = rp.color || "#ff8a5c";
+      ctx.fillRect(x + 6, y + 10, 16, 22);
+      ctx.fillStyle = "#ffe0b8";
+      ctx.fillRect(x + 6, y, 16, 14);
+      ctx.fillStyle = "#1a0c08";
+      ctx.fillRect(x + ((rp.facing || 1) >= 0 ? 14 : 8), y + 5, 3, 3);
+      ctx.fillStyle = "#3a3a48";
+      ctx.fillRect(x + 7, y + 30, 5, 10);
+      ctx.fillRect(x + 16, y + 30, 5, 10);
+      const label = String(rp.name || "玩家").slice(0, 16);
+      ctx.save();
+      ctx.font = "12px 'Noto Sans SC', sans-serif";
+      ctx.textAlign = "center";
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.75)";
+      ctx.fillStyle = rp.color || "#ffe27a";
+      ctx.strokeText(label, x + 14, y - 10);
+      ctx.fillText(label, x + 14, y - 10);
+      ctx.restore();
+    }
   }
 
   function updateShopScene(dt) {
@@ -4089,6 +4618,17 @@
     ctx.fillStyle = "rgba(255,255,255,0.7)";
     ctx.font = "10px 'Press Start 2P', monospace";
     ctx.fillText(reverseGoal ? "???" : "终点", barX + 186, 24);
+    if (level === 11) {
+      ctx.fillStyle = "rgba(255,255,255,0.75)";
+      ctx.font = "11px 'Noto Sans SC', sans-serif";
+      ctx.fillText(
+        coopCount > 1 || remotePlayers.size > 0
+          ? `同行 ${Math.max(coopCount, remotePlayers.size + 1)} 人`
+          : "现在只有你 · 手机和电脑都可以加入",
+        barX,
+        40
+      );
+    }
   }
 
   function draw() {
@@ -4108,10 +4648,12 @@
     drawCrate();
     drawPotion();
     drawShopScene();
+    drawPickupStars();
     if (!(fakeLava && star && star.y + star.r > LAVA_Y - 20)) drawStar();
     drawEndSign();
     drawComingSoon();
     for (const z of zombies) drawZombie(z);
+    drawRemotePlayers();
     if (player && player.y + player.h <= LAVA_Y + 8) drawPlayer();
     if (eatAnim && eatAnim.rocket && !eatAnim.rocket.eaten) {
       const r = eatAnim.rocket;
@@ -4167,7 +4709,8 @@
       resetPuzzleButtons();
       syncPuzzleTools();
       syncHomeBtn();
-      statusLabel.textContent = "重开";
+      if (level === 11) startLevelCoop();
+      statusLabel.textContent = level === 11 ? "独自闯关" : "重开";
     }
     if (e.key === "Enter" && state !== "playing" && state !== "login" && state !== "select") {
       if (state === "naming") {
@@ -4359,6 +4902,15 @@
     });
   }
 
+  if (moonCoopBtn) {
+    moonCoopBtn.addEventListener("click", () => {
+      selectLevel(11);
+    });
+  }
+  if (loginMoonBtn) {
+    loginMoonBtn.addEventListener("click", playMoonCoopNow);
+  }
+
   logoutBtn.addEventListener("click", () => {
     playUiClick();
     stars = 0;
@@ -4391,6 +4943,23 @@
         playUiClick();
         hideUnlockDialog();
       }
+    });
+  }
+  if (portraitDecline) {
+    portraitDecline.addEventListener("click", () => {
+      playUiClick();
+      try {
+        sessionStorage.setItem(PORTRAIT_PROMPT_KEY, "1");
+      } catch {
+        /* ignore */
+      }
+      hidePortraitPrompt();
+    });
+  }
+  if (portraitAccept) {
+    portraitAccept.addEventListener("click", () => {
+      playUiClick();
+      requestLandscapePlay();
     });
   }
   if (adCloseBtn) {
@@ -4459,8 +5028,31 @@
   });
 
   window.addEventListener("blur", () => clearInput());
-  window.addEventListener("resize", () => syncTouchPad());
-  window.addEventListener("orientationchange", () => syncTouchPad());
+  const onViewportChange = () => {
+    syncViewport();
+    syncTouchPad();
+  };
+  window.addEventListener("resize", onViewportChange);
+  window.addEventListener("orientationchange", () => {
+    onViewportChange();
+    setTimeout(onViewportChange, 250);
+  });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", onViewportChange);
+  }
+  if (screen.orientation && screen.orientation.addEventListener) {
+    screen.orientation.addEventListener("change", onViewportChange);
+  }
+  try {
+    const portraitMq = window.matchMedia("(orientation: portrait)");
+    if (portraitMq.addEventListener) {
+      portraitMq.addEventListener("change", onViewportChange);
+    } else if (portraitMq.addListener) {
+      portraitMq.addListener(onViewportChange);
+    }
+  } catch {
+    /* ignore */
+  }
 
   // Unlock audio on first interaction (needed on mobile)
   const unlockOnce = () => {
@@ -4474,6 +5066,7 @@
   setupTouchControls();
   loadSettings();
   loadProgress();
+  syncViewport();
   makeLevel(1);
   levelLabel.textContent = "1";
   starLabel.textContent = String(stars);
