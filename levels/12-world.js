@@ -258,14 +258,7 @@
   let drops = [];
   let dropSeq = 1;
 
-  function seededRng(seed) {
-    let s = seed | 0;
-    return () => {
-      s = Math.imul(s ^ (s >>> 15), 1 | s);
-      s ^= s + Math.imul(s ^ (s >>> 7), 61 | s);
-      return ((s ^ (s >>> 14)) >>> 0) / 4294967296;
-    };
-  }
+  const { seededRng, escapeHtml } = window.GameUtil;
 
   function idx(x, y, z) {
     return x + z * SX + y * SX * SZ;
@@ -1129,13 +1122,6 @@
       add(rp.name || "玩家", x, y + 0.3, z, rp.chat && rp.chatUntil > performance.now() / 1000 ? rp.chat : "");
     }
     el.innerHTML = bits.join("");
-  }
-
-  function escapeHtml(s) {
-    return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
   }
 
   function nearVillager(v) {
