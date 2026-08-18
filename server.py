@@ -9,7 +9,7 @@ import sys
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
 ROOT = os.path.dirname(os.path.abspath(__file__))
-BUILD = "27"
+BUILD = "37"
 
 
 def lan_ips():
@@ -47,11 +47,6 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
         self.send_header("Pragma", "no-cache")
         self.send_header("Expires", "0")
-        try:
-            if self.client_address[0] in ("127.0.0.1", "::1"):
-                self.send_header("Set-Cookie", "yyy_mod=ok; Path=/; SameSite=Lax")
-        except Exception:
-            pass
         super().end_headers()
 
     def do_GET(self):

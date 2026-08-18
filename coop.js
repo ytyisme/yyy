@@ -474,8 +474,8 @@
   function roomFor(level) {
     const lv = Math.max(1, Math.floor(Number(level) || 1));
     return {
-      room: `yyy-magma-l${lv}-v3`,
-      topic: `yyy/magma-parkour/l${lv}/v3`,
+      room: `yyy-magma-l${lv}-v4`,
+      topic: `yyy/magma-parkour/l${lv}/v4`,
     };
   }
 

@@ -12,9 +12,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=27" />
+  <link rel="stylesheet" href="style.css?v=37" />
   <script>
-    window.GAME_BUILD = "27";
+    window.GAME_BUILD = "37";
     (function () {
       try {
         var u = new URL(location.href);
@@ -36,6 +36,23 @@
     <div class="stage-wrap">
       <div class="game-view">
         <canvas id="game" width="960" height="540"></canvas>
+        <canvas id="craft-gl" class="craft-gl hidden" width="960" height="540"></canvas>
+        <div id="craft-hud" class="craft-hud hidden" aria-hidden="true">
+          <div class="craft-crosshair"></div>
+          <div id="craft-names" class="craft-names"></div>
+          <p id="craft-hint" class="craft-hint">WASD 移动 · 鼠标看 · 按住左键挖 · 右键放 · E 背包</p>
+          <div id="craft-break" class="craft-break hidden"><span></span></div>
+          <div id="craft-hotbar" class="craft-hotbar"></div>
+          <div id="craft-inv" class="craft-inv hidden">
+            <p id="craft-inv-title">背包</p>
+            <div id="craft-inv-grid" class="craft-inv-grid"></div>
+            <div id="craft-creative" class="craft-creative hidden">
+              <p>创造物品栏</p>
+              <div id="craft-creative-grid" class="craft-inv-grid"></div>
+            </div>
+            <p class="craft-inv-tip">点格子选中，数字键 1-9 选快捷栏</p>
+          </div>
+        </div>
 
       <div id="puzzle-tools" class="puzzle-tools hidden" aria-hidden="true">
         <button type="button" class="fake-btn" data-label="提示" data-id="hint">提示</button>
@@ -173,10 +190,14 @@
 
       <div id="touch-pad" class="touch-pad hidden" aria-hidden="true">
         <div class="touch-move">
+          <button type="button" class="touch-btn craft-only" data-dir="up" aria-label="前进">▲</button>
           <button type="button" class="touch-btn" data-dir="left" aria-label="向左">◀</button>
           <button type="button" class="touch-btn" data-dir="right" aria-label="向右">▶</button>
+          <button type="button" class="touch-btn craft-only" data-dir="down" aria-label="后退">▼</button>
         </div>
         <div class="touch-actions">
+          <button type="button" class="touch-btn craft-only" id="craft-dig" aria-label="挖掘">挖</button>
+          <button type="button" class="touch-btn craft-only" id="craft-place" aria-label="放置">放</button>
           <button type="button" class="touch-btn touch-jump" data-action="jump" aria-label="跳跃">跳</button>
         </div>
       </div>
@@ -193,11 +214,15 @@
             <span>每一关都可以联机 · 这关随时可进</span>
             <span id="moon-online">0人在玩</span>
           </button>
+          <button id="craft-coop-btn" class="moon-coop-btn craft-coop-btn" type="button">
+            第十二关 · 沙盒世界
+            <span>生存 / 创造 · 可联机建造</span>
+            <span id="craft-online">0人在玩</span>
+          </button>
           <div id="level-grid" class="level-grid"></div>
           <p id="level-tip" class="level-tip hidden"></p>
           <button id="friends-btn" type="button">好友中心</button>
           <button id="global-chat-btn" type="button">全游戏聊天</button>
-          <button id="inbox-btn" class="hidden" type="button">举报内容</button>
           <button id="logout-btn" type="button">退出登录</button>
         </div>
       </div>
@@ -296,6 +321,17 @@
 
       <div id="social-toast" class="social-toast hidden" aria-live="polite"></div>
 
+      <div id="sandbox-mode" class="sandbox-mode hidden" aria-hidden="true">
+        <div class="sandbox-card">
+          <h2>沙盒世界</h2>
+          <p>请选择游戏模式</p>
+          <button type="button" id="sandbox-survival" class="sandbox-pick">生存模式</button>
+          <p class="sandbox-note">挖掘需要时间，方块会掉落，用合适的工具会更快</p>
+          <button type="button" id="sandbox-creative" class="sandbox-pick alt">创造模式</button>
+          <p class="sandbox-note">无限物品，瞬间破坏，按两下空格飞行</p>
+        </div>
+      </div>
+
       <div id="unlock-dialog" class="unlock-dialog hidden" aria-hidden="true">
         <div class="unlock-card">
           <p id="unlock-msg">您上一关还没有通关，请通关第一关</p>
@@ -309,7 +345,7 @@
       <div id="login-screen" class="login-screen" aria-hidden="false">
         <div class="login-card">
           <h2>岩浆跑酷 · 登录</h2>
-          <p class="login-desc">请先登录后开始游戏 · 版本 27</p>
+          <p class="login-desc">请先登录后开始游戏 · 版本 37</p>
           <p class="phone-join" data-phone-url>手机请和电脑连同一个 WiFi，用电脑弹出的地址打开最新版</p>
           <img class="phone-qr" data-phone-qr alt="手机扫码进入游戏" hidden />
           <button id="login-moon-btn" class="moon-coop-btn" type="button">
@@ -392,8 +428,9 @@
       </div>
     </div>
   </div>
-  <script src="audio.js?v=27"></script>
-  <script src="coop.js?v=27"></script>
-  <script src="game.js?v=27"></script>
+  <script src="audio.js?v=37"></script>
+  <script src="coop.js?v=37"></script>
+  <script src="craft.js?v=37"></script>
+  <script src="game.js?v=37"></script>
 </body>
 </html>

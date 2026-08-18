@@ -58,7 +58,7 @@
   const globalChatInput = document.getElementById("global-chat-input");
   const globalChatSend = document.getElementById("global-chat-send");
   const globalChatClose = document.getElementById("global-chat-close");
-  const inboxBtn = document.getElementById("inbox-btn");
+  let inboxBtn = document.getElementById("inbox-btn");
   const inboxPanel = document.getElementById("inbox-panel");
   const inboxListEl = document.getElementById("inbox-list");
   const inboxClose = document.getElementById("inbox-close");
@@ -90,7 +90,11 @@
   const inviteNo = document.getElementById("invite-no");
   const socialToastEl = document.getElementById("social-toast");
   const moonCoopBtn = document.getElementById("moon-coop-btn");
+  const craftCoopBtn = document.getElementById("craft-coop-btn");
   const loginMoonBtn = document.getElementById("login-moon-btn");
+  const sandboxModeEl = document.getElementById("sandbox-mode");
+  const sandboxSurvival = document.getElementById("sandbox-survival");
+  const sandboxCreative = document.getElementById("sandbox-creative");
   const unlockDialog = document.getElementById("unlock-dialog");
   const unlockMsg = document.getElementById("unlock-msg");
   const unlockSkipBtn = document.getElementById("unlock-skip");
@@ -132,7 +136,7 @@
   let portraitPromptOpen = false;
 
   const keys = new Set();
-  const touch = { left: false, right: false, jump: false };
+  const touch = { left: false, right: false, jump: false, up: false, down: false, dig: false };
   let settingsOpen = false;
   let shopOpen = false;
   let socialOpen = false;
@@ -253,7 +257,7 @@
   let homePeerReady = false;
   let banTimerId = 0;
   const TOTAL_LEVELS = 35;
-  const MAX_PLAYABLE = 11;
+  const MAX_PLAYABLE = 12;
   let cameraX = 0;
   let worldMin = 0;
   let worldWidth = 3200;
@@ -285,6 +289,8 @@
   let coopCount = 1;
   let coopAcc = 0;
   let lastCoopPos = { x: 0, y: 0 };
+  let remoteCamX = null;
+  let lastMapSendAt = 0;
   let localChat = "";
   let localChatUntil = 0;
   let joinNotices = [];
@@ -302,9 +308,20 @@
   let shake = 0;
   let time = 0;
   let lastTs = 0;
+  let mapRngFn = null;
 
   function rand(a, b) {
     return a + Math.random() * (b - a);
+  }
+
+  function mapRand(a, b) {
+    const u = mapRngFn ? mapRngFn() : Math.random();
+    return a + u * (b - a);
+  }
+
+  function mapChance(p) {
+    const u = mapRngFn ? mapRngFn() : Math.random();
+    return u < p;
   }
 
   function seededRng(seed) {
@@ -349,7 +366,7 @@
   }
 
   function syncViewport() {
-    const nextW = isPortraitPlay() ? PORTRAIT_W : DESIGN_W;
+    const nextW = DESIGN_W;
     const nextH = DESIGN_H;
     document.body.classList.toggle("is-portrait", isPortraitPlay());
     document.body.classList.toggle("is-landscape", !isPortraitPlay());
@@ -362,13 +379,8 @@
     LAVA_Y = H - 52;
     canvas.width = W;
     canvas.height = H;
-    if (player) {
-      cameraX = clamp(
-        player.x - W * 0.35,
-        worldMin,
-        Math.max(worldMin, worldWidth - W)
-      );
-    }
+    if (player) cameraX = cameraForView();
+    if (window.CraftWorld && CraftWorld.active()) CraftWorld.resize(W, H);
   }
 
   function hidePortraitPrompt() {
@@ -482,6 +494,7 @@
     backpack = { spikes: 0, zombiesKilled: 0, maces: 0, revealed: false };
     pickups = [];
     craters = [];
+    mapRngFn = seededRng(11000 + n * 131);
     const startY = 380;
     const roofY = 150;
 
@@ -514,15 +527,15 @@
       let rx = startPlatW;
       let ry = startY;
       for (let i = 0; i < 10; i++) {
-        const gap = 65 + rand(15, 45);
-        const w = rand(85, 150);
+        const gap = 65 + mapRand(15, 45);
+        const w = mapRand(85, 150);
         rx += gap;
-        ry = clamp(ry + rand(-50, 50), 280, 420);
+        ry = clamp(ry + mapRand(-50, 50), 280, 420);
         platforms.push({ x: rx, y: ry, w, h: 28, lane: "ground" });
         platforms.push({
-          x: rx - rand(8, 30),
-          y: roofY + rand(-8, 16),
-          w: w + rand(30, 90),
+          x: rx - mapRand(8, 30),
+          y: roofY + mapRand(-8, 16),
+          w: w + mapRand(30, 90),
           h: 22,
           lane: "roof",
         });
@@ -530,7 +543,7 @@
           platforms.push({
             x: rx + w * 0.25,
             y: clamp(ry - 90, 200, 300),
-            w: rand(55, 85),
+            w: mapRand(55, 85),
             h: 22,
             lane: "mid",
           });
@@ -663,10 +676,10 @@
       x += 240;
 
       for (let i = 0; i < 12; i++) {
-        const gap = 55 + rand(10, 35);
-        const w = rand(100, 160);
+        const gap = 55 + mapRand(10, 35);
+        const w = mapRand(100, 160);
         x += gap;
-        y = clamp(y + rand(-45, 45), 280, 410);
+        y = clamp(y + mapRand(-45, 45), 280, 410);
         platforms.push({ x, y, w, h: 28, lane: "ground" });
         x += w;
       }
@@ -752,7 +765,7 @@
           h: 18,
         });
         sx += spikeW + gapW;
-        if (Math.random() < 0.22) sx += 40;
+        if (mapChance(0.22)) sx += 40;
       }
 
       // 20 fake zombies chase from above — scary, but harmless on touch; click to kill
@@ -1037,6 +1050,23 @@
         collected: false,
         pulse: 0,
       };
+    } else if (n === 12) {
+      spawnX = 80;
+      platforms.push({ x: 0, y: startY, w: 480, h: 28, lane: "ground" });
+      worldWidth = 560;
+      worldMin = 0;
+      player = {
+        x: spawnX,
+        y: startY - 40,
+        w: 28,
+        h: 40,
+        vx: 0,
+        vy: 0,
+        onGround: false,
+        facing: 1,
+        alive: true,
+      };
+      star = null;
     } else {
       const aboveHunt = n > 10;
       const gapBase = aboveHunt ? 70 + n * 10 : 48 + n * 8;
@@ -1052,19 +1082,19 @@
       const segments = 14 + n * 2;
       let y = startY;
       for (let i = 0; i < segments; i++) {
-        const gap = gapBase + rand(0, 30 + n * 4);
+        const gap = gapBase + mapRand(0, 30 + n * 4);
         x += gap;
-        const rise = rand(aboveHunt ? -55 : -70, aboveHunt ? 55 : 70);
+        const rise = mapRand(aboveHunt ? -55 : -70, aboveHunt ? 55 : 70);
         y = clamp(y + rise, aboveHunt ? 280 : 220, 420);
-        const w = rand(90, 160 + Math.max(0, 40 - n * 3));
+        const w = mapRand(90, 160 + Math.max(0, 40 - n * 3));
         platforms.push({ x, y, w, h: 28, lane: "ground" });
 
         if (aboveHunt) {
-          const rw = w + rand(40, 100);
-          const rx = x - rand(10, 40);
+          const rw = w + mapRand(40, 100);
+          const rx = x - mapRand(10, 40);
           platforms.push({
             x: rx,
-            y: roofY + rand(-8, 18),
+            y: roofY + mapRand(-8, 18),
             w: rw,
             h: 22,
             lane: "roof",
@@ -1073,15 +1103,15 @@
             platforms.push({
               x: x + w * 0.3,
               y: clamp(y - 95, 200, 300),
-              w: rand(60, 90),
+              w: mapRand(60, 90),
               h: 22,
               lane: "mid",
             });
           }
-        } else if (Math.random() < 0.35 && i < segments - 2) {
-          const midX = x + w * 0.5 + rand(20, jumpLen);
-          const midY = clamp(y - rand(40, 90), 180, 400);
-          platforms.push({ x: midX, y: midY, w: rand(70, 110), h: 24, lane: "mid" });
+        } else if (mapChance(0.35) && i < segments - 2) {
+          const midX = x + w * 0.5 + mapRand(20, jumpLen);
+          const midY = clamp(y - mapRand(40, 90), 180, 400);
+          platforms.push({ x: midX, y: midY, w: mapRand(70, 110), h: 24, lane: "mid" });
         }
         x += w;
       }
@@ -1173,6 +1203,8 @@
     }
     const moonOnline = document.getElementById("moon-online");
     if (moonOnline) moonOnline.textContent = `${levelPlayerCounts[11] || 0}人在玩`;
+    const craftOnline = document.getElementById("craft-online");
+    if (craftOnline) craftOnline.textContent = `${levelPlayerCounts[12] || 0}人在玩`;
     if (friendCenterOpen) renderFriendList();
   }
 
@@ -1602,34 +1634,50 @@
     socialToast(`已举报${playerLabel(target.name)}（${why}）`);
   }
 
-  function markOwner() {
+  const OWNER_STORE = "yyy_owner_v2";
+  const OWNER_TOKEN = "inbox-v2-yty";
+  const OWNER_UNLOCK = "tianyu18";
+
+  function clearOldOwnerMarks() {
     try {
-      localStorage.setItem("yyy_mod", "ok");
+      localStorage.removeItem("yyy_mod");
+    } catch {
+      /* ignore */
+    }
+    try {
+      document.cookie = "yyy_mod=; Path=/; Max-Age=0";
     } catch {
       /* ignore */
     }
   }
 
-  function isOwner() {
+  function markOwner() {
     try {
-      if (localStorage.getItem("yyy_mod") === "ok") return true;
-      if (/(?:^|; )yyy_mod=ok(?:;|$)/.test(document.cookie || "")) {
-        markOwner();
-        return true;
-      }
-      const host = location.hostname;
-      if (host === "127.0.0.1" || host === "localhost" || host === "::1") {
-        markOwner();
-        return true;
-      }
-      if (new URLSearchParams(location.search).get("mod") === "ok") {
-        markOwner();
-        return true;
-      }
+      localStorage.setItem(OWNER_STORE, OWNER_TOKEN);
     } catch {
       /* ignore */
     }
-    return false;
+    clearOldOwnerMarks();
+  }
+
+  function isOwner() {
+    try {
+      const box = new URLSearchParams(location.search).get("box");
+      if (box === OWNER_UNLOCK) {
+        markOwner();
+        try {
+          const u = new URL(location.href);
+          u.searchParams.delete("box");
+          history.replaceState(null, "", u.href);
+        } catch {
+          /* ignore */
+        }
+        return true;
+      }
+      return localStorage.getItem(OWNER_STORE) === OWNER_TOKEN;
+    } catch {
+      return false;
+    }
   }
 
   function loadInboxReports() {
@@ -1663,13 +1711,27 @@
   }
 
   function syncInboxBtn() {
-    if (!inboxBtn) return;
-    const show = isOwner();
-    inboxBtn.classList.toggle("hidden", !show);
-    if (!show) {
+    if (!isOwner()) {
+      if (inboxBtn) {
+        inboxBtn.remove();
+        inboxBtn = null;
+      }
       closeInboxPanel();
       return;
     }
+    if (!inboxBtn) {
+      inboxBtn = document.createElement("button");
+      inboxBtn.id = "inbox-btn";
+      inboxBtn.type = "button";
+      inboxBtn.textContent = "举报内容";
+      if (logoutBtn && logoutBtn.parentNode) {
+        logoutBtn.parentNode.insertBefore(inboxBtn, logoutBtn);
+      }
+      inboxBtn.addEventListener("click", openInboxPanel);
+    }
+    inboxBtn.hidden = false;
+    inboxBtn.classList.remove("hidden");
+    inboxBtn.setAttribute("aria-hidden", "false");
     inboxBtn.textContent = inboxUnread > 0 ? `举报内容（${inboxUnread}）` : "举报内容";
   }
 
@@ -2169,6 +2231,8 @@
   }
 
   function stopLevelCoop() {
+    hideSandboxMode();
+    if (window.CraftWorld) CraftWorld.stop();
     if (window.LevelCoop) {
       if (typeof LevelCoop.leaveLevel === "function") LevelCoop.leaveLevel();
       else LevelCoop.leave();
@@ -2176,6 +2240,7 @@
     remotePlayers = new Map();
     coopCount = 1;
     coopAcc = 0;
+    remoteCamX = null;
     localChat = "";
     localChatUntil = 0;
     joinNotices = [];
@@ -2257,6 +2322,117 @@
     pushJoinNotice(deathLine(name, cause));
   }
 
+  function coopHostId() {
+    let host = localCoopId();
+    for (const id of remotePlayers.keys()) {
+      if (String(id) < String(host)) host = id;
+    }
+    return host;
+  }
+
+  function isCoopHost() {
+    return coopHostId() === localCoopId();
+  }
+
+  function coopAnchorX() {
+    const xs = [];
+    if (player && player.alive !== false) xs.push(player.x);
+    for (const rp of remotePlayers.values()) {
+      if (rp.alive === false || rp.dead) continue;
+      const px = rp.drawX != null ? rp.drawX : rp.x;
+      if (px != null) xs.push(px);
+    }
+    if (!xs.length) return player ? player.x : 0;
+    if (xs.length === 1) return xs[0];
+    return (Math.min(...xs) + Math.max(...xs)) / 2;
+  }
+
+  function cameraForView() {
+    const look = remotePlayers.size > 0 ? 0.48 : 0.35;
+    let target = coopAnchorX() - W * look;
+    if (remotePlayers.size > 0 && remoteCamX != null && !isCoopHost()) {
+      target = remoteCamX;
+    }
+    return clamp(target, worldMin, Math.max(worldMin, worldWidth - W)) | 0;
+  }
+
+  function packMap() {
+    const lanes = { ground: 0, roof: 1, mid: 2, secret: 3 };
+    return {
+      type: "map",
+      lv: level,
+      w: worldWidth | 0,
+      m: worldMin | 0,
+      p: platforms.map((pl) => [
+        pl.x | 0,
+        pl.y | 0,
+        pl.w | 0,
+        pl.h | 0,
+        lanes[pl.lane] || 0,
+        pl.theme === "moon" ? 1 : 0,
+      ]),
+      k: spikes.map((s) => [s.x | 0, s.y | 0, s.w | 0, s.h | 0]),
+      c: craters.map((d) => [d.x | 0, d.w | 0]),
+      sx: star ? star.x | 0 : null,
+      sy: star ? star.y | 0 : null,
+    };
+  }
+
+  function applyCoopMap(msg) {
+    if (!msg || Number(msg.lv) !== level) return;
+    const laneNames = ["ground", "roof", "mid", "secret"];
+    if (Array.isArray(msg.p) && msg.p.length) {
+      platforms = msg.p.map((a) => ({
+        x: a[0],
+        y: a[1],
+        w: a[2],
+        h: a[3],
+        lane: laneNames[a[4] || 0] || "ground",
+        theme: a[5] ? "moon" : undefined,
+      }));
+    }
+    if (Array.isArray(msg.k)) {
+      spikes = msg.k.map((a) => ({ x: a[0], y: a[1], w: a[2], h: a[3] }));
+    }
+    if (Array.isArray(msg.c)) {
+      craters = msg.c.map((a) => ({ x: a[0], w: a[1] }));
+    }
+    if (msg.w != null) worldWidth = msg.w;
+    if (msg.m != null) worldMin = msg.m;
+    if (star && msg.sx != null) {
+      star.x = msg.sx;
+      star.y = msg.sy;
+    }
+  }
+
+  function maybeSendMap(force) {
+    if (!window.LevelCoop || !LevelCoop.isJoined() || !isCoopHost()) return;
+    if (!force && time - lastMapSendAt < 1.6) return;
+    lastMapSendAt = time;
+    LevelCoop.send(packMap());
+  }
+
+  function nearestHuntTarget(from) {
+    let best = player;
+    let bestD = player ? Math.abs((player.x || 0) - from.x) : Infinity;
+    for (const rp of remotePlayers.values()) {
+      if (rp.alive === false || rp.dead) continue;
+      const px = rp.drawX != null ? rp.drawX : rp.x;
+      if (px == null) continue;
+      const d = Math.abs(px - from.x);
+      if (d < bestD) {
+        bestD = d;
+        best = {
+          x: px,
+          y: rp.drawY != null ? rp.drawY : rp.y,
+          w: 28,
+          h: 40,
+        };
+      }
+    }
+    return best;
+  }
+
   function syncCoopStatus() {
     if (state !== "playing") return;
     const n = remotePlayers.size + 1;
@@ -2265,6 +2441,7 @@
   }
 
   function handleCoopMessage(msg) {
+    if (window.CraftWorld && CraftWorld.active()) CraftWorld.onNet(msg);
     if (msg && msg.lv != null && Number(msg.lv) !== level) return;
     if (!msg || msg.type === "bye") {
       if (msg && msg.id) {
@@ -2300,6 +2477,10 @@
       announceChat(prev.name || msg.name || "玩家", text);
       return;
     }
+    if (msg.type === "map") {
+      if (String(msg.id || "") <= String(localCoopId())) applyCoopMap(msg);
+      return;
+    }
     if (msg.type === "hello" || msg.type === "state") {
       const existed = remotePlayers.has(msg.id);
       const prev = remotePlayers.get(msg.id) || {};
@@ -2321,9 +2502,13 @@
         pendingJoin: existed ? prev.pendingJoin && !msg.name : !msg.name,
         last: time,
       });
+      if (msg.cam != null && String(msg.id) === String(coopHostId())) {
+        remoteCamX = msg.cam;
+      }
       if (!existed) {
         syncCoopStatus();
         if (msg.name) announceJoin(msg.name);
+        window.setTimeout(() => maybeSendMap(true), 80);
       } else if (prev.pendingJoin && msg.name) {
         announceJoin(msg.name);
       }
@@ -2334,6 +2519,8 @@
     remotePlayers = new Map();
     coopCount = 1;
     coopAcc = 0;
+    remoteCamX = null;
+    lastMapSendAt = 0;
     coopAnnounceAt = time + 1.2;
     joinNotices = [];
     renderJoinNotices();
@@ -2389,7 +2576,9 @@
         facing: player.facing,
         alive: player.alive !== false,
         name: (playerName || "玩家").slice(0, 12),
+        cam: isCoopHost() ? cameraX | 0 : undefined,
       });
+      maybeSendMap(false);
     }
     const follow = Math.min(1, dt * 14);
     for (const [id, rp] of [...remotePlayers]) {
@@ -2408,10 +2597,19 @@
     if (joinNotices.length && joinNotices.some((n) => time >= n.until)) renderJoinNotices();
   }
 
+  function coopFurthestX() {
+    let x = player ? player.x : 0;
+    for (const rp of remotePlayers.values()) {
+      const px = rp.drawX != null ? rp.drawX : rp.x;
+      if (px != null) x = Math.max(x, px);
+    }
+    return x;
+  }
+
   function extendEndlessParkour() {
     if (!reverseGoal || !player) return;
     // Keep generating bricks ahead so the right path never ends
-    while (worldWidth - player.x < 1400) {
+    while (worldWidth - coopFurthestX() < 1400) {
       const roofY = 150;
       let lastGround = null;
       for (let i = platforms.length - 1; i >= 0; i--) {
@@ -2421,28 +2619,29 @@
         }
       }
       if (!lastGround) break;
-      const gap = 65 + rand(15, 50);
-      const w = rand(80, 150);
+      const gap = 65 + mapRand(15, 50);
+      const w = mapRand(80, 150);
       const x = lastGround.x + lastGround.w + gap;
-      const y = clamp(lastGround.y + rand(-55, 55), 280, 420);
+      const y = clamp(lastGround.y + mapRand(-55, 55), 280, 420);
       platforms.push({ x, y, w, h: 28, lane: "ground" });
       platforms.push({
-        x: x - rand(8, 30),
-        y: roofY + rand(-8, 16),
-        w: w + rand(30, 90),
+        x: x - mapRand(8, 30),
+        y: roofY + mapRand(-8, 16),
+        w: w + mapRand(30, 90),
         h: 22,
         lane: "roof",
       });
-      if (Math.random() < 0.45) {
+      if (mapChance(0.45)) {
         platforms.push({
           x: x + w * 0.2,
           y: clamp(y - 90, 200, 300),
-          w: rand(55, 85),
+          w: mapRand(55, 85),
           h: 22,
           lane: "mid",
         });
       }
       worldWidth = x + w + 900;
+      maybeSendMap(true);
     }
   }
 
@@ -2706,7 +2905,7 @@
 
     for (const z of zombies) {
       if (!z.alive && z.alive !== false) z.alive = true;
-      moveActor(z, 0, false, player);
+      moveActor(z, 0, false, nearestHuntTarget(z));
       z.bob += dt * 8;
       if (z.alive !== false && rectsOverlap(player, z)) {
         if (z.fake) {
@@ -2790,14 +2989,10 @@
     if (comingSoon) comingSoon.pulse += dt * 2;
     if (shopScene) updateShopScene(dt);
 
-    cameraX = clamp(
-      player.x - W * 0.35,
-      worldMin,
-      Math.max(worldMin, worldWidth - W)
-    );
+    updateCoop(dt);
+    cameraX = cameraForView();
     if (shake > 0) shake *= 0.88;
     updateParticles(dt);
-    updateCoop(dt);
 
     if (window.GameAudio) {
       const running =
@@ -2881,7 +3076,7 @@
     if (level >= MAX_PLAYABLE) {
       showOverlay(
         "到达终点！",
-        `第 ${level} 关完成！<br />第 11 关是目前的终点，后面作者还在做，敬请期待。`,
+        `第 ${level} 关完成！<br />第 12 关是目前的终点，后面作者还在做，敬请期待。`,
         "回主页",
         { hideHint: true }
       );
@@ -2920,6 +3115,9 @@
     } else if (next === 11) {
       warn =
         `<br /><span style="color:#ffb347">第 11 关：月球跑酷。没有僵尸，可以和其他玩家一起跳过陨石坑。</span>`;
+    } else if (next === 12) {
+      warn =
+        `<br /><span style="color:#ffb347">第 12 关：沙盒世界。进关后选择生存或创造，可以挖方块、开门、联机建造。</span>`;
     }
 
     showOverlay(
@@ -3153,7 +3351,7 @@
   }
 
   function isLevelUnlocked(n) {
-    if (n <= 1 || n === 11) return true;
+    if (n <= 1 || n === 11 || n === 12) return true;
     return maxCleared >= n - 1;
   }
 
@@ -3182,7 +3380,7 @@
 
   function syncItemBar() {
     if (!itemBar) return;
-    const show = state === "playing" && !adOpen && !settingsOpen && !shopOpen && !portraitPromptOpen && !socialOpen;
+    const show = state === "playing" && level !== 12 && !adOpen && !settingsOpen && !shopOpen && !portraitPromptOpen && !socialOpen;
     itemBar.classList.toggle("hidden", !show);
     itemBar.setAttribute("aria-hidden", show ? "false" : "true");
     if (!show) return;
@@ -3798,6 +3996,9 @@
       touch.left = false;
       touch.right = false;
       touch.jump = false;
+      touch.up = false;
+      touch.down = false;
+      touch.dig = false;
       for (const btn of touchPad.querySelectorAll(".touch-btn")) {
         btn.classList.remove("pressed");
       }
@@ -3809,6 +4010,9 @@
     touch.left = false;
     touch.right = false;
     touch.jump = false;
+    touch.up = false;
+    touch.down = false;
+    touch.dig = false;
     if (touchPad) {
       for (const btn of touchPad.querySelectorAll(".touch-btn")) {
         btn.classList.remove("pressed");
@@ -3844,10 +4048,16 @@
 
     const leftBtn = touchPad.querySelector('[data-dir="left"]');
     const rightBtn = touchPad.querySelector('[data-dir="right"]');
+    const upBtn = touchPad.querySelector('[data-dir="up"]');
+    const downBtn = touchPad.querySelector('[data-dir="down"]');
     const jumpBtn = touchPad.querySelector('[data-action="jump"]');
     if (leftBtn) bindHold(leftBtn, (v) => (touch.left = v));
     if (rightBtn) bindHold(rightBtn, (v) => (touch.right = v));
+    if (upBtn) bindHold(upBtn, (v) => (touch.up = v));
+    if (downBtn) bindHold(downBtn, (v) => (touch.down = v));
     if (jumpBtn) bindHold(jumpBtn, (v) => (touch.jump = v));
+    const digBtn = document.getElementById("craft-dig");
+    if (digBtn) bindHold(digBtn, (v) => (touch.dig = v));
 
     touchPad.addEventListener("contextmenu", (e) => e.preventDefault());
   }
@@ -3879,6 +4089,9 @@
       } else if (i === 11) {
         btn.classList.add("endpoint");
         btn.innerHTML = `${i}<span class="badge">月球</span>`;
+      } else if (i === 12) {
+        btn.classList.add("endpoint");
+        btn.innerHTML = `${i}<span class="badge">沙盒</span>`;
       } else if (i === MAX_PLAYABLE) {
         btn.classList.add("endpoint");
         btn.innerHTML = `${i}<span class="badge">终点</span>`;
@@ -3990,10 +4203,56 @@
     enterLevel(11);
   }
 
+  function playCraftCoopNow() {
+    playUiClick();
+    if (blockIfBanned()) return;
+    loggedIn = true;
+    if (!playerName) playerName = "玩家";
+    closeLoginScreen();
+    hideUnlockDialog();
+    hidePortraitPrompt();
+    enterLevel(12);
+  }
+
+  function hideSandboxMode() {
+    if (!sandboxModeEl) return;
+    sandboxModeEl.classList.add("hidden");
+    sandboxModeEl.setAttribute("aria-hidden", "true");
+  }
+
+  function showSandboxMode() {
+    if (!sandboxModeEl) {
+      startCraftWorld("survival");
+      return;
+    }
+    sandboxModeEl.classList.remove("hidden");
+    sandboxModeEl.setAttribute("aria-hidden", "false");
+    if (statusLabel) statusLabel.textContent = "选择模式";
+  }
+
+  function startCraftWorld(mode) {
+    hideSandboxMode();
+    if (!window.CraftWorld) {
+      statusLabel.textContent = "缺少 3D 模块";
+      return;
+    }
+    const ok = CraftWorld.start({
+      w: W,
+      h: H,
+      name: playerName || "玩家",
+      mode: mode === "creative" ? "creative" : "survival",
+      onStatus: (t) => {
+        if (statusLabel) statusLabel.textContent = t;
+      },
+    });
+    if (ok) markLevelCleared(12);
+    if (!ok) statusLabel.textContent = "这台电脑不支持 3D";
+  }
+
   function selectLevel(n) {
     playUiClick();
     if (n > MAX_PLAYABLE) {
-      levelTip.textContent = "后面作者还在做，敬请期待（第 11 关是目前终点）";
+      levelTip.textContent = "后面作者还在做，敬请期待（第 12 关是目前终点）";
       levelTip.classList.remove("hidden");
       return;
     }
@@ -4153,8 +4412,6 @@
         showLoginError("请输入账号和密码");
         return;
       }
-      const key = user.toLowerCase();
-      if (key === "yangtianyu" || user === "杨天宇" || key === "yyy") markOwner();
       returnToHomeMenu();
       return;
     }
@@ -4361,6 +4618,7 @@
     syncItemBar();
     maybeShowPortraitPrompt();
     startLevelCoop();
+    if (level === 12) showSandboxMode();
     if (window.GameAudio) {
       GameAudio.unlock();
       GameAudio.syncAmbience({
@@ -5990,8 +6248,17 @@
     if (!lastTs) lastTs = ts;
     const dt = Math.min(0.033, (ts - lastTs) / 1000);
     lastTs = ts;
-    update(dt);
-    draw();
+    if (level === 12 && state === "playing" && window.CraftWorld && CraftWorld.active()) {
+      const chatOpen = chatPanel && !chatPanel.classList.contains("hidden");
+      CraftWorld.tick(dt, {
+        keys,
+        touch,
+        paused: settingsOpen || adOpen || shopOpen || socialOpen || portraitPromptOpen || chatOpen,
+      });
+    } else {
+      update(dt);
+      draw();
+    }
     requestAnimationFrame(loop);
   }
 
@@ -6004,16 +6271,26 @@
       return;
     }
     keys.add(e.key);
-    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) {
-      e.preventDefault();
+    if (e.code) keys.add(e.code);
+    if (
+      ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "Space"].includes(e.key) ||
+      ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space", "KeyW", "KeyA", "KeyS", "KeyD"].includes(e.code)
+    ) {
+      if (state === "playing") e.preventDefault();
     }
     if ((e.key === "r" || e.key === "R") && state === "playing") {
-      makeLevel(level);
-      resetPuzzleButtons();
-      syncPuzzleTools();
-      syncHomeBtn();
-      startLevelCoop();
-      statusLabel.textContent = "重开";
+      if (level === 12 && window.CraftWorld && CraftWorld.active()) {
+        CraftWorld.reset();
+        startLevelCoop();
+        statusLabel.textContent = "重开";
+      } else {
+        makeLevel(level);
+        resetPuzzleButtons();
+        syncPuzzleTools();
+        syncHomeBtn();
+        startLevelCoop();
+        statusLabel.textContent = "重开";
+      }
     }
     if (e.key === "Enter" && state !== "playing" && state !== "login" && state !== "select") {
       if (state === "naming") {
@@ -6028,6 +6305,7 @@
 
   window.addEventListener("keyup", (e) => {
     keys.delete(e.key);
+    if (e.code) keys.delete(e.code);
   });
 
   startBtn.addEventListener("click", () => {
@@ -6277,6 +6555,23 @@
       playMoonCoopNow();
     });
   }
+  if (craftCoopBtn) {
+    craftCoopBtn.addEventListener("click", () => {
+      playCraftCoopNow();
+    });
+  }
+  if (sandboxSurvival) {
+    sandboxSurvival.addEventListener("click", () => {
+      playUiClick();
+      startCraftWorld("survival");
+    });
+  }
+  if (sandboxCreative) {
+    sandboxCreative.addEventListener("click", () => {
+      playUiClick();
+      startCraftWorld("creative");
+    });
+  }
   if (loginMoonBtn) {
     loginMoonBtn.addEventListener("click", playMoonCoopNow);
   }
@@ -6338,9 +6633,6 @@
   }
   if (globalChatSend) {
     globalChatSend.addEventListener("click", sendGlobalChat);
-  }
-  if (inboxBtn) {
-    inboxBtn.addEventListener("click", openInboxPanel);
   }
   if (inboxClose) {
     inboxClose.addEventListener("click", () => {
@@ -6634,11 +6926,31 @@
   loadProgress();
   loadFriends();
   loadGlobalChat();
+  clearOldOwnerMarks();
   loadInboxReports();
   fillInviteLevels();
   syncFriendsBtn();
   syncGlobalChatBtn();
   syncInboxBtn();
+  const gameTitle = document.querySelector(".top h1");
+  if (gameTitle) {
+    let titleClicks = 0;
+    let titleClickTimer = 0;
+    gameTitle.addEventListener("click", () => {
+      window.clearTimeout(titleClickTimer);
+      titleClicks += 1;
+      titleClickTimer = window.setTimeout(() => {
+        titleClicks = 0;
+      }, 2500);
+      if (titleClicks < 10) return;
+      titleClicks = 0;
+      const pass = window.prompt("管理口令");
+      if (pass === OWNER_UNLOCK) {
+        markOwner();
+        syncInboxBtn();
+      }
+    });
+  }
   syncViewport();
   makeLevel(1);
   levelLabel.textContent = "1";
