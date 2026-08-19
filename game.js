@@ -363,18 +363,21 @@
   function syncViewport() {
     const nextW = DESIGN_W;
     const nextH = DESIGN_H;
+    const mobile = isMobileLike();
     document.body.classList.toggle("is-portrait", isPortraitPlay());
     document.body.classList.toggle("is-landscape", !isPortraitPlay());
+    document.body.classList.toggle("is-mobile", mobile);
+    document.body.classList.toggle("is-desktop", !mobile);
     maybeShowPortraitPrompt();
-    if (canvas.width === nextW && canvas.height === nextH && W === nextW && H === nextH) {
-      return;
+    const sizeChanged = canvas.width !== nextW || canvas.height !== nextH || W !== nextW || H !== nextH;
+    if (sizeChanged) {
+      W = nextW;
+      H = nextH;
+      LAVA_Y = H - 52;
+      canvas.width = W;
+      canvas.height = H;
+      if (player) cameraX = cameraForView();
     }
-    W = nextW;
-    H = nextH;
-    LAVA_Y = H - 52;
-    canvas.width = W;
-    canvas.height = H;
-    if (player) cameraX = cameraForView();
     if (window.CraftWorld && CraftWorld.active()) CraftWorld.resize(W, H);
   }
 
@@ -837,8 +840,8 @@
         best = {
           x: px,
           y: rp.drawY != null ? rp.drawY : rp.y,
-          w: 28,
-          h: 40,
+        w: 28,
+        h: 40,
         };
       }
     }
@@ -1649,7 +1652,10 @@
 
   function applyBrightness(v) {
     brightness = clamp(Math.round(Number(v) || 100), 40, 150);
-    canvas.style.filter = brightness === 100 ? "none" : `brightness(${brightness}%)`;
+    const filter = brightness === 100 ? "none" : `brightness(${brightness}%)`;
+    canvas.style.filter = filter;
+    const craftGl = document.getElementById("craft-gl");
+    if (craftGl) craftGl.style.filter = filter;
     if (brightnessSlider) brightnessSlider.value = String(brightness);
     if (brightnessValue) brightnessValue.textContent = `${brightness}%`;
     saveStr("yyy_brightness", brightness);
@@ -1682,17 +1688,17 @@
 
   function loadProgress() {
     const s = loadStr("yyy_stars", null);
-    if (s != null && Number.isFinite(Number(s))) stars = Math.max(0, Math.floor(Number(s)));
+      if (s != null && Number.isFinite(Number(s))) stars = Math.max(0, Math.floor(Number(s)));
     const parsed = loadJson("yyy_inventory", null);
     if (parsed && typeof parsed === "object") {
-      for (const key of Object.keys(inventory)) {
-        const n = Math.floor(Number(parsed[key]) || 0);
-        inventory[key] = Math.max(0, n);
+        for (const key of Object.keys(inventory)) {
+          const n = Math.floor(Number(parsed[key]) || 0);
+          inventory[key] = Math.max(0, n);
+        }
       }
-    }
     const cleared = loadStr("yyy_cleared", null);
-    if (cleared != null && Number.isFinite(Number(cleared))) {
-      maxCleared = Math.max(0, Math.floor(Number(cleared)));
+      if (cleared != null && Number.isFinite(Number(cleared))) {
+        maxCleared = Math.max(0, Math.floor(Number(cleared)));
     }
     if (starLabel) starLabel.textContent = String(stars);
   }
@@ -2812,8 +2818,8 @@
         paused: settingsOpen || adOpen || shopOpen || socialOpen || portraitPromptOpen || chatOpen,
       });
     } else {
-      update(dt);
-      draw();
+    update(dt);
+      if (level !== 12) draw();
     }
     requestAnimationFrame(loop);
   }
@@ -2822,7 +2828,7 @@
     if (chatPanel && !chatPanel.classList.contains("hidden")) {
       if (e.key === "Escape") {
         closeChat();
-        e.preventDefault();
+      e.preventDefault();
       }
       return;
     }
@@ -2840,12 +2846,12 @@
         startLevelCoop();
         statusLabel.textContent = "重开";
       } else {
-        makeLevel(level);
-        resetPuzzleButtons();
-        syncPuzzleTools();
-        syncHomeBtn();
+      makeLevel(level);
+      resetPuzzleButtons();
+      syncPuzzleTools();
+      syncHomeBtn();
         startLevelCoop();
-        statusLabel.textContent = "重开";
+      statusLabel.textContent = "重开";
       }
     }
     if (e.key === "Enter" && state !== "playing" && state !== "login" && state !== "select") {

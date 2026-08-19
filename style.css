@@ -50,6 +50,40 @@ body {
   gap: 16px;
 }
 
+/* 电脑端：按视口放大游戏区，保持 16:9 */
+@media (min-width: 921px) {
+  body {
+    place-items: center;
+  }
+
+  .shell {
+    width: min(96vw, 1680px);
+    max-height: calc(100dvh - max(24px, env(safe-area-inset-top)) - max(24px, env(safe-area-inset-bottom)));
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    align-content: center;
+  }
+
+  .stage-wrap {
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .game-view {
+    width: min(100%, calc((100dvh - 180px) * 16 / 9));
+    max-height: min(100%, calc(100dvh - 180px));
+    margin: 0 auto;
+    aspect-ratio: 16 / 9;
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+  }
+}
+
 .game-view {
   position: relative;
   background: #000;
@@ -2295,7 +2329,7 @@ canvas {
 
 .craft-creative {
   margin-top: 10px;
-  max-height: 220px;
+  max-height: min(42vh, 320px);
   overflow: auto;
 }
 
@@ -2470,6 +2504,83 @@ body.craft-on .craft-only {
   margin-top: 8px;
   background: linear-gradient(180deg, #245a28, #163818);
   border-color: #3d8a4a;
+}
+
+.craft-trade {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+}
+
+.craft-trade.hidden {
+  display: none !important;
+}
+
+.craft-trade-card {
+  width: min(420px, 92%);
+  max-height: min(80%, 420px);
+  overflow: auto;
+  padding: 16px;
+  background: rgba(18, 8, 6, 0.95);
+  border: 2px solid #6b3a28;
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+.craft-trade-card > p {
+  margin-bottom: 12px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.craft-trade-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.craft-trade-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid #4a2418;
+  border-radius: 6px;
+  color: var(--ink);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.craft-trade-btn:hover {
+  border-color: var(--accent);
+  background: rgba(255, 210, 74, 0.08);
+}
+
+.craft-trade-btn img {
+  width: 28px;
+  height: 28px;
+  image-rendering: pixelated;
+}
+
+.craft-trade-arrow {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+#craft-trade-close {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(180deg, #4a2418, #2a120c);
+  border: 2px solid #6b3a28;
+  color: var(--ink);
+  cursor: pointer;
 }
 
 .game-view {

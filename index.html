@@ -12,9 +12,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=40" />
+  <link rel="stylesheet" href="style.css?v=55" />
   <script>
-    window.GAME_BUILD = "40";
+    window.GAME_BUILD = "55";
     (function () {
       try {
         var u = new URL(location.href);
@@ -40,7 +40,7 @@
         <div id="craft-hud" class="craft-hud hidden" aria-hidden="true">
           <div class="craft-crosshair"></div>
           <div id="craft-names" class="craft-names"></div>
-          <p id="craft-hint" class="craft-hint">WASD 移动 · 鼠标看 · 按住左键挖 · 右键放 · E 背包</p>
+          <p id="craft-hint" class="craft-hint">WASD 移动 · 触控板2秒内短按放方块 · 超2秒长按挖 · 鼠标左挖右键放 · E 背包</p>
           <div id="craft-break" class="craft-break hidden"><span></span></div>
           <div id="craft-hotbar" class="craft-hotbar"></div>
           <div id="craft-inv" class="craft-inv hidden">
@@ -51,6 +51,13 @@
               <div id="craft-creative-grid" class="craft-inv-grid"></div>
             </div>
             <p class="craft-inv-tip">点格子选中，数字键 1-9 选快捷栏</p>
+          </div>
+          <div id="craft-trade" class="craft-trade hidden" aria-hidden="true">
+            <div class="craft-trade-card">
+              <p id="craft-trade-title">村民交易</p>
+              <div id="craft-trade-list" class="craft-trade-list"></div>
+              <button id="craft-trade-close" type="button">关闭</button>
+            </div>
           </div>
         </div>
 
@@ -326,9 +333,9 @@
           <h2>沙盒世界</h2>
           <p>请选择游戏模式</p>
           <button type="button" id="sandbox-survival" class="sandbox-pick">生存模式</button>
-          <p class="sandbox-note">挖掘需要时间，方块会掉落，用合适的工具会更快</p>
+          <p class="sandbox-note">无限地图 · 创造模式含大量 MC 物品 · 下界有岩浆 · 传送门往返主世界</p>
           <button type="button" id="sandbox-creative" class="sandbox-pick alt">创造模式</button>
-          <p class="sandbox-note">无限物品，瞬间破坏，按两下空格飞行</p>
+          <p class="sandbox-note">无限物品，瞬间破坏，按两下空格飞行，世界同样没有尽头</p>
         </div>
       </div>
 
@@ -345,7 +352,7 @@
       <div id="login-screen" class="login-screen" aria-hidden="false">
         <div class="login-card">
           <h2>岩浆跑酷 · 登录</h2>
-          <p class="login-desc">请先登录后开始游戏 · 版本 39</p>
+          <p class="login-desc">请先登录后开始游戏 · 版本 49</p>
           <p class="phone-join" data-phone-url>手机请和电脑连同一个 WiFi，用电脑弹出的地址打开最新版</p>
           <img class="phone-qr" data-phone-qr alt="手机扫码进入游戏" hidden />
           <button id="login-moon-btn" class="moon-coop-btn" type="button">
@@ -428,26 +435,27 @@
       </div>
     </div>
   </div>
-  <script src="lib/util.js?v=40"></script>
-  <script src="audio.js?v=40"></script>
-  <script src="coop.js?v=40"></script>
-  <script src="levels/boot.js?v=40"></script>
-  <script src="levels/01.js?v=40"></script>
-  <script src="levels/02.js?v=40"></script>
-  <script src="levels/03.js?v=40"></script>
-  <script src="levels/04.js?v=40"></script>
-  <script src="levels/05.js?v=40"></script>
-  <script src="levels/06.js?v=40"></script>
-  <script src="levels/07.js?v=40"></script>
-  <script src="levels/08.js?v=40"></script>
-  <script src="levels/09.js?v=40"></script>
-  <script src="levels/10.js?v=40"></script>
-  <script src="levels/11.js?v=40"></script>
-  <script src="levels/12.js?v=40"></script>
-  <script src="levels/12-world.js?v=40"></script>
-  <script src="lib/social.js?v=40"></script>
-  <script src="lib/ads.js?v=40"></script>
-  <script src="lib/draw.js?v=40"></script>
-  <script src="game.js?v=40"></script>
+  <script src="lib/util.js?v=55"></script>
+  <script src="audio.js?v=55"></script>
+  <script src="coop.js?v=55"></script>
+  <script src="levels/boot.js?v=55"></script>
+  <script src="levels/01.js?v=55"></script>
+  <script src="levels/02.js?v=55"></script>
+  <script src="levels/03.js?v=55"></script>
+  <script src="levels/04.js?v=55"></script>
+  <script src="levels/05.js?v=55"></script>
+  <script src="levels/06.js?v=55"></script>
+  <script src="levels/07.js?v=55"></script>
+  <script src="levels/08.js?v=55"></script>
+  <script src="levels/09.js?v=55"></script>
+  <script src="levels/10.js?v=55"></script>
+  <script src="levels/11.js?v=55"></script>
+  <script src="levels/12.js?v=55"></script>
+  <script src="levels/12-catalog.js?v=55"></script>
+  <script src="levels/12-world.js?v=55"></script>
+  <script src="lib/social.js?v=55"></script>
+  <script src="lib/ads.js?v=55"></script>
+  <script src="lib/draw.js?v=55"></script>
+  <script src="game.js?v=55"></script>
 </body>
 </html>
