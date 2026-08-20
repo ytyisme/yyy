@@ -302,6 +302,7 @@
   let eHeld = false;
   let tradeOpen = null;
   let fHeld = false;
+  let mHeld = false;
   let dimension = "overworld";
   let overworldReturn = null;
   let portalUseT = 0;
@@ -971,7 +972,7 @@
   }
 
   const HUD_HINT =
-    "WASD 移动 · 触控板2秒内短按放方块/超2秒长按挖 · 鼠标左挖右键放 · E 背包 · F 交易";
+    "WASD 移动 · M 放方块 · N 挖方块 · E 背包 · F 交易";
 
   function updatePortal(dt) {
     portalCooldown = Math.max(0, portalCooldown - dt);
@@ -2692,6 +2693,13 @@
       if (!fHeld) interactVillager();
       fHeld = true;
     } else fHeld = false;
+    const pressM = keys.has("m") || keys.has("M") || keys.has("KeyM");
+    if (pressM) {
+      if (!mHeld && !bagOpen && !(input && input.paused)) {
+        if (!interactVillager()) placeBlock();
+      }
+      mHeld = true;
+    } else mHeld = false;
     if (keys.has("Escape") && tradeOpen) {
       tradeOpen = null;
       renderTrade();
@@ -2702,7 +2710,8 @@
         renderBag();
       }
     }
-    const mining = !bagOpen && !(input && input.paused) && (mineHeld || touch.dig);
+    const pressN = keys.has("n") || keys.has("N") || keys.has("KeyN");
+    const mining = !bagOpen && !(input && input.paused) && (mineHeld || touch.dig || pressN);
     mineTick(dt, mining);
     sendAcc += dt;
     const moved =
