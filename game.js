@@ -257,7 +257,7 @@
   let homePeerReady = false;
   let banTimerId = 0;
   const TOTAL_LEVELS = 35;
-  const MAX_PLAYABLE = 12;
+  const MAX_PLAYABLE = 17;
   let cameraX = 0;
   let worldMin = 0;
   let worldWidth = 3200;
@@ -276,6 +276,29 @@
   let endSign = null;
   let comingSoon = null;
   let shopScene = null; // level 10 star shop
+  let towerScene = null; // level 14 tower delivery
+  let subwayScene = null; // level 15 subway
+  let rangeScene = null; // level 16 shooting range
+  let battleScene = null; // level 17 battlefield
+  let initTower14 = null;
+  let updateTower14 = null;
+  let drawTowerExtras = null;
+  let tryClickTower14 = null;
+  let syncTower14OnLeave = null;
+  let initSubway15 = null;
+  let updateSubway15 = null;
+  let drawSubwayExtras = null;
+  let drawSubwayForeground = null;
+  let tryClickSubway15 = null;
+  let syncSubway15OnLeave = null;
+  let initRange16 = null;
+  let updateRange16 = null;
+  let drawRangeExtras = null;
+  let syncRange16OnLeave = null;
+  let initBattle17 = null;
+  let updateBattle17 = null;
+  let drawBattleExtras = null;
+  let syncBattle17OnLeave = null;
   let homeMode = false;
   let spikes = [];
   let maces = [];
@@ -481,6 +504,10 @@
     if (opts.endSign !== undefined) endSign = opts.endSign;
     if (opts.comingSoon !== undefined) comingSoon = opts.comingSoon;
     if (opts.shopScene !== undefined) shopScene = opts.shopScene;
+    if (opts.towerScene !== undefined) towerScene = opts.towerScene;
+    if (opts.subwayScene !== undefined) subwayScene = opts.subwayScene;
+    if (opts.rangeScene !== undefined) rangeScene = opts.rangeScene;
+    if (opts.battleScene !== undefined) battleScene = opts.battleScene;
     if (opts.player) player = opts.player;
     if ("star" in opts) star = opts.star;
   }
@@ -502,6 +529,10 @@
     endSign = null;
     comingSoon = null;
     shopScene = null;
+    towerScene = null;
+    subwayScene = null;
+    rangeScene = null;
+    battleScene = null;
     homeMode = false;
     spikes = [];
     maces = [];
@@ -763,6 +794,10 @@
   }
 
   function cameraForView() {
+    if (level === 14 && towerScene) {
+      const cx = (towerScene.towerX + towerScene.towerW / 2 - W / 2) | 0;
+      return clamp(cx, worldMin, Math.max(worldMin, worldWidth - W));
+    }
     const look = remotePlayers.size > 0 ? 0.48 : 0.35;
     let target = coopAnchorX() - W * look;
     if (remotePlayers.size > 0 && remoteCamX != null && !isCoopHost()) {
@@ -784,7 +819,17 @@
         pl.w | 0,
         pl.h | 0,
         lanes[pl.lane] || 0,
-        pl.theme === "moon" ? 1 : 0,
+        pl.theme === "moon"
+          ? 1
+          : pl.theme === "jelly"
+            ? 2
+            : pl.theme === "keyboard"
+              ? 3
+              : pl.theme === "oreo"
+                ? 4
+                : pl.theme === "chocoice"
+                  ? 5
+                  : 0,
       ]),
       k: spikes.map((s) => [s.x | 0, s.y | 0, s.w | 0, s.h | 0]),
       c: craters.map((d) => [d.x | 0, d.w | 0]),
@@ -803,7 +848,8 @@
         w: a[2],
         h: a[3],
         lane: laneNames[a[4] || 0] || "ground",
-        theme: a[5] ? "moon" : undefined,
+        theme: themeFromCode(a[5]),
+        chocolateCracked: false,
       }));
     }
     if (Array.isArray(msg.k)) {
@@ -1077,6 +1123,67 @@
     }
   }
 
+  function themeFromCode(code) {
+    if (code === 1) return "moon";
+    if (code === 2) return "jelly";
+    if (code === 3) return "keyboard";
+    if (code === 4) return "oreo";
+    if (code === 5) return "chocoice";
+    return undefined;
+  }
+
+  function surfaceUnderPlayer() {
+    if (!player || !player.onGround) return null;
+    const foot = {
+      x: player.x + 2,
+      y: player.y + player.h,
+      w: player.w - 4,
+      h: 4,
+    };
+    for (const p of platforms) {
+      if (rectsOverlap(foot, p)) return p;
+    }
+    return solidAt(player, 0, 1);
+  }
+
+  function surfaceKind(plat) {
+    if (!plat) return "ground";
+    if (
+      plat.theme === "jelly" ||
+      plat.theme === "keyboard" ||
+      plat.theme === "oreo" ||
+      plat.theme === "chocoice"
+    ) {
+      return plat.theme;
+    }
+    return "ground";
+  }
+
+  function updateSoftPlatformFx(dt) {
+    if (!player) return;
+    const under = surfaceUnderPlayer();
+    for (const p of platforms) {
+      if (p.theme !== "jelly" && p.theme !== "oreo" && p.theme !== "keyboard") continue;
+      const on = under === p && player.onGround;
+      const target = on ? 1 : 0;
+      p.squish = (p.squish || 0) + (target - (p.squish || 0)) * Math.min(1, dt * 16);
+      if (on) {
+        p.pressX = clamp((player.x + player.w * 0.5 - p.x) / Math.max(1, p.w), 0.1, 0.9);
+      }
+      if (p.theme === "keyboard") {
+        if (on) {
+          const keyW = 22;
+          const gap = 3;
+          const cols = Math.max(1, Math.floor((p.w - 6) / (keyW + gap)));
+          const localX = player.x + player.w * 0.5 - p.x - 4;
+          p.pressedKey = Math.max(0, Math.min(cols - 1, Math.floor(localX / (keyW + gap))));
+        } else if ((p.squish || 0) < 0.12) {
+          p.pressedKey = -1;
+        }
+      }
+    }
+  }
+
   function solidAt(body, dx, dy) {
     const box = { x: body.x + dx, y: body.y + dy, w: body.w, h: body.h };
     for (const p of platforms) {
@@ -1174,12 +1281,7 @@
     } else {
       actor.vx = ax * MOVE * (speedBoost > 0 ? 1.85 : 1);
       if (ax) actor.facing = ax;
-      if (wantsJump && actor.onGround) {
-        actor.vy = JUMP;
-        actor.onGround = false;
-        spawnBurst(actor.x + actor.w / 2, actor.y + actor.h, "#ffd27a", 6);
-        if (window.GameAudio) GameAudio.playJump();
-      }
+      // 跳跃放到落地判定之后处理，避免果冻弹起吞掉跳跃
     }
 
     actor.vy += level === 11 && actor === player ? GRAVITY * 0.45 : GRAVITY;
@@ -1195,17 +1297,74 @@
     }
 
     // Vertical
+    const wasGround = actor.onGround;
     actor.y += actor.vy;
     actor.onGround = false;
+    let landPlat = null;
     const hitY = solidAt(actor, 0, 0);
     if (hitY) {
       if (actor.vy > 0) {
+        const fallSpeed = actor.vy;
         actor.y = hitY.y - actor.h;
         actor.vy = 0;
         actor.onGround = true;
+        landPlat = hitY;
+        if (actor === player && !wasGround) {
+          const kind = surfaceKind(hitY);
+          if (window.GameAudio) {
+            if (kind === "jelly") GameAudio.playJellySquish();
+            else if (kind === "keyboard") GameAudio.playChocoCrack();
+            else if (kind === "oreo") GameAudio.playOreoCrunch();
+            else if (kind === "chocoice") {
+              if (!hitY.chocolateCracked) hitY.chocolateCracked = true;
+              GameAudio.playKeyboardTap();
+            }
+          }
+          // 果冻：像史莱姆方块，落地弹起；若本帧按着跳则优先起跳
+          if (kind === "jelly" && fallSpeed > 3.2 && !chaseTarget) {
+            if (wantsJump) {
+              actor.vy = JUMP * 1.45;
+              actor.onGround = false;
+              landPlat = null;
+              spawnBurst(actor.x + actor.w / 2, actor.y + actor.h, "#ff9ad8", 8);
+              if (window.GameAudio) GameAudio.playJump();
+            } else {
+              actor.vy = -Math.min(8.2, 3.2 + fallSpeed * 0.38);
+              actor.onGround = false;
+              actor.jellyCoyote = 0.14;
+            }
+          }
+        }
       } else if (actor.vy < 0) {
+        // 只有从下方顶到平台才当天花板；站在上表面起跳时不要卡死
+        const feet = actor.y + actor.h;
+        if (feet > hitY.y + hitY.h * 0.55) {
         actor.y = hitY.y + hitY.h;
         actor.vy = 0;
+        }
+      }
+    }
+
+    if (actor === player && !chaseTarget) {
+      if (actor.jellyCoyote == null) actor.jellyCoyote = 0;
+      if (actor.jellyCoyote > 0) actor.jellyCoyote -= 1 / 60;
+      const under = landPlat || solidAt(actor, 0, 2);
+      const onJelly = under && surfaceKind(under) === "jelly";
+      const canJump = actor.onGround || actor.jellyCoyote > 0;
+      if (wantsJump && canJump) {
+        actor.vy = onJelly ? JUMP * 1.35 : JUMP;
+        actor.onGround = false;
+        actor.jellyCoyote = 0;
+        spawnBurst(
+          actor.x + actor.w / 2,
+          actor.y + actor.h,
+          onJelly ? "#ff9ad8" : "#ffd27a",
+          6
+        );
+        if (window.GameAudio) {
+          if (onJelly) GameAudio.playJellySquish();
+          GameAudio.playJump();
+        }
       }
     }
 
@@ -1403,13 +1562,20 @@
     if (endSign) endSign.pulse += dt * 3;
     if (comingSoon) comingSoon.pulse += dt * 2;
     if (shopScene) updateShopScene(dt);
+    if (towerScene && updateTower14) updateTower14(dt);
+    if (subwayScene && updateSubway15) updateSubway15(dt);
+    if (rangeScene && updateRange16) updateRange16(dt);
+    if (battleScene && updateBattle17) updateBattle17(dt);
 
     updateCoop(dt);
     cameraX = cameraForView();
     if (shake > 0) shake *= 0.88;
     updateParticles(dt);
+    updateSoftPlatformFx(dt);
 
     if (window.GameAudio) {
+      const surf = surfaceUnderPlayer();
+      const kind = surfaceKind(surf);
       const running =
         player &&
         player.onGround &&
@@ -1422,6 +1588,7 @@
         zombies: zombies.some((z) => z.alive !== false),
         running,
         fast: speedBoost > 0,
+        surface: kind,
       });
     }
   }
@@ -1437,6 +1604,10 @@
   }
 
   function die(cause) {
+    if (syncTower14OnLeave) syncTower14OnLeave();
+    if (syncSubway15OnLeave) syncSubway15OnLeave();
+    if (syncRange16OnLeave) syncRange16OnLeave();
+    if (syncBattle17OnLeave) syncBattle17OnLeave();
     const name = playerName || "玩家";
     if (window.LevelCoop && LevelCoop.isJoined()) {
       LevelCoop.send({ type: "dead", lv: level, cause, name: name.slice(0, 12) });
@@ -1476,6 +1647,10 @@
   }
 
   function winLevel() {
+    if (syncTower14OnLeave) syncTower14OnLeave();
+    if (syncSubway15OnLeave) syncSubway15OnLeave();
+    if (syncRange16OnLeave) syncRange16OnLeave();
+    if (syncBattle17OnLeave) syncBattle17OnLeave();
     stopLevelCoop();
     state = "win";
     statusLabel.textContent = "通关";
@@ -1491,7 +1666,7 @@
     if (level >= MAX_PLAYABLE) {
       showOverlay(
         "到达终点！",
-        `第 ${level} 关完成！<br />第 12 关是目前的终点，后面作者还在做，敬请期待。`,
+        `第 ${level} 关完成！<br />第 17 关是目前的终点，后面作者还在做，敬请期待。`,
         "回主页",
         { hideHint: true }
       );
@@ -1533,6 +1708,21 @@
     } else if (next === 12) {
       warn =
         `<br /><span style="color:#ffb347">第 12 关：沙盒世界。进关后选择生存或创造，可以挖方块、开门、联机建造。</span>`;
+    } else if (next === 13) {
+      warn =
+        `<br /><span style="color:#ffb347">第 13 关：解压跑酷。果冻、键盘、奥利奥、巧克力冰块——没有僵尸。</span>`;
+    } else if (next === 14) {
+      warn =
+        `<br /><span style="color:#ffb347">第 14 关：123 层大厦。手机没电了——充电、点外卖，再在地图里搜索机场给外卖小哥叫飞机。</span>`;
+    } else if (next === 15) {
+      warn =
+        `<br /><span style="color:#ffb347">第 15 关：挤地铁。坐电梯去 B1，买票扫码过闸，挤上第 4 列地铁到蓝月桥。</span>`;
+    } else if (next === 16) {
+      warn =
+        `<br /><span style="color:#ffb347">第 16 关：练枪。射击场打靶——瞄准、发射、下趴、潜行，打中全部 5 个靶通关。</span>`;
+    } else if (next === 17) {
+      warn =
+        `<br /><span style="color:#ffb347">第 17 关：战场。蓝队 vs 红队，只有枪和小匕首，消灭全部红队通关。</span>`;
     }
 
     showOverlay(
@@ -2142,6 +2332,21 @@
       } else if (i === 12) {
         btn.classList.add("endpoint");
         btn.innerHTML = `${i}<span class="badge">沙盒</span>`;
+      } else if (i === 13) {
+        btn.classList.add("endpoint");
+        btn.innerHTML = `${i}<span class="badge">解压</span>`;
+      } else if (i === 14) {
+        btn.classList.add("endpoint");
+        btn.innerHTML = `${i}<span class="badge">大厦</span>`;
+      } else if (i === 15) {
+        btn.classList.add("endpoint");
+        btn.innerHTML = `${i}<span class="badge">挤地铁</span>`;
+      } else if (i === 16) {
+        btn.classList.add("endpoint");
+        btn.innerHTML = `${i}<span class="badge">练枪</span>`;
+      } else if (i === 17) {
+        btn.classList.add("endpoint");
+        btn.innerHTML = `${i}<span class="badge">战场</span>`;
       } else if (i === MAX_PLAYABLE) {
         btn.classList.add("endpoint");
         btn.innerHTML = `${i}<span class="badge">终点</span>`;
@@ -2220,6 +2425,10 @@
     hideOverlay();
     hideLevelSelect();
     hideUnlockDialog();
+    if (syncTower14OnLeave) syncTower14OnLeave();
+    if (syncSubway15OnLeave) syncSubway15OnLeave();
+    if (syncRange16OnLeave) syncRange16OnLeave();
+    if (syncBattle17OnLeave) syncBattle17OnLeave();
     state = "select";
     statusLabel.textContent = "选关";
     watchLobbyCounts();
@@ -2302,7 +2511,7 @@
   function selectLevel(n) {
     playUiClick();
     if (n > MAX_PLAYABLE) {
-      levelTip.textContent = "后面作者还在做，敬请期待（第 12 关是目前终点）";
+      levelTip.textContent = "后面作者还在做，敬请期待（第 17 关是目前终点）";
       levelTip.classList.remove("hidden");
       return;
     }
@@ -2314,6 +2523,10 @@
   }
 
   function openLoginScreen() {
+    if (syncTower14OnLeave) syncTower14OnLeave();
+    if (syncSubway15OnLeave) syncSubway15OnLeave();
+    if (syncRange16OnLeave) syncRange16OnLeave();
+    if (syncBattle17OnLeave) syncBattle17OnLeave();
     if (isBanned()) {
       showBanScreen("你被封号了");
       return;
@@ -2349,6 +2562,10 @@
   }
 
   function goHome() {
+    if (syncTower14OnLeave) syncTower14OnLeave();
+    if (syncSubway15OnLeave) syncSubway15OnLeave();
+    if (syncRange16OnLeave) syncRange16OnLeave();
+    if (syncBattle17OnLeave) syncBattle17OnLeave();
     stopLevelCoop();
     cancelAd(false);
     closeSettings();
@@ -2669,6 +2886,14 @@
     maybeShowPortraitPrompt();
     startLevelCoop();
     if (level === 12) showSandboxMode();
+    if (level === 14 && initTower14) initTower14();
+    else if (syncTower14OnLeave) syncTower14OnLeave();
+    if (level === 15 && initSubway15) initSubway15();
+    else if (syncSubway15OnLeave) syncSubway15OnLeave();
+    if (level === 16 && initRange16) initRange16();
+    else if (syncRange16OnLeave) syncRange16OnLeave();
+    if (level === 17 && initBattle17) initBattle17();
+    else if (syncBattle17OnLeave) syncBattle17OnLeave();
     if (window.GameAudio) {
       GameAudio.unlock();
       GameAudio.syncAmbience({
@@ -2741,11 +2966,34 @@
   const S = GameUtil.liveScope(
     (n) => eval(n),
     (n, value) => eval(n + " = value"),
-    "ADS,AD_DURATION,COOP_COLORS,DESIGN_H,DESIGN_W,GRAVITY,H,JUMP,LAVA_Y,MAX_PLAYABLE,MOVE,PORTRAIT_PROMPT_KEY,PORTRAIT_W,SHOP_CATALOG,TOTAL_LEVELS,W,ZOMBIE_COUNT,adAnimId,adCanvas,adCloseBtn,adCountdown,adCurrent,adDesc,adDrawCtx,adEndsAt,adMode,adOpen,adPanel,adProgressBar,adStartPerf,adTargetLevel,adTimerHint,adTimerId,adTitle,adVideo,announceChat,announceDeath,announceJoin,announceLeave,applyBrightness,applyCoopMap,applyLevelCounts,applyLevelOpts,applyVolume,armPickaxe,armSword,backpack,banLeft,banMsg,banScreen,banTimerId,beginPlaying,belly,breakWithPickaxe,bridgePieceW,bridgeY,brightness,brightnessSlider,brightnessValue,buildLevelGrid,buyItem,cameraForView,cameraX,canvas,canvasScale,chatBtn,chatClose,chatDock,chatInput,chatLog,chatLogEl,chatLogLevel,chatPanel,chatSend,chatUserCancel,chatUserDialog,chatUserFriend,chatUserMsg,chatUserReport,chatUserTarget,clamp,clearInput,clientToWorld,closeChat,closeLoginScreen,closeSettings,closeShop,colorForCoopId,comingSoon,confirmPlayerName,controlHintText,coopAcc,coopAnchorX,coopAnnounceAt,coopCount,coopFurthestX,coopHostId,cornerActions,craftCoopBtn,crate,craters,ctx,deathLine,die,eatAnim,endSign,enterLevel,escapeHtml,extendEndlessParkour,fakeButtons,fakeLava,findRoofAhead,friendCenter,friendCenterOpen,friendChatInput,friendChatLogEl,friendChatSend,friendChatTitle,friendInviteBtn,friendInviteLevel,friendListEl,friendReqCurrent,friendReqDialog,friendReqMsg,friendReqNo,friendReqQueue,friendReqYes,friendUnread,friends,friendsBtn,friendsClose,gameTitle,globalChat,globalChatBtn,globalChatClose,globalChatInput,globalChatLogEl,globalChatOpen,globalChatPanel,globalChatSend,globalChatUnread,goHome,handleCoopMessage,handleHomePeer,hideLevelSelect,hideOverlay,hidePortraitPrompt,hideSandboxMode,hideUnlockDialog,hitRemotePlayer,homeBtn,homeMode,homeNotices,homeNoticesEl,homePeerQuietUntil,homePeerReady,inboxBtn,inboxClear,inboxClose,inboxListEl,inboxOpen,inboxPanel,inboxReports,inboxUnread,inventory,inviteCurrent,inviteDialog,inviteMsg,inviteNo,inviteQueue,inviteYes,isCoopHost,isDevicePortrait,isLevelUnlocked,isMobileLike,isPortraitPlay,itemBar,joinNotices,joinNoticesEl,keys,killZombieWithSword,lastCoopPos,lastMapSendAt,lastTs,lavaDrainAt,lavaDrains,level,levelGrid,levelLabel,levelPlayerCounts,levelSelect,levelTip,levelUses,loadJson,loadProgress,loadSettings,loadStr,localChat,localChatUntil,localCoopId,loggedIn,loginError,loginIdcard,loginMode,loginMoonBtn,loginPaneAccount,loginPaneIdcard,loginPanePhone,loginPass,loginPhone,loginScreen,loginSms,loginSubmit,loginTabs,loginUser,logoutBtn,loop,maces,makeLevel,mapChance,mapRand,mapRngFn,markLevelCleared,maxCleared,maybeSendMap,maybeShowPortraitPrompt,minorNotice,minorOk,mockSmsCode,moonCoopBtn,moonEarthGrad,moonSkyGrad,moonVoidGrad,moveActor,myDisplayName,nameForm,nameInput,nearestHuntTarget,needsPlayerName,onViewportChange,openChat,openLoginScreen,openSettings,openShop,overlay,overlayHint,overlayMsg,overlayTitle,packMap,parseIdAge,particles,pendingFriend,pendingUnlockLevel,pickups,pitStart,pitWidth,placeBridgeButton,platforms,playCraftCoopNow,playMoonCoopNow,playUiClick,player,playerLabel,playerName,portraitAccept,portraitDecline,portraitDialog,portraitPromptDismissed,portraitPromptOpen,potion,preferTouchControls,pushHomeNotice,pushJoinNotice,pushZombie,puzzleMode,puzzleTools,rand,rectsOverlap,refreshShopUI,remainingFor,remoteCamX,remotePlayers,renderChatLog,renderHomeNotices,renderJoinNotices,reportCancel,reportDialog,reportMsg,resetLevelUses,resetPuzzleButtons,returnToHomeMenu,reverseGoal,rockets,sandboxCreative,sandboxModeEl,sandboxSurvival,saveCleared,saveInventory,saveJson,saveStars,saveStr,seededRng,selectLevel,selectedFriendId,sendChat,sendSmsCode,setLoginMode,settingsBtn,settingsClose,settingsOpen,settingsPanel,setupPuzzleDrag,setupTouchControls,shake,shopBtn,shopClose,shopOpen,shopPanel,shopScene,shopStarCount,shopTip,showLevelSelect,showLoginError,showMinorNotice,showNamePrompt,showOverlay,showPhoneJoin,showPortraitPrompt,showSandboxMode,showUnlockDialog,skipBtn,skipPreviousAndEnter,smsBtn,smsCooldown,smsTimer,socialOpen,socialToastEl,socialToastTimer,solidAt,spawnBurst,spawnX,speedBoost,spikes,star,starLabel,stars,startBtn,startCraftWorld,startGame,startLevelCoop,state,statusLabel,stopLevelCoop,submitLogin,syncChatBtn,syncCoopStatus,syncHomeBtn,syncItemBar,syncPuzzleTools,syncTouchPad,syncViewport,time,toolMode,touch,touchPad,tryClickPlayerName,tryUseToolClick,unlockCancelBtn,unlockDialog,unlockMsg,unlockOnce,unlockSkipBtn,update,updateCoop,updateParticles,useBucketItem,useInventoryItem,usePotionItem,useSkipCard,volumePct,volumeSlider,volumeValue,watchLobbyCounts,winLevel,worldMin,worldWidth,zombies"
+    "ADS,AD_DURATION,COOP_COLORS,DESIGN_H,DESIGN_W,GRAVITY,H,JUMP,LAVA_Y,MAX_PLAYABLE,MOVE,PORTRAIT_PROMPT_KEY,PORTRAIT_W,SHOP_CATALOG,TOTAL_LEVELS,W,ZOMBIE_COUNT,adAnimId,adCanvas,adCloseBtn,adCountdown,adCurrent,adDesc,adDrawCtx,adEndsAt,adMode,adOpen,adPanel,adProgressBar,adStartPerf,adTargetLevel,adTimerHint,adTimerId,adTitle,adVideo,announceChat,announceDeath,announceJoin,announceLeave,applyBrightness,applyCoopMap,applyLevelCounts,applyLevelOpts,applyVolume,armPickaxe,armSword,backpack,banLeft,banMsg,banScreen,banTimerId,beginPlaying,belly,breakWithPickaxe,bridgePieceW,bridgeY,brightness,brightnessSlider,brightnessValue,buildLevelGrid,buyItem,cameraForView,cameraX,canvas,canvasScale,chatBtn,chatClose,chatDock,chatInput,chatLog,chatLogEl,chatLogLevel,chatPanel,chatSend,chatUserCancel,chatUserDialog,chatUserFriend,chatUserMsg,chatUserReport,chatUserTarget,clamp,clearInput,clientToWorld,closeChat,closeLoginScreen,closeSettings,closeShop,colorForCoopId,comingSoon,confirmPlayerName,controlHintText,coopAcc,coopAnchorX,coopAnnounceAt,coopCount,coopFurthestX,coopHostId,cornerActions,craftCoopBtn,crate,craters,ctx,deathLine,die,eatAnim,endSign,enterLevel,escapeHtml,extendEndlessParkour,fakeButtons,fakeLava,findRoofAhead,friendCenter,friendCenterOpen,friendChatInput,friendChatLogEl,friendChatSend,friendChatTitle,friendInviteBtn,friendInviteLevel,friendListEl,friendReqCurrent,friendReqDialog,friendReqMsg,friendReqNo,friendReqQueue,friendReqYes,friendUnread,friends,friendsBtn,friendsClose,gameTitle,globalChat,globalChatBtn,globalChatClose,globalChatInput,globalChatLogEl,globalChatOpen,globalChatPanel,globalChatSend,globalChatUnread,goHome,handleCoopMessage,handleHomePeer,hideLevelSelect,hideOverlay,hidePortraitPrompt,hideSandboxMode,hideUnlockDialog,hitRemotePlayer,homeBtn,homeMode,homeNotices,homeNoticesEl,homePeerQuietUntil,homePeerReady,inboxBtn,inboxClear,inboxClose,inboxListEl,inboxOpen,inboxPanel,inboxReports,inboxUnread,inventory,inviteCurrent,inviteDialog,inviteMsg,inviteNo,inviteQueue,inviteYes,isCoopHost,isDevicePortrait,isLevelUnlocked,isMobileLike,isPortraitPlay,itemBar,joinNotices,joinNoticesEl,keys,killZombieWithSword,lastCoopPos,lastMapSendAt,lastTs,lavaDrainAt,lavaDrains,level,levelGrid,levelLabel,levelPlayerCounts,levelSelect,levelTip,levelUses,loadJson,loadProgress,loadSettings,loadStr,localChat,localChatUntil,localCoopId,loggedIn,loginError,loginIdcard,loginMode,loginMoonBtn,loginPaneAccount,loginPaneIdcard,loginPanePhone,loginPass,loginPhone,loginScreen,loginSms,loginSubmit,loginTabs,loginUser,logoutBtn,loop,maces,makeLevel,mapChance,mapRand,mapRngFn,markLevelCleared,maxCleared,maybeSendMap,maybeShowPortraitPrompt,minorNotice,minorOk,mockSmsCode,moonCoopBtn,moonEarthGrad,moonSkyGrad,moonVoidGrad,moveActor,myDisplayName,nameForm,nameInput,nearestHuntTarget,needsPlayerName,onViewportChange,openChat,openLoginScreen,openSettings,openShop,overlay,overlayHint,overlayMsg,overlayTitle,packMap,parseIdAge,particles,pendingFriend,pendingUnlockLevel,pickups,pitStart,pitWidth,placeBridgeButton,platforms,playCraftCoopNow,playMoonCoopNow,playUiClick,player,playerLabel,playerName,portraitAccept,portraitDecline,portraitDialog,portraitPromptDismissed,portraitPromptOpen,potion,preferTouchControls,pushHomeNotice,pushJoinNotice,pushZombie,puzzleMode,puzzleTools,rand,rectsOverlap,refreshShopUI,remainingFor,remoteCamX,remotePlayers,renderChatLog,renderHomeNotices,renderJoinNotices,reportCancel,reportDialog,reportMsg,resetLevelUses,resetPuzzleButtons,returnToHomeMenu,reverseGoal,rockets,sandboxCreative,sandboxModeEl,sandboxSurvival,saveCleared,saveInventory,saveJson,saveStars,saveStr,seededRng,selectLevel,selectedFriendId,sendChat,sendSmsCode,setLoginMode,settingsBtn,settingsClose,settingsOpen,settingsPanel,setupPuzzleDrag,setupTouchControls,shake,shopBtn,shopClose,shopOpen,shopPanel,shopScene,shopStarCount,shopTip,showLevelSelect,towerScene,subwayScene,rangeScene,battleScene,showLoginError,showMinorNotice,showNamePrompt,showOverlay,showPhoneJoin,showPortraitPrompt,showSandboxMode,showUnlockDialog,skipBtn,skipPreviousAndEnter,smsBtn,smsCooldown,smsTimer,socialOpen,socialToastEl,socialToastTimer,solidAt,spawnBurst,spawnX,speedBoost,spikes,star,starLabel,stars,startBtn,startCraftWorld,startGame,startLevelCoop,state,statusLabel,stopLevelCoop,submitLogin,syncChatBtn,syncCoopStatus,syncHomeBtn,syncItemBar,syncPuzzleTools,syncTouchPad,syncViewport,time,toolMode,touch,touchPad,tryClickPlayerName,tryUseToolClick,unlockCancelBtn,unlockDialog,unlockMsg,unlockOnce,unlockSkipBtn,update,updateCoop,updateParticles,useBucketItem,useInventoryItem,usePotionItem,useSkipCard,volumePct,volumeSlider,volumeValue,watchLobbyCounts,winLevel,worldMin,worldWidth,zombies"
   );
   window.installGameSocial(S);
   window.installGameAds(S);
   window.installGameDraw(S);
+  if (typeof window.installTower14 === "function") window.installTower14(S);
+  if (typeof window.installSubway15 === "function") window.installSubway15(S);
+  if (typeof window.installRange16 === "function") window.installRange16(S);
+  if (typeof window.installBattle17 === "function") window.installBattle17(S);
+  initTower14 = S.initTower14 || null;
+  updateTower14 = S.updateTower14 || null;
+  drawTowerExtras = S.drawTowerExtras || null;
+  tryClickTower14 = S.tryClickTower14 || null;
+  syncTower14OnLeave = S.syncTower14OnLeave || null;
+  initSubway15 = S.initSubway15 || null;
+  updateSubway15 = S.updateSubway15 || null;
+  drawSubwayExtras = S.drawSubwayExtras || null;
+  drawSubwayForeground = S.drawSubwayForeground || null;
+  tryClickSubway15 = S.tryClickSubway15 || null;
+  syncSubway15OnLeave = S.syncSubway15OnLeave || null;
+  initRange16 = S.initRange16 || null;
+  updateRange16 = S.updateRange16 || null;
+  drawRangeExtras = S.drawRangeExtras || null;
+  syncRange16OnLeave = S.syncRange16OnLeave || null;
+  initBattle17 = S.initBattle17 || null;
+  updateBattle17 = S.updateBattle17 || null;
+  drawBattleExtras = S.drawBattleExtras || null;
+  syncBattle17OnLeave = S.syncBattle17OnLeave || null;
   const {
     loadFriends,
     syncFriendsBtn,
@@ -2895,6 +3143,8 @@
     if (!toolMode && tryClickPlayerName(e.clientX, e.clientY)) return;
     if (tryUseToolClick(e.clientX, e.clientY)) return;
     if (tryClickShopStar(e.clientX, e.clientY)) return;
+    if (tryClickTower14 && tryClickTower14(e.clientX, e.clientY)) return;
+    if (tryClickSubway15 && tryClickSubway15(e.clientX, e.clientY)) return;
     if (tryClickLevel6(e.clientX, e.clientY)) return;
     if (tryClickLevel7(e.clientX, e.clientY)) return;
     if (tryClickLevel8(e.clientX, e.clientY)) return;

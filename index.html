@@ -12,9 +12,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=56" />
+  <link rel="stylesheet" href="style.css?v=90" />
   <script>
-    window.GAME_BUILD = "56";
+    window.GAME_BUILD = "90";
     (function () {
       try {
         var u = new URL(location.href);
@@ -65,6 +65,55 @@
         <button type="button" class="fake-btn" data-label="提示" data-id="hint">提示</button>
         <button type="button" class="fake-btn" data-label="暂停" data-id="pause">暂停</button>
         <button type="button" class="fake-btn" data-label="重开" data-id="restart">重开</button>
+      </div>
+
+      <button id="lv14-phone-btn" class="lv14-phone-btn hidden" type="button" aria-label="打开手机">📱 手机</button>
+      <div id="lv14-phone-wrap" class="lv14-phone-wrap hidden" aria-hidden="true">
+        <div class="lv14-phone-device">
+          <div id="lv14-phone-screen" class="lv14-phone-screen lv14-dead"></div>
+        </div>
+        <button id="lv14-phone-close" type="button">收起</button>
+      </div>
+
+      <div id="lv15-ticket-wrap" class="lv15-panel-wrap hidden" aria-hidden="true">
+        <div class="lv15-panel lv15-ticket-panel">
+          <div class="lv15-panel-head">
+            <span>地铁售票机</span>
+            <button id="lv15-ticket-close" type="button">关闭</button>
+          </div>
+          <div id="lv15-ticket-screen" class="lv15-ticket-screen"></div>
+          <button id="lv15-ticket-back" type="button" class="lv15-panel-back">返回游戏</button>
+        </div>
+      </div>
+
+      <div id="lv15-elev-wrap" class="lv15-panel-wrap hidden" aria-hidden="true">
+        <div class="lv15-panel lv15-elev-panel">
+          <p id="lv15-elev-title" class="lv15-elev-title">选择楼层</p>
+          <div id="lv15-elev-floors" class="lv15-elev-floors"></div>
+          <button id="lv15-elev-close" type="button">取消</button>
+        </div>
+      </div>
+
+      <div id="lv15-announce" class="lv15-announce hidden" aria-live="polite"></div>
+
+      <div id="lv16-range-pad" class="lv16-range-pad hidden" aria-hidden="true">
+        <button id="lv16-btn-aim" type="button" class="lv16-range-btn">瞄准</button>
+        <button id="lv16-btn-fire" type="button" class="lv16-range-btn fire">发射</button>
+        <button id="lv16-btn-prone" type="button" class="lv16-range-btn">下趴</button>
+        <button id="lv16-btn-sneak" type="button" class="lv16-range-btn">潜行</button>
+        <div id="lv16-aim-adjust" class="lv16-aim-adjust hidden">
+          <button id="lv16-aim-up" type="button" class="lv16-range-btn">仰角 ↑</button>
+          <button id="lv16-aim-down" type="button" class="lv16-range-btn">俯角 ↓</button>
+          <button id="lv16-aim-left" type="button" class="lv16-range-btn">← 左偏</button>
+          <button id="lv16-aim-right" type="button" class="lv16-range-btn">右偏 →</button>
+        </div>
+      </div>
+
+      <div id="lv17-battle-pad" class="lv17-battle-pad hidden" aria-hidden="true">
+        <button id="lv17-btn-gun" type="button" class="lv17-battle-btn">枪</button>
+        <button id="lv17-btn-dagger" type="button" class="lv17-battle-btn">小匕首</button>
+        <button id="lv17-btn-fire" type="button" class="lv17-battle-btn fire">开枪</button>
+        <button id="lv17-btn-slash" type="button" class="lv17-battle-btn slash">挥砍</button>
       </div>
 
       <div id="chat-dock" class="chat-dock hidden">
@@ -435,27 +484,36 @@
       </div>
     </div>
   </div>
-  <script src="lib/util.js?v=56"></script>
-  <script src="audio.js?v=56"></script>
-  <script src="coop.js?v=56"></script>
-  <script src="levels/boot.js?v=56"></script>
-  <script src="levels/01.js?v=56"></script>
-  <script src="levels/02.js?v=56"></script>
-  <script src="levels/03.js?v=56"></script>
-  <script src="levels/04.js?v=56"></script>
-  <script src="levels/05.js?v=56"></script>
-  <script src="levels/06.js?v=56"></script>
-  <script src="levels/07.js?v=56"></script>
-  <script src="levels/08.js?v=56"></script>
-  <script src="levels/09.js?v=56"></script>
-  <script src="levels/10.js?v=56"></script>
-  <script src="levels/11.js?v=56"></script>
-  <script src="levels/12.js?v=56"></script>
-  <script src="levels/12-catalog.js?v=56"></script>
-  <script src="levels/12-world.js?v=56"></script>
-  <script src="lib/social.js?v=56"></script>
-  <script src="lib/ads.js?v=56"></script>
-  <script src="lib/draw.js?v=56"></script>
-  <script src="game.js?v=56"></script>
+  <script src="lib/util.js?v=90"></script>
+  <script src="audio.js?v=90"></script>
+  <script src="coop.js?v=90"></script>
+  <script src="levels/boot.js?v=90"></script>
+  <script src="levels/01.js?v=90"></script>
+  <script src="levels/02.js?v=90"></script>
+  <script src="levels/03.js?v=90"></script>
+  <script src="levels/04.js?v=90"></script>
+  <script src="levels/05.js?v=90"></script>
+  <script src="levels/06.js?v=90"></script>
+  <script src="levels/07.js?v=90"></script>
+  <script src="levels/08.js?v=90"></script>
+  <script src="levels/09.js?v=90"></script>
+  <script src="levels/10.js?v=90"></script>
+  <script src="levels/11.js?v=90"></script>
+  <script src="levels/12.js?v=90"></script>
+  <script src="levels/12-catalog.js?v=90"></script>
+  <script src="levels/12-world.js?v=90"></script>
+  <script src="levels/13.js?v=90"></script>
+  <script src="levels/14.js?v=90"></script>
+  <script src="levels/14-tower.js?v=90"></script>
+  <script src="levels/15.js?v=90"></script>
+  <script src="levels/15-subway.js?v=90"></script>
+  <script src="levels/16.js?v=90"></script>
+  <script src="levels/16-range.js?v=90"></script>
+  <script src="levels/17.js?v=90"></script>
+  <script src="levels/17-battle.js?v=90"></script>
+  <script src="lib/social.js?v=90"></script>
+  <script src="lib/ads.js?v=90"></script>
+  <script src="lib/draw.js?v=90"></script>
+  <script src="game.js?v=90"></script>
 </body>
 </html>

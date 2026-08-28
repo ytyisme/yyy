@@ -7,6 +7,7 @@
     lava: null,
     city: null,
     zombie: null,
+    train: null,
   };
 
   let footTimer = 0;
@@ -81,6 +82,232 @@
     if (!ensure()) return;
     noiseBurst(0.06, 0.16, 200, "lowpass");
     tone("triangle", 95, 0.06, 0.1);
+  }
+
+  /** 踩进水坑：清脆的水花声 */
+  function playJellySquish() {
+    if (!ensure()) return;
+    const t = now();
+    const rate = ctx.sampleRate;
+    const len = Math.max(1, Math.floor(rate * 0.18));
+    const buffer = ctx.createBuffer(1, len, rate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < len; i++) {
+      const p = i / len;
+      const env = Math.exp(-p * 14) * (1 - p * 0.35);
+      data[i] = (Math.random() * 2 - 1) * env;
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    const hp = ctx.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = 600;
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.setValueAtTime(2400, t);
+    bp.frequency.exponentialRampToValueAtTime(900, t + 0.12);
+    bp.Q.value = 0.85;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.36, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+    src.connect(hp);
+    hp.connect(bp);
+    bp.connect(g);
+    g.connect(master);
+    src.start(t);
+
+    // 水花二次溅起
+    const len2 = Math.max(1, Math.floor(rate * 0.1));
+    const buf2 = ctx.createBuffer(1, len2, rate);
+    const d2 = buf2.getChannelData(0);
+    for (let i = 0; i < len2; i++) {
+      const p = i / len2;
+      d2[i] = (Math.random() * 2 - 1) * Math.exp(-p * 20);
+    }
+    const s2 = ctx.createBufferSource();
+    s2.buffer = buf2;
+    const f2 = ctx.createBiquadFilter();
+    f2.type = "highpass";
+    f2.frequency.value = 1400;
+    const g2 = ctx.createGain();
+    const t2 = t + 0.035;
+    g2.gain.setValueAtTime(0.0001, t2);
+    g2.gain.exponentialRampToValueAtTime(0.18, t2 + 0.003);
+    g2.gain.exponentialRampToValueAtTime(0.0001, t2 + 0.09);
+    s2.connect(f2);
+    f2.connect(g2);
+    g2.connect(master);
+    s2.start(t2);
+
+    // 清脆的水珠叮一下
+    tone("sine", 880 + Math.random() * 220, 0.06, 0.08, 420);
+  }
+
+  /** 奥利奥：大声沙沙碎屑声 */
+  function playOreoCrunch() {
+    if (!ensure()) return;
+    const t = now();
+    const rate = ctx.sampleRate;
+    const sand = (start, dur, peak, freq) => {
+      const len = Math.max(1, Math.floor(rate * dur));
+      const buffer = ctx.createBuffer(1, len, rate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < len; i++) {
+        const p = i / len;
+        // 颗粒感：稀疏尖刺噪声 = 沙沙
+        const spike = (i % 3 === 0 ? 1 : i % 7 === 0 ? 0.7 : 0.15);
+        data[i] = (Math.random() * 2 - 1) * spike * Math.exp(-p * 8);
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      const hp = ctx.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 1800;
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = freq;
+      bp.Q.value = 0.45;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(peak, start + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+      src.connect(hp);
+      hp.connect(bp);
+      bp.connect(g);
+      g.connect(master);
+      src.start(start);
+    };
+    sand(t, 0.14, 0.55, 4500);
+    sand(t + 0.03, 0.12, 0.4, 3200);
+    sand(t + 0.06, 0.1, 0.28, 5500);
+  }
+
+  /** 巧克力裂开：更脆、更大声的咔嚓（冰不碎） */
+  function playChocoCrack() {
+    if (!ensure()) return;
+    const t = now();
+    const rate = ctx.sampleRate;
+    const burst = (start, dur, peak, freq, q) => {
+      const len = Math.max(1, Math.floor(rate * dur));
+      const buffer = ctx.createBuffer(1, len, rate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < len; i++) {
+        const p = i / len;
+        // 更尖的起音，脆裂感
+        const snap = Math.exp(-p * 35) * (1 - p * 0.2);
+        data[i] = (Math.random() * 2 - 1) * snap;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      const hp = ctx.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 1200;
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = freq;
+      bp.Q.value = q;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(peak, start + 0.0015);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+      src.connect(hp);
+      hp.connect(bp);
+      bp.connect(g);
+      g.connect(master);
+      src.start(start);
+    };
+    burst(t, 0.055, 0.62, 3800, 1.4);
+    burst(t + 0.018, 0.045, 0.48, 5200, 1.6);
+    burst(t + 0.038, 0.06, 0.36, 2800, 1.2);
+    burst(t + 0.06, 0.07, 0.28, 6500, 0.9);
+    // 脆壳叮一声
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = "triangle";
+    o.frequency.setValueAtTime(980, t);
+    o.frequency.exponentialRampToValueAtTime(320, t + 0.08);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.22, t + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+    o.connect(g);
+    g.connect(master);
+    o.start(t);
+    o.stop(t + 0.1);
+  }
+
+  /** 电脑打字声：按下 + 回弹，像笔记本/机械键盘敲击 */
+  function playKeyboardTap() {
+    if (!ensure()) return;
+    const t = now();
+    const rate = ctx.sampleRate;
+    const makeClick = (start, dur, peak, hiFreq, thock) => {
+      const len = Math.max(1, Math.floor(rate * dur));
+      const buffer = ctx.createBuffer(1, len, rate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < len; i++) {
+        const p = i / len;
+        const env = Math.exp(-p * 18) * (1 - p);
+        data[i] =
+          (Math.random() * 2 - 1) * env * 0.85 +
+          Math.sin(i * thock * 0.08) * env * 0.25;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      const hp = ctx.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = hiFreq;
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = 1800 + Math.random() * 900;
+      bp.Q.value = 0.7;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(peak, start + 0.002);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+      src.connect(hp);
+      hp.connect(bp);
+      bp.connect(g);
+      g.connect(master);
+      src.start(start);
+    };
+
+    // 按下（明显更大）
+    makeClick(t, 0.05, 0.48, 900 + Math.random() * 400, 55 + Math.random() * 25);
+    // 键帽回弹
+    makeClick(t + 0.028 + Math.random() * 0.012, 0.04, 0.26, 1200, 70);
+
+    // 底板闷响
+    const o = ctx.createOscillator();
+    const og = ctx.createGain();
+    o.type = "triangle";
+    const f0 = 190 + Math.random() * 80;
+    o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(90, t + 0.05);
+    og.gain.setValueAtTime(0.0001, t);
+    og.gain.exponentialRampToValueAtTime(0.16, t + 0.004);
+    og.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+    o.connect(og);
+    og.connect(master);
+    o.start(t);
+    o.stop(t + 0.07);
+  }
+
+  /** 巧克力裂开后的碎屑轻响（冰仍在） */
+  function playChocoFlake() {
+    if (!ensure()) return;
+    const t = now();
+    noiseBurst(0.05, 0.28, 4200, "highpass");
+    noiseBurst(0.04, 0.2, 2800, "bandpass");
+    tone("triangle", 720 + Math.random() * 180, 0.045, 0.1, 280);
+  }
+
+  function playSurfaceStep(kind) {
+    if (kind === "jelly") playJellySquish();
+    else if (kind === "keyboard") playChocoFlake();
+    else if (kind === "oreo") playOreoCrunch();
+    else if (kind === "chocoice") playKeyboardTap();
+    else playFootstep();
   }
 
   function playStar() {
@@ -254,10 +481,137 @@
     loops.zombie = { nodes: [o], gain };
   }
 
+  function startTrainLoop() {
+    if (!ensure() || loops.train) return;
+    const gain = ctx.createGain();
+    gain.gain.value = 0.0001;
+    gain.connect(master);
+    const t0 = now();
+    gain.gain.exponentialRampToValueAtTime(0.14, t0 + 0.6);
+
+    // 低频车体震动
+    const rumble = ctx.createOscillator();
+    rumble.type = "sawtooth";
+    rumble.frequency.value = 42;
+    const rumbleFilter = ctx.createBiquadFilter();
+    rumbleFilter.type = "lowpass";
+    rumbleFilter.frequency.value = 120;
+    const rumbleGain = ctx.createGain();
+    rumbleGain.gain.value = 0.55;
+    rumble.connect(rumbleFilter);
+    rumbleFilter.connect(rumbleGain);
+    rumbleGain.connect(gain);
+
+    // 轨道摩擦噪声
+    const len = Math.floor(ctx.sampleRate * 2.5);
+    const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    noise.loop = true;
+    const nFilter = ctx.createBiquadFilter();
+    nFilter.type = "bandpass";
+    nFilter.frequency.value = 380;
+    nFilter.Q.value = 0.7;
+    const nGain = ctx.createGain();
+    nGain.gain.value = 0.4;
+    noise.connect(nFilter);
+    nFilter.connect(nGain);
+    nGain.connect(gain);
+
+    // 轮轨节奏（哒哒）
+    const click = ctx.createOscillator();
+    click.type = "square";
+    click.frequency.value = 8;
+    const clickFilter = ctx.createBiquadFilter();
+    clickFilter.type = "highpass";
+    clickFilter.frequency.value = 600;
+    const clickGain = ctx.createGain();
+    clickGain.gain.value = 0.045;
+    click.connect(clickFilter);
+    clickFilter.connect(clickGain);
+    clickGain.connect(gain);
+
+    // 轻微电机嗡鸣
+    const hum = ctx.createOscillator();
+    hum.type = "sine";
+    hum.frequency.value = 95;
+    const humGain = ctx.createGain();
+    humGain.gain.value = 0.08;
+    hum.connect(humGain);
+    humGain.connect(gain);
+
+    rumble.start();
+    noise.start();
+    click.start();
+    hum.start();
+
+    loops.train = {
+      nodes: [rumble, noise, click, hum],
+      gain,
+      rumble,
+      click,
+      nFilter,
+      speed: 1,
+    };
+  }
+
+  function setTrainLoopSpeed(speed) {
+    if (!loops.train || !ctx) return;
+    const s = Math.max(0.05, Math.min(1.4, Number(speed) || 1));
+    loops.train.speed = s;
+    const t = now();
+    try {
+      if (loops.train.rumble) {
+        loops.train.rumble.frequency.setTargetAtTime(36 + s * 28, t, 0.15);
+      }
+      if (loops.train.click) {
+        loops.train.click.frequency.setTargetAtTime(3 + s * 10, t, 0.12);
+      }
+      if (loops.train.nFilter) {
+        loops.train.nFilter.frequency.setTargetAtTime(220 + s * 280, t, 0.2);
+      }
+      if (loops.train.gain) {
+        loops.train.gain.gain.setTargetAtTime(0.04 + s * 0.12, t, 0.2);
+      }
+    } catch (_) {}
+  }
+
+  function stopTrainLoop() {
+    if (!loops.train || !ctx) {
+      stopLoop("train");
+      return;
+    }
+    const g = loops.train.gain;
+    const t = now();
+    try {
+      if (g) {
+        g.gain.cancelScheduledValues(t);
+        g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+      }
+    } catch (_) {}
+    const nodes = loops.train.nodes ? loops.train.nodes.slice() : [];
+    setTimeout(() => {
+      try {
+        nodes.forEach((n) => {
+          try {
+            if (n.stop) n.stop();
+            n.disconnect();
+          } catch (_) {}
+        });
+        if (g) g.disconnect();
+      } catch (_) {}
+    }, 500);
+    loops.train = null;
+  }
+
   function stopAllAmbience() {
     stopLoop("lava");
     stopLoop("city");
     stopLoop("zombie");
+    stopTrainLoop();
     footTimer = 0;
     zombieBarkTimer = 0;
   }
@@ -295,8 +649,16 @@
     if (opts.running) {
       footTimer -= dt;
       if (footTimer <= 0) {
-        playFootstep();
-        footTimer = opts.fast ? 0.22 : 0.32;
+        playSurfaceStep(opts.surface || "ground");
+        footTimer = opts.fast
+          ? 0.22
+          : opts.surface === "jelly"
+            ? 0.36
+            : opts.surface === "oreo"
+              ? 0.28
+              : opts.surface === "chocoice"
+                ? 0.4
+                : 0.32;
       }
     } else {
       footTimer = 0;
@@ -433,6 +795,93 @@
   }
 
   // Unlock audio on first interaction
+  function playGunShot() {
+    if (!ensure()) return;
+    noiseBurst(0.08, 0.22, 900, "bandpass");
+    tone("square", 180, 0.06, 0.12, 60);
+    setTimeout(() => {
+      if (!ctx) return;
+      noiseBurst(0.12, 0.1, 400, "lowpass");
+      tone("triangle", 90, 0.1, 0.08);
+    }, 40);
+  }
+
+  function playDoorChime(kind) {
+    if (!ensure()) return;
+    if (kind === "open") {
+      tone("sine", 660, 0.15, 0.1);
+      setTimeout(() => tone("sine", 880, 0.2, 0.09), 120);
+      setTimeout(() => tone("triangle", 990, 0.25, 0.07), 280);
+    } else {
+      tone("sine", 880, 0.12, 0.1);
+      setTimeout(() => tone("sine", 660, 0.18, 0.09), 100);
+      setTimeout(() => tone("triangle", 440, 0.28, 0.08), 240);
+    }
+  }
+
+  /** 列车进站提示音（叮咚 · 叮咚） */
+  function playTrainArriveChime() {
+    if (!ensure()) return;
+    const beat = (freq, delay, dur, peak) => {
+      setTimeout(() => {
+        if (!ctx) return;
+        tone("sine", freq, dur, peak);
+        tone("triangle", freq * 1.01, dur * 0.9, peak * 0.45);
+      }, delay);
+    };
+    // 两组进站铃
+    beat(784, 0, 0.22, 0.14); // G5
+    beat(1047, 220, 0.28, 0.12); // C6
+    beat(784, 520, 0.22, 0.13);
+    beat(1047, 740, 0.32, 0.11);
+    setTimeout(() => {
+      if (!ctx) return;
+      noiseBurst(0.08, 0.04, 1800, "highpass");
+    }, 980);
+  }
+
+  function playSubwayDing() {
+    if (!ensure()) return;
+    tone("sine", 880, 0.18, 0.12);
+    setTimeout(() => {
+      if (!ctx) return;
+      tone("sine", 1175, 0.22, 0.1);
+    }, 140);
+  }
+
+  let subwayUtter = null;
+
+  function stopSubwayAnnounce() {
+    try {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+    } catch (e) {}
+    subwayUtter = null;
+  }
+
+  function playSubwayAnnounce(text) {
+    if (!text) return;
+    ensure();
+    playSubwayDing();
+    if (!window.speechSynthesis) return;
+    stopSubwayAnnounce();
+    const u = new SpeechSynthesisUtterance(String(text));
+    u.lang = "zh-CN";
+    u.rate = 0.92;
+    u.pitch = 1.05;
+    u.volume = master ? Math.min(1, Math.max(0.2, master.gain.value * 2.2)) : 0.8;
+    subwayUtter = u;
+    // 优先中文女声
+    try {
+      const voices = window.speechSynthesis.getVoices() || [];
+      const zh =
+        voices.find((v) => /zh[-_]CN/i.test(v.lang) && /female|女|Xiaoxiao|Tingting| Huihui/i.test(v.name)) ||
+        voices.find((v) => /zh[-_]CN/i.test(v.lang)) ||
+        voices.find((v) => /^zh/i.test(v.lang));
+      if (zh) u.voice = zh;
+    } catch (e) {}
+    window.speechSynthesis.speak(u);
+  }
+
   const unlock = () => {
     ensure();
   };
@@ -444,12 +893,26 @@
     unlock: ensure,
     playJump,
     playFootstep,
+    playJellySquish,
+    playKeyboardTap,
+    playOreoCrunch,
+    playChocoCrack,
+    playChocoFlake,
+    playSurfaceStep,
     playStar,
     playWin,
     playDeath,
     playClick,
     playRocket,
     playZombieBark,
+    playGunShot,
+    playDoorChime,
+    playTrainArriveChime,
+    playSubwayAnnounce,
+    stopSubwayAnnounce,
+    startTrainLoop,
+    stopTrainLoop,
+    setTrainLoopSpeed,
     syncAmbience,
     stopAllAmbience,
     updateGameplay,
