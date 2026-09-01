@@ -487,72 +487,97 @@
     gain.gain.value = 0.0001;
     gain.connect(master);
     const t0 = now();
-    gain.gain.exponentialRampToValueAtTime(0.14, t0 + 0.6);
+    gain.gain.exponentialRampToValueAtTime(0.16, t0 + 0.45);
+    const rate = ctx.sampleRate;
 
-    // 低频车体震动
-    const rumble = ctx.createOscillator();
-    rumble.type = "sawtooth";
-    rumble.frequency.value = 42;
-    const rumbleFilter = ctx.createBiquadFilter();
-    rumbleFilter.type = "lowpass";
-    rumbleFilter.frequency.value = 120;
-    const rumbleGain = ctx.createGain();
-    rumbleGain.gain.value = 0.55;
-    rumble.connect(rumbleFilter);
-    rumbleFilter.connect(rumbleGain);
-    rumbleGain.connect(gain);
+    // 轮轨摩擦：中高频沙沙（不用振荡器，避免嗡嗡）
+    const roarLen = Math.floor(rate * 1.8);
+    const roarBuf = ctx.createBuffer(1, roarLen, rate);
+    const roarData = roarBuf.getChannelData(0);
+    for (let i = 0; i < roarLen; i++) roarData[i] = Math.random() * 2 - 1;
+    const roar = ctx.createBufferSource();
+    roar.buffer = roarBuf;
+    roar.loop = true;
+    const roarHp = ctx.createBiquadFilter();
+    roarHp.type = "highpass";
+    roarHp.frequency.value = 220;
+    const roarBp = ctx.createBiquadFilter();
+    roarBp.type = "bandpass";
+    roarBp.frequency.value = 950;
+    roarBp.Q.value = 0.55;
+    const roarGain = ctx.createGain();
+    roarGain.gain.value = 0.3;
+    roar.connect(roarHp);
+    roarHp.connect(roarBp);
+    roarBp.connect(roarGain);
+    roarGain.connect(gain);
 
-    // 轨道摩擦噪声
-    const len = Math.floor(ctx.sampleRate * 2.5);
-    const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
-    noise.loop = true;
-    const nFilter = ctx.createBiquadFilter();
-    nFilter.type = "bandpass";
-    nFilter.frequency.value = 380;
-    nFilter.Q.value = 0.7;
-    const nGain = ctx.createGain();
-    nGain.gain.value = 0.4;
-    noise.connect(nFilter);
-    nFilter.connect(nGain);
-    nGain.connect(gain);
+    // 轨缝撞击：周期性双咔嗒（左轮/右轮）
+    const clackPeriod = Math.floor(rate * 0.2);
+    const clackCycles = 10;
+    const clackLen = clackPeriod * clackCycles;
+    const clackBuf = ctx.createBuffer(1, clackLen, rate);
+    const clackData = clackBuf.getChannelData(0);
+    for (let c = 0; c < clackCycles; c++) {
+      const base = c * clackPeriod;
+      for (const pair of [
+        { off: 0, amp: 1 },
+        { off: Math.floor(rate * 0.032), amp: 0.72 },
+      ]) {
+        const start = base + pair.off;
+        const dur = Math.floor(rate * 0.03);
+        for (let i = 0; i < dur && start + i < clackLen; i++) {
+          const p = i / dur;
+          const env = Math.exp(-p * 20) * (1 - p * 0.25);
+          clackData[start + i] += (Math.random() * 2 - 1) * env * pair.amp;
+        }
+      }
+    }
+    const clack = ctx.createBufferSource();
+    clack.buffer = clackBuf;
+    clack.loop = true;
+    clack.playbackRate.value = 1;
+    const clackHp = ctx.createBiquadFilter();
+    clackHp.type = "highpass";
+    clackHp.frequency.value = 450;
+    const clackBp = ctx.createBiquadFilter();
+    clackBp.type = "bandpass";
+    clackBp.frequency.value = 1700;
+    clackBp.Q.value = 1.15;
+    const clackGain = ctx.createGain();
+    clackGain.gain.value = 0.48;
+    clack.connect(clackHp);
+    clackHp.connect(clackBp);
+    clackBp.connect(clackGain);
+    clackGain.connect(gain);
 
-    // 轮轨节奏（哒哒）
-    const click = ctx.createOscillator();
-    click.type = "square";
-    click.frequency.value = 8;
-    const clickFilter = ctx.createBiquadFilter();
-    clickFilter.type = "highpass";
-    clickFilter.frequency.value = 600;
-    const clickGain = ctx.createGain();
-    clickGain.gain.value = 0.045;
-    click.connect(clickFilter);
-    clickFilter.connect(clickGain);
-    clickGain.connect(gain);
+    // 车体低沉轰隆：噪声低通，不要锯齿/正弦嗡鸣
+    const thumpLen = Math.floor(rate * 2.2);
+    const thumpBuf = ctx.createBuffer(1, thumpLen, rate);
+    const thumpData = thumpBuf.getChannelData(0);
+    for (let i = 0; i < thumpLen; i++) thumpData[i] = Math.random() * 2 - 1;
+    const thump = ctx.createBufferSource();
+    thump.buffer = thumpBuf;
+    thump.loop = true;
+    const thumpLp = ctx.createBiquadFilter();
+    thumpLp.type = "lowpass";
+    thumpLp.frequency.value = 130;
+    const thumpGain = ctx.createGain();
+    thumpGain.gain.value = 0.16;
+    thump.connect(thumpLp);
+    thumpLp.connect(thumpGain);
+    thumpGain.connect(gain);
 
-    // 轻微电机嗡鸣
-    const hum = ctx.createOscillator();
-    hum.type = "sine";
-    hum.frequency.value = 95;
-    const humGain = ctx.createGain();
-    humGain.gain.value = 0.08;
-    hum.connect(humGain);
-    humGain.connect(gain);
-
-    rumble.start();
-    noise.start();
-    click.start();
-    hum.start();
+    roar.start();
+    clack.start();
+    thump.start();
 
     loops.train = {
-      nodes: [rumble, noise, click, hum],
+      nodes: [roar, clack, thump],
       gain,
-      rumble,
-      click,
-      nFilter,
+      clack,
+      roarBp,
+      clackBp,
       speed: 1,
     };
   }
@@ -563,17 +588,17 @@
     loops.train.speed = s;
     const t = now();
     try {
-      if (loops.train.rumble) {
-        loops.train.rumble.frequency.setTargetAtTime(36 + s * 28, t, 0.15);
+      if (loops.train.clack && loops.train.clack.playbackRate) {
+        loops.train.clack.playbackRate.setTargetAtTime(0.55 + s * 0.75, t, 0.12);
       }
-      if (loops.train.click) {
-        loops.train.click.frequency.setTargetAtTime(3 + s * 10, t, 0.12);
+      if (loops.train.roarBp) {
+        loops.train.roarBp.frequency.setTargetAtTime(520 + s * 680, t, 0.2);
       }
-      if (loops.train.nFilter) {
-        loops.train.nFilter.frequency.setTargetAtTime(220 + s * 280, t, 0.2);
+      if (loops.train.clackBp) {
+        loops.train.clackBp.frequency.setTargetAtTime(1200 + s * 900, t, 0.2);
       }
       if (loops.train.gain) {
-        loops.train.gain.gain.setTargetAtTime(0.04 + s * 0.12, t, 0.2);
+        loops.train.gain.gain.setTargetAtTime(0.05 + s * 0.14, t, 0.2);
       }
     } catch (_) {}
   }
@@ -607,11 +632,91 @@
     loops.train = null;
   }
 
+  let musicTrack = null;
+  let musicTrackOnEnd = null;
+
+  function stopMusicTrack() {
+    if (musicTrack) {
+      try {
+        musicTrack.onended = null;
+        musicTrack.onerror = null;
+        musicTrack.pause();
+        musicTrack.removeAttribute("src");
+        musicTrack.load();
+      } catch (_) {}
+      musicTrack = null;
+    }
+    musicTrackOnEnd = null;
+  }
+
+  /**
+   * 播放真实音频（本地 mp3 / 网上直链）
+   * opts: { src, volume, onEnded, onError, onPlay }
+   */
+  function playMusicTrack(opts) {
+    const o = opts || {};
+    const src = String(o.src || "").trim();
+    if (!src) {
+      if (typeof o.onError === "function") o.onError(new Error("empty src"));
+      return null;
+    }
+    ensure();
+    stopMusicTrack();
+    const el = new Audio();
+    el.preload = "auto";
+    el.crossOrigin = "anonymous";
+    el.volume = Math.max(0, Math.min(1, o.volume != null ? o.volume : 0.75));
+    musicTrackOnEnd = typeof o.onEnded === "function" ? o.onEnded : null;
+    el.onended = () => {
+      const cb = musicTrackOnEnd;
+      musicTrackOnEnd = null;
+      if (cb) cb();
+    };
+    el.onerror = () => {
+      if (typeof o.onError === "function") o.onError(el.error || new Error("load fail"));
+    };
+    el.onplay = () => {
+      if (typeof o.onPlay === "function") o.onPlay(el);
+    };
+    el.src = src;
+    musicTrack = el;
+    const p = el.play();
+    if (p && typeof p.catch === "function") {
+      p.catch(() => {
+        // 需用户手势解锁；再次点击后由关卡重试
+        if (typeof o.onError === "function") o.onError(new Error("autoplay blocked"));
+      });
+    }
+    return el;
+  }
+
+  function getMusicTrack() {
+    return musicTrack;
+  }
+
+  function setMusicTrackVolume(v) {
+    if (!musicTrack) return;
+    musicTrack.volume = Math.max(0, Math.min(1, Number(v) || 0));
+  }
+
+  /** 碰壁时给真实音乐一个短暂音量脉冲 */
+  function pulseMusicTrack(boost, ms) {
+    if (!musicTrack) return;
+    const base = musicTrack.volume;
+    const up = Math.min(1, base + (boost != null ? boost : 0.18));
+    musicTrack.volume = up;
+    setTimeout(() => {
+      if (musicTrack) musicTrack.volume = base;
+    }, ms != null ? ms : 120);
+  }
+
   function stopAllAmbience() {
     stopLoop("lava");
     stopLoop("city");
     stopLoop("zombie");
     stopTrainLoop();
+    stopMusicTrack();
+    stopDateAmbience();
     footTimer = 0;
     zombieBarkTimer = 0;
   }
@@ -819,7 +924,342 @@
     }
   }
 
-  /** 列车进站提示音（叮咚 · 叮咚） */
+  let musicBus = null;
+  let musicDelay = null;
+
+  function ensureMusicBus() {
+    if (!ensure()) return null;
+    if (musicBus) return musicBus;
+    musicBus = ctx.createGain();
+    musicBus.gain.value = 0.85;
+    // 轻延迟：更空灵好听
+    const delay = ctx.createDelay(1.0);
+    delay.delayTime.value = 0.22;
+    const fb = ctx.createGain();
+    fb.gain.value = 0.28;
+    const wet = ctx.createGain();
+    wet.gain.value = 0.28;
+    const dry = ctx.createGain();
+    dry.gain.value = 0.92;
+    const toneFilter = ctx.createBiquadFilter();
+    toneFilter.type = "lowpass";
+    toneFilter.frequency.value = 4200;
+    toneFilter.Q.value = 0.5;
+
+    musicBus.connect(dry);
+    dry.connect(master);
+    musicBus.connect(delay);
+    delay.connect(fb);
+    fb.connect(delay);
+    delay.connect(toneFilter);
+    toneFilter.connect(wet);
+    wet.connect(master);
+    musicDelay = delay;
+    return musicBus;
+  }
+
+  /** 音乐关：更空灵好听的纯音乐合成 */
+  function playMusicNote(freq, style, duration, meta) {
+    if (!ensure()) return;
+    const bus = ensureMusicBus();
+    if (!bus) return;
+    const f = Number(freq) || 0;
+    const st = style || "lead";
+    const dur = Math.max(0.14, Number(duration) || 0.28);
+    const beat = (meta && meta.beat) | 0;
+    const accent = beat % 4 === 0;
+    const fromWall = !!(meta && meta.fromWall);
+    const t0 = now();
+
+    function softVoice(opts) {
+      const type = opts.type || "sine";
+      const hz = Math.max(20, opts.hz);
+      const d = Math.max(0.05, opts.d || dur);
+      const peak = opts.peak != null ? opts.peak : 0.1;
+      const attack = opts.attack != null ? opts.attack : 0.02;
+      const decay = opts.decay != null ? opts.decay : 0.42;
+      const filterHz = opts.filterHz || Math.min(4800, hz * 4.2);
+      const detune = opts.detune || 0;
+      const slide = opts.slide;
+      const delay = opts.delay || 0;
+      const vib = opts.vib || 0;
+      const start = t0 + delay;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      const filt = ctx.createBiquadFilter();
+      o.type = type;
+      o.detune.setValueAtTime(detune, start);
+      o.frequency.setValueAtTime(hz, start);
+      if (slide) {
+        o.frequency.exponentialRampToValueAtTime(Math.max(20, slide), start + d * 0.9);
+      }
+      if (vib > 0) {
+        const lfo = ctx.createOscillator();
+        const lfoG = ctx.createGain();
+        lfo.frequency.value = 5.2;
+        lfoG.gain.value = vib;
+        lfo.connect(lfoG);
+        lfoG.connect(o.frequency);
+        lfo.start(start);
+        lfo.stop(start + d + 0.05);
+      }
+      filt.type = opts.filterType || "lowpass";
+      filt.Q.value = opts.q != null ? opts.q : 0.7;
+      filt.frequency.setValueAtTime(Math.max(90, filterHz * 0.35), start);
+      filt.frequency.exponentialRampToValueAtTime(Math.max(160, filterHz), start + attack + 0.05);
+      filt.frequency.exponentialRampToValueAtTime(Math.max(120, filterHz * 0.45), start + d);
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), start + attack);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak * decay), start + Math.max(attack + 0.05, d * 0.48));
+      g.gain.exponentialRampToValueAtTime(0.0001, start + d);
+      o.connect(filt);
+      filt.connect(g);
+      g.connect(bus);
+      o.start(start);
+      o.stop(start + d + 0.08);
+    }
+
+    function subBass(root) {
+      let b = root;
+      while (b > 90) b *= 0.5;
+      b = Math.max(36, b);
+      softVoice({ type: "sine", hz: b, d: dur * 1.35, peak: accent ? 0.16 : 0.11, attack: 0.02, filterHz: 280 });
+      softVoice({ type: "triangle", hz: b * 2, d: dur * 1.15, peak: 0.035, attack: 0.03, filterHz: 520 });
+    }
+
+    // 大七 / add9，更甜
+    function lushChord(root, peak) {
+      softVoice({ type: "sine", hz: root, d: dur * 1.35, peak: peak * 0.4, attack: 0.07, filterHz: root * 2.8 });
+      softVoice({ type: "sine", hz: root * 1.26, d: dur * 1.3, peak: peak * 0.34, attack: 0.08, filterHz: root * 3.1 });
+      softVoice({ type: "sine", hz: root * 1.498, d: dur * 1.25, peak: peak * 0.26, attack: 0.09, filterHz: root * 3.4 });
+      softVoice({ type: "sine", hz: root * 1.888, d: dur * 1.15, peak: peak * 0.16, attack: 0.1, filterHz: root * 3.8 }); // maj7
+      softVoice({ type: "triangle", hz: root * 2.245, d: dur * 1.05, peak: peak * 0.12, attack: 0.08, filterHz: root * 4.2 }); // add9
+    }
+
+    function airySparkle(root, peak) {
+      softVoice({ type: "sine", hz: root * 2, d: dur * 0.95, peak: peak * 0.16, delay: 0.03, filterHz: 5600, vib: 1.2 });
+      softVoice({ type: "sine", hz: root * 3.01, d: dur * 0.6, peak: peak * 0.06, delay: 0.06, filterHz: 6800 });
+    }
+
+    function softKick() {
+      softVoice({ type: "sine", hz: 140, slide: 42, d: 0.2, peak: fromWall ? 0.08 : accent ? 0.14 : 0.1, attack: 0.003, decay: 0.18, filterHz: 360 });
+    }
+
+    function softHat() {
+      if (fromWall) return;
+      noiseBurst(0.014, 0.018, 9000, "highpass");
+    }
+
+    function softSnare() {
+      noiseBurst(0.04, fromWall ? 0.025 : 0.045, 2400, "bandpass");
+      softVoice({ type: "triangle", hz: 220, d: 0.05, peak: 0.03, attack: 0.001, filterHz: 900 });
+    }
+
+    // 纯音乐：鼓更轻、更散
+    if (!fromWall && f > 0) {
+      if (beat % 8 === 0) softKick();
+      else if (beat % 4 === 2 && st === "batida") softSnare();
+      else if (beat % 4 === 3) softHat();
+    }
+
+    if (f <= 0) {
+      if (accent && !fromWall) lushChord(196, 0.07);
+      return;
+    }
+
+    subBass(f);
+    if (accent) lushChord(f, 0.12);
+    else if (beat % 2 === 0) lushChord(f, 0.07);
+    airySparkle(f, 0.1);
+
+    if (st === "cool") {
+      softVoice({ type: "sine", hz: f, d: dur * 1.05, peak: 0.13, attack: 0.018, filterHz: 3400, vib: 2.5 });
+      softVoice({ type: "triangle", hz: f, d: dur, peak: 0.05, detune: 6, filterHz: 2600 });
+      softVoice({ type: "sine", hz: f * 2, d: dur * 0.95, peak: 0.06, filterHz: 5000, vib: 1.5 });
+      softVoice({ type: "sine", hz: f * 1.498, d: dur * 1.15, peak: 0.04, attack: 0.05, filterHz: 3000 });
+    } else if (st === "pluck") {
+      softVoice({ type: "triangle", hz: f, d: dur * 1.05, peak: 0.14, attack: 0.004, decay: 0.22, filterHz: 3800, q: 1.2 });
+      softVoice({ type: "sine", hz: f * 2.004, d: dur * 0.7, peak: 0.055, attack: 0.003, filterHz: 5600 });
+      softVoice({ type: "sine", hz: f * 1.26, d: dur * 1.25, peak: 0.055, attack: 0.04, filterHz: 2800, vib: 1.8 });
+      softVoice({ type: "sine", hz: f * 1.888, d: dur * 1.1, peak: 0.03, attack: 0.05, filterHz: 3200 });
+    } else if (st === "fly") {
+      softVoice({ type: "sawtooth", hz: f, d: dur, peak: accent ? 0.08 : 0.065, filterHz: 2800, q: 0.8, slide: f * 1.02 });
+      softVoice({ type: "sine", hz: f, d: dur * 1.1, peak: 0.09, attack: 0.03, filterHz: 3200, vib: 2 });
+      softVoice({ type: "sine", hz: f * 2, d: dur * 0.85, peak: 0.05, filterHz: 4800 });
+      softVoice({ type: "sine", hz: f * 1.26, d: dur * 1.15, peak: 0.05, attack: 0.05, filterHz: 2800 });
+    } else if (st === "batida") {
+      softVoice({ type: "sine", hz: Math.max(48, f * (f < 120 ? 1 : 0.5)), d: dur * 1.3, peak: 0.14, filterHz: 480 });
+      softVoice({ type: "triangle", hz: f, d: dur * 1.1, peak: 0.08, filterHz: 1200 });
+      softVoice({ type: "sine", hz: f * 1.5, d: dur * 0.55, peak: 0.035, filterHz: 2000 });
+      if (!fromWall && beat % 4 === 0) softKick();
+    } else if (st === "chant") {
+      softVoice({ type: "sine", hz: f, d: dur * 1.3, peak: 0.12, attack: 0.06, filterHz: 2800, vib: 3 });
+      softVoice({ type: "sine", hz: f * 1.498, d: dur * 1.25, peak: 0.08, attack: 0.07, filterHz: 3000, vib: 2.2 });
+      softVoice({ type: "triangle", hz: f * 1.26, d: dur * 1.2, peak: 0.045, attack: 0.08, filterHz: 2600 });
+      softVoice({ type: "sine", hz: f * 0.5, d: dur * 1.35, peak: 0.05, filterHz: 800 });
+    } else if (st === "bounce") {
+      softVoice({ type: "sine", hz: f, d: dur * 1.05, peak: 0.135, attack: 0.008, decay: 0.3, filterHz: 3600, vib: 2 });
+      softVoice({ type: "triangle", hz: f * 2, d: dur * 0.8, peak: 0.055, filterHz: 4800 });
+      softVoice({ type: "sine", hz: f * 1.26, d: dur * 1.2, peak: 0.05, attack: 0.04, filterHz: 2800 });
+      softVoice({ type: "sine", hz: f * 1.888, d: dur * 0.9, peak: 0.03, filterHz: 4000 });
+    } else {
+      softVoice({ type: "sine", hz: f, d: dur, peak: 0.12, filterHz: 3000, vib: 2 });
+      softVoice({ type: "triangle", hz: f * 2, d: dur * 0.85, peak: 0.045, filterHz: 4500 });
+    }
+  }
+
+  /** 碰壁：轻触感，不抢纯音乐 */
+  function playMusicWallHit(style) {
+    if (!ensure()) return;
+    ensureMusicBus();
+    const st = style || "cool";
+    if (st === "batida") {
+      noiseBurst(0.04, 0.06, 160, "lowpass");
+      tone("sine", 80, 0.08, 0.06, 45);
+    } else if (st === "chant") {
+      tone("sine", 520, 0.1, 0.035);
+      tone("sine", 780, 0.12, 0.028);
+    } else {
+      noiseBurst(0.02, 0.03, 1400, "bandpass");
+      tone("sine", 440, 0.08, 0.03);
+      tone("sine", 660, 0.1, 0.022);
+    }
+  }
+
+  let dateAmbTimer = null;
+  let dateAmbGain = null;
+
+  function stopDateAmbience() {
+    if (dateAmbTimer) {
+      clearInterval(dateAmbTimer);
+      dateAmbTimer = null;
+    }
+    if (dateAmbGain) {
+      try {
+        const t = now();
+        dateAmbGain.gain.cancelScheduledValues(t);
+        dateAmbGain.gain.setValueAtTime(dateAmbGain.gain.value, t);
+        dateAmbGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+      } catch (_) {}
+      dateAmbGain = null;
+    }
+  }
+
+  /** 西餐厅：换一曲夜店式柔和爵士氛围 */
+  function startDateAmbience() {
+    if (!ensure()) return;
+    stopDateAmbience();
+    const bus = ensureMusicBus() || master;
+    dateAmbGain = ctx.createGain();
+    dateAmbGain.gain.value = 0.0001;
+    dateAmbGain.connect(bus);
+    const t0 = now();
+    dateAmbGain.gain.exponentialRampToValueAtTime(0.62, t0 + 1.4);
+
+    // Dm7 · G7 · Cmaj7 · Am7 循环，偏晚间酒吧
+    const prog = [
+      { bass: 146.83, chord: [293.66, 349.23, 440.0, 523.25] }, // D
+      { bass: 196.0, chord: [246.94, 293.66, 349.23, 440.0] }, // G
+      { bass: 130.81, chord: [261.63, 329.63, 392.0, 493.88] }, // C
+      { bass: 110.0, chord: [220.0, 261.63, 329.63, 392.0] }, // A
+    ];
+    let step = 0;
+    let tick = 0;
+
+    function voice(type, hz, d, peak, opts) {
+      if (!ctx || !dateAmbGain) return;
+      const o = opts || {};
+      const start = now() + (o.delay || 0);
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      const f = ctx.createBiquadFilter();
+      osc.type = type;
+      osc.frequency.setValueAtTime(Math.max(20, hz), start);
+      if (o.slide) {
+        osc.frequency.exponentialRampToValueAtTime(Math.max(20, o.slide), start + d * 0.9);
+      }
+      osc.detune.value = o.detune || 0;
+      f.type = "lowpass";
+      f.frequency.value = o.filter || 2200;
+      f.Q.value = 0.5;
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), start + (o.attack || 0.04));
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak * (o.decay || 0.35)), start + d * 0.45);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + d);
+      osc.connect(f);
+      f.connect(g);
+      g.connect(dateAmbGain);
+      osc.start(start);
+      osc.stop(start + d + 0.05);
+    }
+
+    function playBar(bar) {
+      if (!dateAmbGain) return;
+      // 低音拨弦
+      voice("triangle", bar.bass, 1.5, 0.1, { filter: 480, attack: 0.02 });
+      voice("sine", bar.bass * 2, 1.2, 0.035, { filter: 700, delay: 0.02 });
+      // 七和弦垫底
+      for (let i = 0; i < bar.chord.length; i++) {
+        voice("sine", bar.chord[i], 3.8, 0.045 - i * 0.006, {
+          filter: 1800,
+          attack: 0.35,
+          detune: (i - 1.5) * 3,
+          delay: i * 0.03,
+        });
+      }
+      // 轻钢琴点缀
+      const mel = [
+        bar.chord[2],
+        bar.chord[1],
+        bar.chord[3],
+        bar.chord[2] * 0.75,
+      ];
+      for (let i = 0; i < 4; i++) {
+        voice("triangle", mel[i], 0.55, 0.055, {
+          filter: 3200,
+          attack: 0.01,
+          decay: 0.2,
+          delay: 0.45 + i * 0.55,
+        });
+        voice("sine", mel[i] * 2, 0.35, 0.02, {
+          filter: 4500,
+          attack: 0.01,
+          delay: 0.47 + i * 0.55,
+        });
+      }
+      // 极轻刷镲感
+      if (tick % 2 === 0) {
+        noiseBurst(0.04, 0.018, 7000, "highpass");
+      }
+    }
+
+    playBar(prog[0]);
+    dateAmbTimer = setInterval(() => {
+      if (!dateAmbGain) return;
+      step = (step + 1) % prog.length;
+      tick += 1;
+      playBar(prog[step]);
+    }, 3600);
+  }
+
+  function playSchoolBell() {
+    if (!ensure()) return;
+    // 下课铃：两段急促铃声
+    const ring = (freq, delay, dur, peak) => {
+      setTimeout(() => {
+        if (!ctx) return;
+        tone("square", freq, dur, peak * 0.55);
+        tone("sine", freq * 1.01, dur, peak);
+        noiseBurst(0.04, 0.03, 2200, "highpass");
+      }, delay);
+    };
+    ring(880, 0, 0.18, 0.13);
+    ring(880, 220, 0.18, 0.12);
+    ring(988, 520, 0.2, 0.13);
+    ring(988, 760, 0.22, 0.11);
+    ring(880, 1100, 0.28, 0.12);
+  }
+
   function playTrainArriveChime() {
     if (!ensure()) return;
     const beat = (freq, delay, dur, peak) => {
@@ -908,6 +1348,16 @@
     playGunShot,
     playDoorChime,
     playTrainArriveChime,
+    playMusicNote,
+    playMusicWallHit,
+    playMusicTrack,
+    stopMusicTrack,
+    getMusicTrack,
+    setMusicTrackVolume,
+    pulseMusicTrack,
+    startDateAmbience,
+    stopDateAmbience,
+    playSchoolBell,
     playSubwayAnnounce,
     stopSubwayAnnounce,
     startTrainLoop,

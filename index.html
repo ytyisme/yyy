@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=90" />
+  <link rel="stylesheet" href="style.css?v=120" />
   <script>
     window.GAME_BUILD = "90";
     (function () {
@@ -114,6 +114,10 @@
         <button id="lv17-btn-dagger" type="button" class="lv17-battle-btn">小匕首</button>
         <button id="lv17-btn-fire" type="button" class="lv17-battle-btn fire">开枪</button>
         <button id="lv17-btn-slash" type="button" class="lv17-battle-btn slash">挥砍</button>
+        <button id="lv17-btn-phase" type="button" class="lv17-battle-btn phase">穿透×3</button>
+        <button id="lv17-btn-medkit" type="button" class="lv17-battle-btn med">医疗包×3</button>
+        <button id="lv17-btn-apple" type="button" class="lv17-battle-btn apple">金苹果×2</button>
+        <button id="lv17-btn-summon-red" type="button" class="lv17-battle-btn summon-red">召唤红队 · R</button>
       </div>
 
       <div id="chat-dock" class="chat-dock hidden">
@@ -124,7 +128,7 @@
         <div class="chat-card">
           <p>聊天记录 · 发的字也会出现在头顶</p>
           <div id="chat-log" class="chat-log"></div>
-          <input id="chat-input" type="text" maxlength="12" placeholder="最多 12 个字" autocomplete="off" />
+          <input id="chat-input" type="text" maxlength="24" placeholder="随便说，NPC会认真回 · 指令也行" autocomplete="off" />
           <div class="chat-actions">
             <button id="chat-send" type="button">发送</button>
             <button id="chat-close" type="button">关闭</button>
@@ -484,36 +488,42 @@
       </div>
     </div>
   </div>
-  <script src="lib/util.js?v=90"></script>
-  <script src="audio.js?v=90"></script>
-  <script src="coop.js?v=90"></script>
-  <script src="levels/boot.js?v=90"></script>
-  <script src="levels/01.js?v=90"></script>
-  <script src="levels/02.js?v=90"></script>
-  <script src="levels/03.js?v=90"></script>
-  <script src="levels/04.js?v=90"></script>
-  <script src="levels/05.js?v=90"></script>
-  <script src="levels/06.js?v=90"></script>
-  <script src="levels/07.js?v=90"></script>
-  <script src="levels/08.js?v=90"></script>
-  <script src="levels/09.js?v=90"></script>
-  <script src="levels/10.js?v=90"></script>
-  <script src="levels/11.js?v=90"></script>
-  <script src="levels/12.js?v=90"></script>
-  <script src="levels/12-catalog.js?v=90"></script>
-  <script src="levels/12-world.js?v=90"></script>
-  <script src="levels/13.js?v=90"></script>
-  <script src="levels/14.js?v=90"></script>
-  <script src="levels/14-tower.js?v=90"></script>
-  <script src="levels/15.js?v=90"></script>
-  <script src="levels/15-subway.js?v=90"></script>
-  <script src="levels/16.js?v=90"></script>
-  <script src="levels/16-range.js?v=90"></script>
-  <script src="levels/17.js?v=90"></script>
-  <script src="levels/17-battle.js?v=90"></script>
-  <script src="lib/social.js?v=90"></script>
-  <script src="lib/ads.js?v=90"></script>
-  <script src="lib/draw.js?v=90"></script>
-  <script src="game.js?v=90"></script>
+  <script src="lib/util.js?v=120"></script>
+  <script src="audio.js?v=120"></script>
+  <script src="coop.js?v=120"></script>
+  <script src="levels/boot.js?v=120"></script>
+  <script src="levels/01.js?v=120"></script>
+  <script src="levels/02.js?v=120"></script>
+  <script src="levels/03.js?v=120"></script>
+  <script src="levels/04.js?v=120"></script>
+  <script src="levels/05.js?v=120"></script>
+  <script src="levels/06.js?v=120"></script>
+  <script src="levels/07.js?v=120"></script>
+  <script src="levels/08.js?v=120"></script>
+  <script src="levels/09.js?v=120"></script>
+  <script src="levels/10.js?v=120"></script>
+  <script src="levels/11.js?v=120"></script>
+  <script src="levels/12.js?v=120"></script>
+  <script src="levels/12-catalog.js?v=120"></script>
+  <script src="levels/12-world.js?v=120"></script>
+  <script src="levels/13.js?v=120"></script>
+  <script src="levels/14.js?v=120"></script>
+  <script src="levels/14-tower.js?v=120"></script>
+  <script src="levels/15.js?v=120"></script>
+  <script src="levels/15-subway.js?v=120"></script>
+  <script src="levels/16.js?v=120"></script>
+  <script src="levels/16-range.js?v=120"></script>
+  <script src="levels/17.js?v=120"></script>
+  <script src="levels/17-battle.js?v=120"></script>
+  <script src="levels/18.js?v=120"></script>
+  <script src="levels/18-school.js?v=120"></script>
+  <script src="levels/19.js?v=120"></script>
+  <script src="levels/19-music.js?v=120"></script>
+  <script src="levels/20.js?v=120"></script>
+  <script src="levels/20-date.js?v=120"></script>
+  <script src="lib/social.js?v=120"></script>
+  <script src="lib/ads.js?v=120"></script>
+  <script src="lib/draw.js?v=120"></script>
+  <script src="game.js?v=120"></script>
 </body>
 </html>

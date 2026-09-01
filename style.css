@@ -860,6 +860,35 @@ body {
   gap: 8px;
 }
 
+.level-section-sep {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0 2px;
+  color: #c9a67a;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  user-select: none;
+  pointer-events: none;
+}
+
+.level-section-sep::before,
+.level-section-sep::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #c47a30, transparent);
+  opacity: 0.85;
+}
+
+.level-section-sep span {
+  color: #ffd24a;
+  padding: 0 2px;
+}
+
 .level-cell {
   appearance: none;
   border: 1px solid #7a3d24;
@@ -3354,7 +3383,7 @@ body.craft-on .craft-only {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  width: 168px;
+  width: 188px;
   pointer-events: auto;
 }
 
@@ -3368,9 +3397,9 @@ body.craft-on .craft-only {
   background: linear-gradient(180deg, #3a2418, #24140e);
   color: #ffd24a;
   font-family: "Noto Sans SC", sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  padding: 12px 8px;
+  padding: 10px 6px;
   cursor: pointer;
   border-radius: 8px;
   box-shadow: 0 3px 0 #1a0c08;
@@ -3388,13 +3417,44 @@ body.craft-on .craft-only {
   color: #ddd;
 }
 
+.lv17-battle-btn.phase {
+  border-color: #7c6cf0;
+  background: linear-gradient(180deg, #3a2a6a, #1a1438);
+  color: #cbb8ff;
+  grid-column: 1 / -1;
+}
+
+.lv17-battle-btn.med {
+  border-color: #e74c3c;
+  background: linear-gradient(180deg, #6a2020, #3a1010);
+  color: #ffb4b4;
+}
+
+.lv17-battle-btn.apple {
+  border-color: #d4a017;
+  background: linear-gradient(180deg, #6a5010, #3a2a08);
+  color: #ffe566;
+}
+
+.lv17-battle-btn.summon-red {
+  border-color: #ff7a6e;
+  background: linear-gradient(180deg, #8a2020, #4a1010);
+  color: #ffc0b8;
+  grid-column: 1 / -1;
+}
+
 .lv17-battle-btn.active {
   border-color: #4ade80;
   color: #4ade80;
   box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.35);
 }
 
-.lv17-battle-btn:active {
+.lv17-battle-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.lv17-battle-btn:active:not(:disabled) {
   transform: translateY(2px);
   box-shadow: 0 1px 0 #1a0c08;
 }
