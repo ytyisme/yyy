@@ -38,14 +38,6 @@
   const shopStarCount = document.getElementById("shop-star-count");
   const shopTip = document.getElementById("shop-tip");
   const itemBar = document.getElementById("item-bar");
-  const adPanel = document.getElementById("ad-panel");
-  const adVideo = document.getElementById("ad-video");
-  const adTitle = document.getElementById("ad-title");
-  const adDesc = document.getElementById("ad-desc");
-  const adCountdown = document.getElementById("ad-countdown");
-  const adProgressBar = document.getElementById("ad-progress-bar");
-  const adCloseBtn = document.getElementById("ad-close");
-  const adTimerHint = document.getElementById("ad-timer-hint");
   const levelSelect = document.getElementById("level-select");
   const homeNoticesEl = document.getElementById("home-notices");
   const levelGrid = document.getElementById("level-grid");
@@ -141,13 +133,6 @@
   let shopOpen = false;
   let socialOpen = false;
   let adOpen = false;
-  let adTimerId = null;
-  let adEndsAt = 0;
-  let adAnimId = 0;
-  let adCanvas = null;
-  let adDrawCtx = null;
-  let adCurrent = null;
-  let adStartPerf = 0;
   let brightness = 100;
   let volumePct = 35;
   let inventory = {
@@ -174,59 +159,6 @@
     bucket: { cost: 17, name: "桶" },
   };
 
-  const AD_DURATION = 25;
-  let adMode = "level"; // level | unlock
-  let adTargetLevel = 0;
-  const ADS = [
-    {
-      theme: "soda",
-      mark: "冰爽",
-      title: "岩浆可乐 · 限时特供",
-      desc: "一口冷静，两口起飞。今日下单立减岩浆税 50%。",
-    },
-    {
-      theme: "food",
-      mark: "外卖",
-      title: "僵尸烧烤摊上线了",
-      desc: "炭火慢烤，绝不追人（大概）。满 30 减 8，骑士 3 分钟到。",
-    },
-    {
-      theme: "game",
-      mark: "手游",
-      title: "五角星连连看 Pro",
-      desc: "下载即送传说皮肤「假岩浆」。先到先得，手慢无星。",
-    },
-    {
-      theme: "shop",
-      mark: "商城",
-      title: "防烫靴超级折扣周",
-      desc: "踩岩浆不烫脚（广告效果）。全场跑酷装备 2 件 8 折。",
-    },
-    {
-      theme: "soda",
-      mark: "APP",
-      title: "砖块贷 · 秒借秒跳",
-      desc: "额度高达 9999 星，当天放款。过桥费？我们帮你垫。",
-    },
-    {
-      theme: "food",
-      mark: "饮品",
-      title: "狼牙棒奶茶新品",
-      desc: "旋转搅拌，口感暴击。第三杯半价，打工人续命首选。",
-    },
-    {
-      theme: "game",
-      mark: "直播",
-      title: "主播今晚通关第 9 关",
-      desc: "关注领加速药水。弹幕刷「跳」送火箭表情包。",
-    },
-    {
-      theme: "shop",
-      mark: "保险",
-      title: "岩浆意外险上线",
-      desc: "掉坑包赔，僵尸啃一口也赔。月缴 1 星，安心逃亡。",
-    },
-  ];
   let state = "login"; // login | select | menu | naming | playing | dead | win
   let level = 1;
   let stars = 0;
@@ -257,7 +189,7 @@
   let homePeerReady = false;
   let banTimerId = 0;
   const TOTAL_LEVELS = 35;
-  const MAX_PLAYABLE = 20;
+  const MAX_PLAYABLE = 24;
   let cameraX = 0;
   let worldMin = 0;
   let worldWidth = 3200;
@@ -283,6 +215,10 @@
   let schoolScene = null; // level 18 school rush
   let musicScene = null; // level 19 music room
   let dateScene = null; // level 20 restaurant date
+  let kongScene = null; // level 21 donkey kong
+  let starHouseScene = null; // level 22 star house fountain
+  let matchScene = null; // level 23 match-3 shooter
+  let furnaceScene = null; // level 24 countdown furnace
   let initTower14 = null;
   let updateTower14 = null;
   let drawTowerExtras = null;
@@ -315,6 +251,22 @@
   let drawDateExtras = null;
   let syncDate20OnLeave = null;
   let tryClickDate20 = null;
+  let initKong21 = null;
+  let updateKong21 = null;
+  let drawKongExtras = null;
+  let syncKong21OnLeave = null;
+  let initStarHouse22 = null;
+  let updateStarHouse22 = null;
+  let drawStarHouseExtras = null;
+  let syncStarHouse22OnLeave = null;
+  let initMatch23 = null;
+  let updateMatch23 = null;
+  let drawMatchExtras = null;
+  let syncMatch23OnLeave = null;
+  let initFurnace24 = null;
+  let updateFurnace24 = null;
+  let drawFurnaceExtras = null;
+  let syncFurnace24OnLeave = null;
   let homeMode = false;
   let spikes = [];
   let maces = [];
@@ -527,6 +479,10 @@
     if (opts.schoolScene !== undefined) schoolScene = opts.schoolScene;
     if (opts.musicScene !== undefined) musicScene = opts.musicScene;
     if (opts.dateScene !== undefined) dateScene = opts.dateScene;
+    if (opts.kongScene !== undefined) kongScene = opts.kongScene;
+    if (opts.starHouseScene !== undefined) starHouseScene = opts.starHouseScene;
+    if (opts.matchScene !== undefined) matchScene = opts.matchScene;
+    if (opts.furnaceScene !== undefined) furnaceScene = opts.furnaceScene;
     if (opts.player) player = opts.player;
     if ("star" in opts) star = opts.star;
   }
@@ -555,6 +511,10 @@
     schoolScene = null;
     musicScene = null;
     dateScene = null;
+    kongScene = null;
+    starHouseScene = null;
+    matchScene = null;
+    furnaceScene = null;
     homeMode = false;
     spikes = [];
     maces = [];
@@ -763,6 +723,7 @@
     if (cause === "crater") return `${who}掉进陨石坑了`;
     if (cause === "car") return `你撞大运了，哥们！`;
     if (cause === "hungry") return `${who}没抢到饭…`;
+    if (cause === "barrel") return `${who}被大木桶砸中了`;
     return `${who}烫死了`;
   }
 
@@ -1613,6 +1574,10 @@
     if (schoolScene && updateSchool18) updateSchool18(dt);
     if (musicScene && updateMusic19) updateMusic19(dt);
     if (dateScene && updateDate20) updateDate20(dt);
+    if (kongScene && updateKong21) updateKong21(dt);
+    if (starHouseScene && updateStarHouse22) updateStarHouse22(dt);
+    if (matchScene && updateMatch23) updateMatch23(dt);
+    if (furnaceScene && updateFurnace24) updateFurnace24(dt);
 
     updateCoop(dt);
     cameraX = cameraForView();
@@ -1650,7 +1615,7 @@
     particles = particles.filter((p) => p.life > 0);
   }
 
-  function die(cause) {
+  function leaveSpecialLevels() {
     if (syncTower14OnLeave) syncTower14OnLeave();
     if (syncSubway15OnLeave) syncSubway15OnLeave();
     if (syncRange16OnLeave) syncRange16OnLeave();
@@ -1658,6 +1623,14 @@
     if (syncSchool18OnLeave) syncSchool18OnLeave();
     if (syncMusic19OnLeave) syncMusic19OnLeave();
     if (syncDate20OnLeave) syncDate20OnLeave();
+    if (syncKong21OnLeave) syncKong21OnLeave();
+    if (syncStarHouse22OnLeave) syncStarHouse22OnLeave();
+    if (syncMatch23OnLeave) syncMatch23OnLeave();
+    if (syncFurnace24OnLeave) syncFurnace24OnLeave();
+  }
+
+  function die(cause) {
+    leaveSpecialLevels();
     const name = playerName || "玩家";
     if (window.LevelCoop && LevelCoop.isJoined()) {
       LevelCoop.send({ type: "dead", lv: level, cause, name: name.slice(0, 12) });
@@ -1696,18 +1669,14 @@
                 ? "你撞大运了，哥们！"
                 : cause === "hungry"
                   ? "三份饭都被抢光了！"
-                  : "掉进岩浆了！";
+                  : cause === "barrel"
+                    ? "被大木桶砸中了！"
+                    : "掉进岩浆了！";
     showOverlay(cause === "car" ? "你撞大运了，哥们！" : "游戏结束", `${reason}<br />关卡 ${level} · 已收集 ${stars} 颗五角星`, "再试一次");
   }
 
   function winLevel() {
-    if (syncTower14OnLeave) syncTower14OnLeave();
-    if (syncSubway15OnLeave) syncSubway15OnLeave();
-    if (syncRange16OnLeave) syncRange16OnLeave();
-    if (syncBattle17OnLeave) syncBattle17OnLeave();
-    if (syncSchool18OnLeave) syncSchool18OnLeave();
-    if (syncMusic19OnLeave) syncMusic19OnLeave();
-    if (syncDate20OnLeave) syncDate20OnLeave();
+    leaveSpecialLevels();
     stopLevelCoop();
     state = "win";
     statusLabel.textContent = "通关";
@@ -1723,7 +1692,7 @@
     if (level >= MAX_PLAYABLE) {
       showOverlay(
         "到达终点！",
-        `第 ${level} 关完成！<br />第 20 关「西餐厅」是目前的终点，后面作者还在做，敬请期待。`,
+        `第 ${level} 关完成！<br />第 24 关「倒计时熔炉」是目前的终点，后面作者还在做，敬请期待。`,
         "回主页",
         { hideHint: true }
       );
@@ -1789,6 +1758,18 @@
     } else if (next === 20) {
       warn =
         `<br /><span style="color:#ffb347">第 20 关：西餐厅。选性别、换装，和约会对象一起放松用餐。</span>`;
+    } else if (next === 21) {
+      warn =
+        `<br /><span style="color:#ffb347">第 21 关：DONKEY KONG。爬梯子、躲开滚桶，冲到顶层救人。</span>`;
+    } else if (next === 22) {
+      warn =
+        `<br /><span style="color:#ffb347">第 22 关：五角星屋。喷泉会喷出大量五角星，靠近去捡。</span>`;
+    } else if (next === 23) {
+      warn =
+        `<br /><span style="color:#ffb347">第 23 关：消消乐。顶上炮台瞄准发射，三连同色消除，清空 90 行过关。</span>`;
+    } else if (next === 24) {
+      warn =
+        `<br /><span style="color:#ffb347">第 24 关：倒计时熔炉。岩浆每 30 秒上涨，向上建造，集齐 3 星开启传送门。</span>`;
     }
 
     showOverlay(
@@ -1848,8 +1829,7 @@
       closeSettings();
       closeShop();
       closeChat();
-      cancelAd(false);
-    }
+      }
     syncTouchPad();
     syncItemBar();
     syncChatBtn();
@@ -1923,7 +1903,6 @@
     if (volumeSlider) volumeSlider.value = String(volumePct);
     if (volumeValue) volumeValue.textContent = `${volumePct}%`;
     if (window.GameAudio) GameAudio.setVolume(volumePct / 100);
-    if (adVideo) adVideo.volume = volumePct / 100;
     saveStr("yyy_volume", volumePct);
   }
 
@@ -1973,7 +1952,7 @@
   }
 
   function isLevelUnlocked(n) {
-    if (n <= 1 || n === 11 || n === 12) return true;
+    if (n <= 1 || n === 11 || n === 12 || n === 22) return true;
     return maxCleared >= n - 1;
   }
 
@@ -2091,7 +2070,6 @@
     syncItemBar();
     closeShop();
     closeSettings();
-    cancelAd(false);
     statusLabel.textContent = "使用跳过卡";
     if (window.GameAudio) GameAudio.playWin();
     finishSkipAd();
@@ -2382,6 +2360,22 @@
   function buildLevelGrid() {
     if (!levelGrid) return;
     levelGrid.innerHTML = "";
+    const LEVEL_BADGES = {
+      11: "月球",
+      12: "沙盒",
+      13: "解压",
+      14: "大厦",
+      15: "挤地铁",
+      16: "练枪",
+      17: "战场",
+      18: "抢饭",
+      19: "音乐",
+      20: "西餐厅",
+      21: "DONKEY KONG",
+      22: "五角星屋",
+      23: "消消乐",
+      24: "倒计时熔炉",
+    };
     for (let i = 1; i <= TOTAL_LEVELS; i++) {
       if (i === 1) {
         const sep = document.createElement("div");
@@ -2407,39 +2401,9 @@
       } else if (!isLevelUnlocked(i)) {
         btn.classList.add("locked-progress");
         btn.innerHTML = `${i}<span class="badge">未解锁</span>`;
-      } else if (i === 11) {
+      } else if (LEVEL_BADGES[i]) {
         btn.classList.add("endpoint");
-        btn.innerHTML = `${i}<span class="badge">月球</span>`;
-      } else if (i === 12) {
-        btn.classList.add("endpoint");
-        btn.innerHTML = `${i}<span class="badge">沙盒</span>`;
-      } else if (i === 13) {
-        btn.classList.add("endpoint");
-        btn.innerHTML = `${i}<span class="badge">解压</span>`;
-      } else if (i === 14) {
-        btn.classList.add("endpoint");
-        btn.innerHTML = `${i}<span class="badge">大厦</span>`;
-      } else if (i === 15) {
-        btn.classList.add("endpoint");
-        btn.innerHTML = `${i}<span class="badge">挤地铁</span>`;
-      } else if (i === 16) {
-        btn.classList.add("endpoint");
-        btn.innerHTML = `${i}<span class="badge">练枪</span>`;
-      } else if (i === 17) {
-        btn.classList.add("endpoint");
-        btn.innerHTML = `${i}<span class="badge">战场</span>`;
-      } else if (i === 18) {
-        btn.classList.add("endpoint");
-        btn.innerHTML = `${i}<span class="badge">抢饭</span>`;
-      } else if (i === 19) {
-        btn.classList.add("endpoint");
-        btn.innerHTML = `${i}<span class="badge">音乐</span>`;
-      } else if (i === 20) {
-        btn.classList.add("endpoint");
-        btn.innerHTML = `${i}<span class="badge">西餐厅</span>`;
-      } else if (i === MAX_PLAYABLE) {
-        btn.classList.add("endpoint");
-        btn.innerHTML = `${i}<span class="badge">终点</span>`;
+        btn.innerHTML = `${i}<span class="badge">${LEVEL_BADGES[i]}</span>`;
       } else if (maxCleared >= i) {
         btn.classList.add("playable");
         btn.innerHTML = `${i}<span class="badge">已通关</span>`;
@@ -2482,13 +2446,25 @@
       hideUnlockDialog();
       return;
     }
-    // Keep target; hide dialog then play unlock ad
-    pendingUnlockLevel = 0;
-    if (unlockDialog) {
-      unlockDialog.classList.add("hidden");
-      unlockDialog.setAttribute("aria-hidden", "true");
+    hideUnlockDialog();
+    markLevelCleared(Math.max(1, n - 1));
+    enterLevel(n);
+  }
+
+
+  function finishSkipAd() {
+    markLevelCleared(level);
+    if (window.GameAudio) GameAudio.stopAllAmbience();
+    if (level >= MAX_PLAYABLE) {
+      statusLabel.textContent = "已是终点";
+      showLevelSelect();
+      if (levelTip) {
+        levelTip.textContent = "已经是目前最后一关啦";
+        levelTip.classList.remove("hidden");
+      }
+      return;
     }
-    startUnlockSkipAd(n);
+    startGame("next");
   }
 
   function enterLevel(n) {
@@ -2515,10 +2491,7 @@
     hideOverlay();
     hideLevelSelect();
     hideUnlockDialog();
-    if (syncTower14OnLeave) syncTower14OnLeave();
-    if (syncSubway15OnLeave) syncSubway15OnLeave();
-    if (syncRange16OnLeave) syncRange16OnLeave();
-    if (syncBattle17OnLeave) syncBattle17OnLeave();
+    leaveSpecialLevels();
     state = "select";
     statusLabel.textContent = "选关";
     watchLobbyCounts();
@@ -2601,7 +2574,7 @@
   function selectLevel(n) {
     playUiClick();
     if (n > MAX_PLAYABLE) {
-      levelTip.textContent = "后面作者还在做，敬请期待（第 20 关「西餐厅」是目前终点）";
+      levelTip.textContent = "后面作者还在做，敬请期待（第 24 关「倒计时熔炉」是目前终点）";
       levelTip.classList.remove("hidden");
       return;
     }
@@ -2613,10 +2586,7 @@
   }
 
   function openLoginScreen() {
-    if (syncTower14OnLeave) syncTower14OnLeave();
-    if (syncSubway15OnLeave) syncSubway15OnLeave();
-    if (syncRange16OnLeave) syncRange16OnLeave();
-    if (syncBattle17OnLeave) syncBattle17OnLeave();
+    leaveSpecialLevels();
     if (isBanned()) {
       showBanScreen("你被封号了");
       return;
@@ -2652,15 +2622,8 @@
   }
 
   function goHome() {
-    if (syncTower14OnLeave) syncTower14OnLeave();
-    if (syncSubway15OnLeave) syncSubway15OnLeave();
-    if (syncRange16OnLeave) syncRange16OnLeave();
-    if (syncBattle17OnLeave) syncBattle17OnLeave();
-    if (syncSchool18OnLeave) syncSchool18OnLeave();
-    if (syncMusic19OnLeave) syncMusic19OnLeave();
-    if (syncDate20OnLeave) syncDate20OnLeave();
+    leaveSpecialLevels();
     stopLevelCoop();
-    cancelAd(false);
     closeSettings();
     closeShop();
     if (loggedIn) showLevelSelect();
@@ -2993,13 +2956,21 @@
     else if (syncMusic19OnLeave) syncMusic19OnLeave();
     if (level === 20 && initDate20) initDate20();
     else if (syncDate20OnLeave) syncDate20OnLeave();
+    if (level === 21 && initKong21) initKong21();
+    else if (syncKong21OnLeave) syncKong21OnLeave();
+    if (level === 22 && initStarHouse22) initStarHouse22();
+    else if (syncStarHouse22OnLeave) syncStarHouse22OnLeave();
+    if (level === 23 && initMatch23) initMatch23();
+    else if (syncMatch23OnLeave) syncMatch23OnLeave();
+    if (level === 24 && initFurnace24) initFurnace24();
+    else if (syncFurnace24OnLeave) syncFurnace24OnLeave();
     if (window.GameAudio) {
       GameAudio.unlock();
       GameAudio.syncAmbience({
         playing: true,
         force: true,
         city: level === 8,
-        moon: level === 11 || level === 19 || level === 20,
+        moon: level === 11 || level === 19 || level === 20 || level === 21 || level === 22 || level === 23,
         zombies: zombies.length > 0,
       });
     }
@@ -3065,10 +3036,9 @@
   const S = GameUtil.liveScope(
     (n) => eval(n),
     (n, value) => eval(n + " = value"),
-    "ADS,AD_DURATION,COOP_COLORS,DESIGN_H,DESIGN_W,GRAVITY,H,JUMP,LAVA_Y,MAX_PLAYABLE,MOVE,PORTRAIT_PROMPT_KEY,PORTRAIT_W,SHOP_CATALOG,TOTAL_LEVELS,W,ZOMBIE_COUNT,adAnimId,adCanvas,adCloseBtn,adCountdown,adCurrent,adDesc,adDrawCtx,adEndsAt,adMode,adOpen,adPanel,adProgressBar,adStartPerf,adTargetLevel,adTimerHint,adTimerId,adTitle,adVideo,announceChat,announceDeath,announceJoin,announceLeave,applyBrightness,applyCoopMap,applyLevelCounts,applyLevelOpts,applyVolume,armPickaxe,armSword,backpack,banLeft,banMsg,banScreen,banTimerId,beginPlaying,belly,breakWithPickaxe,bridgePieceW,bridgeY,brightness,brightnessSlider,brightnessValue,buildLevelGrid,buyItem,cameraForView,cameraX,canvas,canvasScale,chatBtn,chatClose,chatDock,chatInput,chatLog,chatLogEl,chatLogLevel,chatPanel,chatSend,chatUserCancel,chatUserDialog,chatUserFriend,chatUserMsg,chatUserReport,chatUserTarget,clamp,clearInput,clientToWorld,closeChat,closeLoginScreen,closeSettings,closeShop,colorForCoopId,comingSoon,confirmPlayerName,controlHintText,coopAcc,coopAnchorX,coopAnnounceAt,coopCount,coopFurthestX,coopHostId,cornerActions,craftCoopBtn,crate,craters,ctx,deathLine,die,eatAnim,endSign,enterLevel,escapeHtml,extendEndlessParkour,fakeButtons,fakeLava,findRoofAhead,friendCenter,friendCenterOpen,friendChatInput,friendChatLogEl,friendChatSend,friendChatTitle,friendInviteBtn,friendInviteLevel,friendListEl,friendReqCurrent,friendReqDialog,friendReqMsg,friendReqNo,friendReqQueue,friendReqYes,friendUnread,friends,friendsBtn,friendsClose,gameTitle,globalChat,globalChatBtn,globalChatClose,globalChatInput,globalChatLogEl,globalChatOpen,globalChatPanel,globalChatSend,globalChatUnread,goHome,handleCoopMessage,handleHomePeer,hideLevelSelect,hideOverlay,hidePortraitPrompt,hideSandboxMode,hideUnlockDialog,hitRemotePlayer,homeBtn,homeMode,homeNotices,homeNoticesEl,homePeerQuietUntil,homePeerReady,inboxBtn,inboxClear,inboxClose,inboxListEl,inboxOpen,inboxPanel,inboxReports,inboxUnread,inventory,inviteCurrent,inviteDialog,inviteMsg,inviteNo,inviteQueue,inviteYes,isCoopHost,isDevicePortrait,isLevelUnlocked,isMobileLike,isPortraitPlay,itemBar,joinNotices,joinNoticesEl,keys,killZombieWithSword,lastCoopPos,lastMapSendAt,lastTs,lavaDrainAt,lavaDrains,level,levelGrid,levelLabel,levelPlayerCounts,levelSelect,levelTip,levelUses,loadJson,loadProgress,loadSettings,loadStr,localChat,localChatUntil,localCoopId,loggedIn,loginError,loginIdcard,loginMode,loginMoonBtn,loginPaneAccount,loginPaneIdcard,loginPanePhone,loginPass,loginPhone,loginScreen,loginSms,loginSubmit,loginTabs,loginUser,logoutBtn,loop,maces,makeLevel,mapChance,mapRand,mapRngFn,markLevelCleared,maxCleared,maybeSendMap,maybeShowPortraitPrompt,minorNotice,minorOk,mockSmsCode,moonCoopBtn,moonEarthGrad,moonSkyGrad,moonVoidGrad,moveActor,myDisplayName,nameForm,nameInput,nearestHuntTarget,needsPlayerName,onViewportChange,openChat,openLoginScreen,openSettings,openShop,overlay,overlayHint,overlayMsg,overlayTitle,packMap,parseIdAge,particles,pendingFriend,pendingUnlockLevel,pickups,pitStart,pitWidth,placeBridgeButton,platforms,playCraftCoopNow,playMoonCoopNow,playUiClick,player,playerLabel,playerName,portraitAccept,portraitDecline,portraitDialog,portraitPromptDismissed,portraitPromptOpen,potion,preferTouchControls,pushHomeNotice,pushJoinNotice,pushZombie,puzzleMode,puzzleTools,rand,rectsOverlap,refreshShopUI,remainingFor,remoteCamX,remotePlayers,renderChatLog,renderHomeNotices,renderJoinNotices,reportCancel,reportDialog,reportMsg,resetLevelUses,resetPuzzleButtons,returnToHomeMenu,reverseGoal,rockets,sandboxCreative,sandboxModeEl,sandboxSurvival,saveCleared,saveInventory,saveJson,saveStars,saveStr,seededRng,selectLevel,selectedFriendId,sendChat,sendSmsCode,setLoginMode,settingsBtn,settingsClose,settingsOpen,settingsPanel,setupPuzzleDrag,setupTouchControls,shake,shopBtn,shopClose,shopOpen,shopPanel,shopScene,shopStarCount,shopTip,showLevelSelect,towerScene,subwayScene,rangeScene,battleScene,schoolScene,musicScene,dateScene,showLoginError,showMinorNotice,showNamePrompt,showOverlay,showPhoneJoin,showPortraitPrompt,showSandboxMode,showUnlockDialog,skipBtn,skipPreviousAndEnter,smsBtn,smsCooldown,smsTimer,socialOpen,socialToastEl,socialToastTimer,solidAt,spawnBurst,spawnX,speedBoost,spikes,star,starLabel,stars,startBtn,startCraftWorld,startGame,startLevelCoop,state,statusLabel,stopLevelCoop,submitLogin,syncChatBtn,syncCoopStatus,syncHomeBtn,syncItemBar,syncPuzzleTools,syncTouchPad,syncViewport,time,toolMode,touch,touchPad,tryClickPlayerName,tryUseToolClick,unlockCancelBtn,unlockDialog,unlockMsg,unlockOnce,unlockSkipBtn,update,updateCoop,updateParticles,useBucketItem,useInventoryItem,usePotionItem,useSkipCard,volumePct,volumeSlider,volumeValue,watchLobbyCounts,winLevel,worldMin,worldWidth,zombies"
+    "COOP_COLORS,DESIGN_H,DESIGN_W,GRAVITY,H,JUMP,LAVA_Y,MAX_PLAYABLE,MOVE,PORTRAIT_PROMPT_KEY,PORTRAIT_W,SHOP_CATALOG,TOTAL_LEVELS,W,ZOMBIE_COUNT,adOpen,announceChat,announceDeath,announceJoin,announceLeave,applyBrightness,applyCoopMap,applyLevelCounts,applyLevelOpts,applyVolume,armPickaxe,armSword,backpack,banLeft,banMsg,banScreen,banTimerId,beginPlaying,belly,breakWithPickaxe,bridgePieceW,bridgeY,brightness,brightnessSlider,brightnessValue,buildLevelGrid,buyItem,cameraForView,cameraX,canvas,canvasScale,chatBtn,chatClose,chatDock,chatInput,chatLog,chatLogEl,chatLogLevel,chatPanel,chatSend,chatUserCancel,chatUserDialog,chatUserFriend,chatUserMsg,chatUserReport,chatUserTarget,clamp,clearInput,clientToWorld,closeChat,closeLoginScreen,closeSettings,closeShop,colorForCoopId,comingSoon,confirmPlayerName,controlHintText,coopAcc,coopAnchorX,coopAnnounceAt,coopCount,coopFurthestX,coopHostId,cornerActions,craftCoopBtn,crate,craters,ctx,deathLine,die,eatAnim,endSign,enterLevel,escapeHtml,extendEndlessParkour,fakeButtons,fakeLava,findRoofAhead,friendCenter,friendCenterOpen,friendChatInput,friendChatLogEl,friendChatSend,friendChatTitle,friendInviteBtn,friendInviteLevel,friendListEl,friendReqCurrent,friendReqDialog,friendReqMsg,friendReqNo,friendReqQueue,friendReqYes,friendUnread,friends,friendsBtn,friendsClose,gameTitle,globalChat,globalChatBtn,globalChatClose,globalChatInput,globalChatLogEl,globalChatOpen,globalChatPanel,globalChatSend,globalChatUnread,goHome,handleCoopMessage,handleHomePeer,hideLevelSelect,hideOverlay,hidePortraitPrompt,hideSandboxMode,hideUnlockDialog,hitRemotePlayer,homeBtn,homeMode,homeNotices,homeNoticesEl,homePeerQuietUntil,homePeerReady,inboxBtn,inboxClear,inboxClose,inboxListEl,inboxOpen,inboxPanel,inboxReports,inboxUnread,inventory,inviteCurrent,inviteDialog,inviteMsg,inviteNo,inviteQueue,inviteYes,isCoopHost,isDevicePortrait,isLevelUnlocked,isMobileLike,isPortraitPlay,itemBar,joinNotices,joinNoticesEl,keys,killZombieWithSword,lastCoopPos,lastMapSendAt,lastTs,lavaDrainAt,lavaDrains,level,levelGrid,levelLabel,levelPlayerCounts,levelSelect,levelTip,levelUses,loadJson,loadProgress,loadSettings,loadStr,localChat,localChatUntil,localCoopId,loggedIn,loginError,loginIdcard,loginMode,loginMoonBtn,loginPaneAccount,loginPaneIdcard,loginPanePhone,loginPass,loginPhone,loginScreen,loginSms,loginSubmit,loginTabs,loginUser,logoutBtn,loop,maces,makeLevel,mapChance,mapRand,mapRngFn,markLevelCleared,maxCleared,maybeSendMap,maybeShowPortraitPrompt,minorNotice,minorOk,mockSmsCode,moonCoopBtn,moonEarthGrad,moonSkyGrad,moonVoidGrad,moveActor,myDisplayName,nameForm,nameInput,nearestHuntTarget,needsPlayerName,onViewportChange,openChat,openLoginScreen,openSettings,openShop,overlay,overlayHint,overlayMsg,overlayTitle,packMap,parseIdAge,particles,pendingFriend,pendingUnlockLevel,pickups,pitStart,pitWidth,placeBridgeButton,platforms,playCraftCoopNow,playMoonCoopNow,playUiClick,player,playerLabel,playerName,portraitAccept,portraitDecline,portraitDialog,portraitPromptDismissed,portraitPromptOpen,potion,preferTouchControls,pushHomeNotice,pushJoinNotice,pushZombie,puzzleMode,puzzleTools,rand,rectsOverlap,refreshShopUI,remainingFor,remoteCamX,remotePlayers,renderChatLog,renderHomeNotices,renderJoinNotices,reportCancel,reportDialog,reportMsg,resetLevelUses,resetPuzzleButtons,returnToHomeMenu,reverseGoal,rockets,sandboxCreative,sandboxModeEl,sandboxSurvival,saveCleared,saveInventory,saveJson,saveStars,saveStr,seededRng,selectLevel,selectedFriendId,sendChat,sendSmsCode,setLoginMode,settingsBtn,settingsClose,settingsOpen,settingsPanel,setupPuzzleDrag,setupTouchControls,shake,shopBtn,shopClose,shopOpen,shopPanel,shopScene,shopStarCount,shopTip,showLevelSelect,towerScene,subwayScene,rangeScene,battleScene,schoolScene,musicScene,dateScene,kongScene,starHouseScene,matchScene,furnaceScene,showLoginError,showMinorNotice,showNamePrompt,showOverlay,showPhoneJoin,showPortraitPrompt,showSandboxMode,showUnlockDialog,skipBtn,skipPreviousAndEnter,smsBtn,smsCooldown,smsTimer,socialOpen,socialToastEl,socialToastTimer,solidAt,spawnBurst,spawnX,speedBoost,spikes,star,starLabel,stars,startBtn,startCraftWorld,startGame,startLevelCoop,state,statusLabel,stopLevelCoop,submitLogin,syncChatBtn,syncCoopStatus,syncHomeBtn,syncItemBar,syncPuzzleTools,syncTouchPad,syncViewport,time,toolMode,touch,touchPad,tryClickPlayerName,tryUseToolClick,unlockCancelBtn,unlockDialog,unlockMsg,unlockOnce,unlockSkipBtn,update,updateCoop,updateParticles,useBucketItem,useInventoryItem,usePotionItem,useSkipCard,volumePct,volumeSlider,volumeValue,watchLobbyCounts,winLevel,worldMin,worldWidth,zombies"
   );
   window.installGameSocial(S);
-  window.installGameAds(S);
   window.installGameDraw(S);
   if (typeof window.installTower14 === "function") window.installTower14(S);
   if (typeof window.installSubway15 === "function") window.installSubway15(S);
@@ -3077,6 +3047,10 @@
   if (typeof window.installSchool18 === "function") window.installSchool18(S);
   if (typeof window.installMusic19 === "function") window.installMusic19(S);
   if (typeof window.installDate20 === "function") window.installDate20(S);
+  if (typeof window.installKong21 === "function") window.installKong21(S);
+  if (typeof window.installStarHouse22 === "function") window.installStarHouse22(S);
+  if (typeof window.installMatch23 === "function") window.installMatch23(S);
+  if (typeof window.installFurnace24 === "function") window.installFurnace24(S);
   initTower14 = S.initTower14 || null;
   updateTower14 = S.updateTower14 || null;
   drawTowerExtras = S.drawTowerExtras || null;
@@ -3109,6 +3083,22 @@
   drawDateExtras = S.drawDateExtras || null;
   syncDate20OnLeave = S.syncDate20OnLeave || null;
   tryClickDate20 = S.tryClickDate20 || null;
+  initKong21 = S.initKong21 || null;
+  updateKong21 = S.updateKong21 || null;
+  drawKongExtras = S.drawKongExtras || null;
+  syncKong21OnLeave = S.syncKong21OnLeave || null;
+  initStarHouse22 = S.initStarHouse22 || null;
+  updateStarHouse22 = S.updateStarHouse22 || null;
+  drawStarHouseExtras = S.drawStarHouseExtras || null;
+  syncStarHouse22OnLeave = S.syncStarHouse22OnLeave || null;
+  initMatch23 = S.initMatch23 || null;
+  updateMatch23 = S.updateMatch23 || null;
+  drawMatchExtras = S.drawMatchExtras || null;
+  syncMatch23OnLeave = S.syncMatch23OnLeave || null;
+  initFurnace24 = S.initFurnace24 || null;
+  updateFurnace24 = S.updateFurnace24 || null;
+  drawFurnaceExtras = S.drawFurnaceExtras || null;
+  syncFurnace24OnLeave = S.syncFurnace24OnLeave || null;
   const {
     loadFriends,
     syncFriendsBtn,
@@ -3149,11 +3139,6 @@
     sendFriendInvite,
     handleSocial,
     OWNER_UNLOCK,
-    cancelAd,
-    closeAdEarly,
-    finishSkipAd,
-    startSkipAd,
-    startUnlockSkipAd,
     updateShopScene,
     tryClickShopStar,
     hoverShopStar,
@@ -3322,7 +3307,8 @@
     skipBtn.addEventListener("click", () => {
       playUiClick();
       if (shopOpen) return;
-      startSkipAd();
+      if (state !== "playing") return;
+      finishSkipAd();
     });
   }
   if (shopBtn) {
@@ -3723,13 +3709,6 @@
     portraitAccept.addEventListener("click", () => {
       playUiClick();
       requestLandscapePlay();
-    });
-  }
-  if (adCloseBtn) {
-    adCloseBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      playUiClick();
-      closeAdEarly();
     });
   }
 
