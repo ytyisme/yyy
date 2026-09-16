@@ -59,31 +59,53 @@ window.installMatch23 = function (S) {
     }
 
     function wantShoot() {
+      // 与全局跳跃键一致：空格 / ↑ / W / 触屏跳跃
       return (
+        keys.has(" ") ||
         keys.has("Space") ||
         keys.has("ArrowUp") ||
         keys.has("w") ||
         keys.has("W") ||
-        keys.has("Enter") ||
         (touch && touch.jump)
       );
     }
 
+    function aimAngle() {
+      return Math.PI / 2 + matchScene.aim; // 0 aim = 竖直向下
+    }
+
+    function muzzlePos() {
+      const ang = aimAngle();
+      const can = matchScene.cannon;
+      const len = 30;
+      return {
+        x: can.x + Math.cos(ang) * len,
+        y: can.y + Math.sin(ang) * len,
+        ang,
+      };
+    }
+
+    function boardEdges() {
+      return {
+        left: matchScene.originX,
+        right: matchScene.originX + matchScene.cols * matchScene.cell,
+      };
+    }
+
     function fireShot() {
       if (!matchScene || matchScene.done || matchScene.shot || matchScene.cooldown > 0) return;
-      const ang = Math.PI / 2 + matchScene.aim; // 0 aim = straight down
-      const speed = 520;
-      const can = matchScene.cannon;
+      const m = muzzlePos();
+      const speed = 560;
       matchScene.shot = {
-        x: can.x,
-        y: can.y + 18,
-        vx: Math.cos(ang) * speed,
-        vy: Math.sin(ang) * speed,
+        x: m.x,
+        y: m.y,
+        vx: Math.cos(m.ang) * speed,
+        vy: Math.sin(m.ang) * speed,
         color: matchScene.current,
-        r: matchScene.cell * 0.42,
+        r: matchScene.cell * 0.4,
       };
       popNext();
-      matchScene.cooldown = 0.18;
+      matchScene.cooldown = 0.14;
       if (window.GameAudio && GameAudio.playClick) GameAudio.playClick();
     }
 
@@ -94,8 +116,36 @@ window.installMatch23 = function (S) {
       };
     }
 
-    function findAttachCell(hitC, hitR, px, py) {
-      // 优先落在碰撞格的相邻空位；否则找最近空位
+    function hitFilledNear(x, y, rad) {
+      const cell = matchScene.cell;
+      const localY = y + matchScene.scrollY - matchScene.originY;
+      const localX = x - matchScene.originX;
+      const c0 = Math.floor(localX / cell);
+      const r0 = Math.floor(localY / cell);
+      let best = null;
+      let bestD = rad * rad;
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const c = c0 + dc;
+          const r = r0 + dr;
+          if (cellAt(c, r) < 0) continue;
+          const p = worldCellPos(c, r);
+          const hx = Math.max(p.x - cell / 2, Math.min(x, p.x + cell / 2));
+          const hy = Math.max(p.y - cell / 2, Math.min(y, p.y + cell / 2));
+          const dx = x - hx;
+          const dy = y - hy;
+          const d = dx * dx + dy * dy;
+          if (d <= bestD) {
+            bestD = d;
+            best = { c, r };
+          }
+        }
+      }
+      return best;
+    }
+
+    function findAttachCell(hitC, hitR, px, py, vx, vy) {
+      // 按「入射反方向」优先贴到被撞面的空格，距离作次要排序
       const dirs = [
         [0, -1],
         [0, 1],
@@ -106,26 +156,82 @@ window.installMatch23 = function (S) {
         [-1, 1],
         [1, 1],
       ];
+      const spd = Math.hypot(vx || 0, vy || 0) || 1;
+      const ix = -(vx || 0) / spd;
+      const iy = -(vy || 0) / spd;
       let best = null;
-      let bestD = 1e9;
+      let bestScore = 1e18;
       for (const [dc, dr] of dirs) {
         const c = hitC + dc;
         const r = hitR + dr;
         if (cellAt(c, r) !== -1) continue;
         if (c < 0 || r < 0 || c >= matchScene.cols || r >= matchScene.rows) continue;
         const p = worldCellPos(c, r);
-        const d = (p.x - px) * (p.x - px) + (p.y - py) * (p.y - py);
-        if (d < bestD) {
-          bestD = d;
+        const dist = (p.x - px) * (p.x - px) + (p.y - py) * (p.y - py);
+        const face = dc * ix + dr * iy;
+        const score = dist - face * 1400;
+        if (score < bestScore) {
+          bestScore = score;
           best = { c, r };
         }
       }
       if (best) return best;
-      // 若撞到空位本身
-      if (cellAt(hitC, hitR) < 0 && hitC >= 0 && hitR >= 0 && hitC < matchScene.cols && hitR < matchScene.rows) {
+      if (
+        cellAt(hitC, hitR) < 0 &&
+        hitC >= 0 &&
+        hitR >= 0 &&
+        hitC < matchScene.cols &&
+        hitR < matchScene.rows
+      ) {
         return { c: hitC, r: hitR };
       }
       return null;
+    }
+
+    // 预瞄：与真实弹道一致的碰壁反弹 + 落点格
+    function simulateAim() {
+      if (!matchScene) return { points: [], land: null };
+      const m = muzzlePos();
+      const rad = matchScene.cell * 0.4;
+      const { left, right } = boardEdges();
+      let x = m.x;
+      let y = m.y;
+      let vx = Math.cos(m.ang);
+      let vy = Math.sin(m.ang);
+      const points = [{ x, y }];
+      const step = 3;
+      const maxDist = 1100;
+      let traveled = 0;
+      let land = null;
+      let guard = 0;
+      while (traveled < maxDist && guard++ < 800) {
+        x += vx * step;
+        y += vy * step;
+        traveled += step;
+
+        if (x - rad < left) {
+          x = left + rad;
+          vx = Math.abs(vx);
+          points.push({ x, y });
+        } else if (x + rad > right) {
+          x = right - rad;
+          vx = -Math.abs(vx);
+          points.push({ x, y });
+        }
+
+        const hit = hitFilledNear(x, y, rad);
+        if (hit) {
+          land = findAttachCell(hit.c, hit.r, x, y, vx, vy);
+          points.push({ x, y });
+          break;
+        }
+
+        if (y > H + 30) break;
+        if ((guard & 3) === 0) points.push({ x, y });
+      }
+      matchScene.aimLand = land;
+      matchScene.aimPoints = points;
+      return { points, land };
     }
 
     function floodGroup(sc, sr, color) {
@@ -233,21 +339,31 @@ window.installMatch23 = function (S) {
     }
 
     function placeShotOnGrid(shot) {
-      const cell = matchScene.cell;
-      const localY = shot.y + matchScene.scrollY - matchScene.originY;
-      const localX = shot.x - matchScene.originX;
-      let c = Math.floor(localX / cell);
-      let r = Math.floor(localY / cell);
-      c = Math.max(0, Math.min(matchScene.cols - 1, c));
-      r = Math.max(0, Math.min(matchScene.rows - 1, r));
-
-      // 若当前格有方块，找相邻空位；若为空直接放
+      const hit = hitFilledNear(shot.x, shot.y, shot.r * 1.05);
       let target = null;
-      if (cellAt(c, r) < 0) target = { c, r };
-      else target = findAttachCell(c, r, shot.x, shot.y);
+      if (hit) {
+        if (cellAt(hit.c, hit.r) < 0) target = hit;
+        else target = findAttachCell(hit.c, hit.r, shot.x, shot.y, shot.vx, shot.vy);
+      }
 
       if (!target) {
-        // 挤到顶部空行
+        const cell = matchScene.cell;
+        const localY = shot.y + matchScene.scrollY - matchScene.originY;
+        const localX = shot.x - matchScene.originX;
+        let c = Math.floor(localX / cell);
+        let r = Math.floor(localY / cell);
+        c = Math.max(0, Math.min(matchScene.cols - 1, c));
+        r = Math.max(0, Math.min(matchScene.rows - 1, r));
+        if (cellAt(c, r) < 0) target = { c, r };
+        else target = findAttachCell(c, r, shot.x, shot.y, shot.vx, shot.vy);
+      }
+
+      if (!target) {
+        const cell = matchScene.cell;
+        const c = Math.max(
+          0,
+          Math.min(matchScene.cols - 1, Math.floor((shot.x - matchScene.originX) / cell))
+        );
         for (let rr = 0; rr < matchScene.rows; rr++) {
           if (cellAt(c, rr) < 0) {
             target = { c, r: rr };
@@ -262,47 +378,37 @@ window.installMatch23 = function (S) {
     function updateShot(dt) {
       const shot = matchScene.shot;
       if (!shot) return;
-      shot.x += shot.vx * dt;
-      shot.y += shot.vy * dt;
 
-      const left = matchScene.originX;
-      const right = matchScene.originX + matchScene.cols * matchScene.cell;
-      if (shot.x - shot.r < left) {
-        shot.x = left + shot.r;
-        shot.vx = Math.abs(shot.vx);
-      } else if (shot.x + shot.r > right) {
-        shot.x = right - shot.r;
-        shot.vx = -Math.abs(shot.vx);
-      }
-
-      // 出底界
+      const { left, right } = boardEdges();
       const bottom =
         matchScene.originY + matchScene.rows * matchScene.cell - matchScene.scrollY + 40;
-      if (shot.y > bottom || shot.y > H + 40) {
-        matchScene.shot = null;
-        matchToast("打偏了", 1);
-        return;
-      }
+      // 细分步进，避免高速穿透导致落点偏
+      const speed = Math.hypot(shot.vx, shot.vy);
+      const steps = Math.max(1, Math.ceil((speed * dt) / 4));
+      const sdt = dt / steps;
 
-      const cell = matchScene.cell;
-      const localY = shot.y + matchScene.scrollY - matchScene.originY;
-      const localX = shot.x - matchScene.originX;
-      const c0 = Math.floor(localX / cell);
-      const r0 = Math.floor(localY / cell);
-      for (let dr = -1; dr <= 1; dr++) {
-        for (let dc = -1; dc <= 1; dc++) {
-          const c = c0 + dc;
-          const r = r0 + dr;
-          if (cellAt(c, r) < 0) continue;
-          const p = worldCellPos(c, r);
-          const hx = Math.max(p.x - cell / 2, Math.min(shot.x, p.x + cell / 2));
-          const hy = Math.max(p.y - cell / 2, Math.min(shot.y, p.y + cell / 2));
-          const dx = shot.x - hx;
-          const dy = shot.y - hy;
-          if (dx * dx + dy * dy <= shot.r * shot.r) {
-            placeShotOnGrid(shot);
-            return;
-          }
+      for (let i = 0; i < steps; i++) {
+        shot.x += shot.vx * sdt;
+        shot.y += shot.vy * sdt;
+
+        if (shot.x - shot.r < left) {
+          shot.x = left + shot.r;
+          shot.vx = Math.abs(shot.vx);
+        } else if (shot.x + shot.r > right) {
+          shot.x = right - shot.r;
+          shot.vx = -Math.abs(shot.vx);
+        }
+
+        if (shot.y > bottom || shot.y > H + 40) {
+          matchScene.shot = null;
+          matchToast("打偏了", 1);
+          return;
+        }
+
+        const hit = hitFilledNear(shot.x, shot.y, shot.r);
+        if (hit) {
+          placeShotOnGrid(shot);
+          return;
         }
       }
     }
@@ -329,6 +435,8 @@ window.installMatch23 = function (S) {
       matchScene.done = false;
       matchScene.particles = [];
       matchScene.shootHeld = false;
+      matchScene.aimLand = null;
+      matchScene.aimPoints = null;
       // 本关不显示角色，移出画面
       if (player) {
         player.x = -999;
@@ -336,9 +444,29 @@ window.installMatch23 = function (S) {
         player.vx = 0;
         player.vy = 0;
       }
+      bindMatchAimPointer();
       if (window.GameAudio && GameAudio.unlock) GameAudio.unlock();
       statusLabel.textContent = `消消乐 · 剩余 ${matchScene.remaining}`;
-      matchToast("左右瞄准，空格/跳 发射 · 三连同色消除 · 消完过关", 3.4);
+      matchToast("左右微调 / 鼠标瞄准，跳跃键发射 · 虚线落点即落格", 3.4);
+    }
+
+    function bindMatchAimPointer() {
+      if (S._matchAimBound || !canvas) return;
+      S._matchAimBound = true;
+      const aimFromEvent = (e) => {
+        if (level !== 23 || !matchScene || state !== "playing") return;
+        if (matchScene.done || matchScene.shot) return;
+        // 触控板左右键优先时不抢；鼠标移动可直接瞄准
+        if (e.pointerType === "touch") return;
+        const w = clientToWorld(e.clientX, e.clientY);
+        const can = matchScene.cannon;
+        const dx = w.x - can.x;
+        const dy = w.y - can.y;
+        if (dy < 4) return;
+        let aim = Math.atan2(dy, dx) - Math.PI / 2;
+        matchScene.aim = Math.max(matchScene.aimMin, Math.min(matchScene.aimMax, aim));
+      };
+      canvas.addEventListener("pointermove", aimFromEvent);
     }
 
     function syncMatch23OnLeave() {}
@@ -361,7 +489,10 @@ window.installMatch23 = function (S) {
       }
 
       if (!matchScene.done) {
-        const turn = 2.2 * dt;
+        // 精细转向；按住 Shift 更慢
+        const fine =
+          keys.has("Shift") || keys.has("ShiftLeft") || keys.has("ShiftRight");
+        const turn = (fine ? 0.7 : 1.35) * dt;
         if (wantLeft()) matchScene.aim = Math.max(matchScene.aimMin, matchScene.aim - turn);
         if (wantRight()) matchScene.aim = Math.min(matchScene.aimMax, matchScene.aim + turn);
 
@@ -371,6 +502,7 @@ window.installMatch23 = function (S) {
 
         updateShot(dt);
         syncScroll();
+        if (!matchScene.shot) simulateAim();
       }
 
       for (const p of matchScene.particles) {
@@ -450,16 +582,44 @@ window.installMatch23 = function (S) {
       ctx.lineTo(cx + Math.cos(ang) * len, cy + Math.sin(ang) * len);
       ctx.stroke();
 
-      // 瞄准虚线
-      ctx.strokeStyle = "rgba(255,255,255,0.28)";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([6, 8]);
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(ang) * 20, cy + Math.sin(ang) * 20);
-      ctx.lineTo(cx + Math.cos(ang) * 160, cy + Math.sin(ang) * 160);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
+      // 预瞄轨迹（含碰壁反弹）+ 落点格
+      if (!matchScene.shot) {
+        const trace = matchScene.aimPoints || simulateAim().points;
+        const land = matchScene.aimLand;
+        if (trace && trace.length > 1) {
+          ctx.strokeStyle = "rgba(255,255,255,0.45)";
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 7]);
+          ctx.beginPath();
+          ctx.moveTo(trace[0].x - cameraX, trace[0].y);
+          for (let i = 1; i < trace.length; i++) {
+            ctx.lineTo(trace[i].x - cameraX, trace[i].y);
+          }
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        if (land) {
+          const p = worldCellPos(land.c, land.r);
+          const curHex = colors[matchScene.current].hex;
+          ctx.globalAlpha = 0.4 + 0.2 * Math.sin(time * 8);
+          ctx.fillStyle = curHex;
+          ctx.fillRect(
+            p.x - cameraX - cell / 2 + 2,
+            p.y - cell / 2 + 2,
+            cell - 4,
+            cell - 4
+          );
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = "rgba(255,255,255,0.85)";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(
+            p.x - cameraX - cell / 2 + 1,
+            p.y - cell / 2 + 1,
+            cell - 2,
+            cell - 2
+          );
+        }
+      }
       // 炮口与「下一个」框：都显示即将发射的颜色
       const cur = colors[matchScene.current];
       ctx.fillStyle = cur.hex;

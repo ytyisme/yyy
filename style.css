@@ -364,6 +364,164 @@ body {
   box-shadow: 0 1px 0 #1a0c08;
 }
 
+.item-bar {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 7;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: min(420px, 70%);
+  pointer-events: none;
+}
+
+.item-bar.hidden {
+  display: none;
+}
+
+.item-btn {
+  pointer-events: auto;
+  appearance: none;
+  border: 2px solid #8a5a28;
+  background: rgba(28, 14, 10, 0.88);
+  color: #ffd24a;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 10px;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.item-btn strong {
+  color: #ffe9a8;
+  margin-left: 2px;
+}
+
+.item-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.item-btn.active {
+  border-color: #ffe07a;
+  box-shadow: 0 0 0 1px rgba(255, 210, 74, 0.45);
+  filter: brightness(1.12);
+}
+
+.shop-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 16;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 3, 2, 0.78);
+  backdrop-filter: blur(2px);
+  padding: 12px;
+  overflow: auto;
+}
+
+.shop-panel.hidden {
+  display: none;
+}
+
+.shop-card {
+  width: min(440px, 96%);
+  padding: 18px 16px 14px;
+  background: rgba(18, 8, 6, 0.97);
+  border: 2px solid #7a3d24;
+  display: grid;
+  gap: 12px;
+  animation: panel-in 0.28s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.shop-card h3 {
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 20px;
+  color: var(--accent);
+  text-align: center;
+}
+
+.shop-stars {
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0;
+}
+
+.shop-stars strong {
+  color: #ffd24a;
+}
+
+.shop-list {
+  display: grid;
+  gap: 8px;
+  max-height: min(52vh, 360px);
+  overflow: auto;
+}
+
+.shop-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #5a3020;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.shop-item strong {
+  color: #ffd24a;
+  font-size: 14px;
+}
+
+.shop-item p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 4px 0 0;
+}
+
+.shop-buy {
+  appearance: none;
+  border: 1px solid #8a5a28;
+  background: linear-gradient(180deg, #3a2418, #24140e);
+  color: #ffd24a;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 10px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.shop-buy:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.shop-tip {
+  min-height: 18px;
+  text-align: center;
+  color: #ffb347;
+  font-size: 13px;
+  margin: 0;
+}
+
+#shop-close {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font-family: "Press Start 2P", monospace;
+  font-size: 10px;
+  padding: 12px 14px;
+  color: #2a1208;
+  background: linear-gradient(180deg, #ffe07a, #ff9a2a);
+  box-shadow: 0 0 0 2px #8a4a18, 0 5px 0 #8a3a10;
+}
+
 .settings-panel {
   position: absolute;
   inset: 0;
