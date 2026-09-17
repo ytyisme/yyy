@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=140" />
+  <link rel="stylesheet" href="style.css?v=142" />
   <script>
     window.GAME_BUILD = "90";
     (function () {
@@ -119,6 +119,8 @@
         <button id="lv17-btn-apple" type="button" class="lv17-battle-btn apple">金苹果×2</button>
         <button id="lv17-btn-summon-red" type="button" class="lv17-battle-btn summon-red">召唤红队 · R</button>
       </div>
+
+      <button id="lv27-boss-btn" class="lv27-boss-btn hidden" type="button" aria-hidden="true">挑战BOSS</button>
 
       <div id="chat-dock" class="chat-dock hidden">
         <button id="chat-btn" class="chat-btn" type="button">聊天</button>
@@ -465,51 +467,55 @@
       </div>
     </div>
   </div>
-  <script src="lib/util.js?v=140"></script>
-  <script src="audio.js?v=140"></script>
-  <script src="coop.js?v=140"></script>
-  <script src="levels/boot.js?v=140"></script>
-  <script src="levels/01.js?v=140"></script>
-  <script src="levels/02.js?v=140"></script>
-  <script src="levels/03.js?v=140"></script>
-  <script src="levels/04.js?v=140"></script>
-  <script src="levels/05.js?v=140"></script>
-  <script src="levels/06.js?v=140"></script>
-  <script src="levels/07.js?v=140"></script>
-  <script src="levels/08.js?v=140"></script>
-  <script src="levels/09.js?v=140"></script>
-  <script src="levels/10.js?v=140"></script>
-  <script src="levels/11.js?v=140"></script>
-  <script src="levels/12.js?v=140"></script>
-  <script src="levels/12-catalog.js?v=140"></script>
-  <script src="levels/12-world.js?v=140"></script>
-  <script src="levels/13.js?v=140"></script>
-  <script src="levels/14.js?v=140"></script>
-  <script src="levels/14-tower.js?v=140"></script>
-  <script src="levels/15.js?v=140"></script>
-  <script src="levels/15-subway.js?v=140"></script>
-  <script src="levels/16.js?v=140"></script>
-  <script src="levels/16-range.js?v=140"></script>
-  <script src="levels/17.js?v=140"></script>
-  <script src="levels/17-battle.js?v=140"></script>
-  <script src="levels/18.js?v=140"></script>
-  <script src="levels/18-school.js?v=140"></script>
-  <script src="levels/19.js?v=140"></script>
-  <script src="levels/19-music.js?v=140"></script>
-  <script src="levels/20.js?v=140"></script>
-  <script src="levels/20-date.js?v=140"></script>
-  <script src="levels/21.js?v=140"></script>
-  <script src="levels/21-kong.js?v=140"></script>
-  <script src="levels/22.js?v=140"></script>
-  <script src="levels/22-starhouse.js?v=140"></script>
-  <script src="levels/23.js?v=140"></script>
-  <script src="levels/23-match.js?v=140"></script>
-  <script src="levels/24.js?v=140"></script>
-  <script src="levels/24-furnace.js?v=140"></script>
-  <script src="levels/25.js?v=140"></script>
-  <script src="levels/25-twin.js?v=140"></script>
-  <script src="lib/social.js?v=140"></script>
-  <script src="lib/draw.js?v=140"></script>
-  <script src="game.js?v=140"></script>
+  <script src="lib/util.js?v=142"></script>
+  <script src="audio.js?v=142"></script>
+  <script src="coop.js?v=142"></script>
+  <script src="levels/boot.js?v=142"></script>
+  <script src="levels/01.js?v=142"></script>
+  <script src="levels/02.js?v=142"></script>
+  <script src="levels/03.js?v=142"></script>
+  <script src="levels/04.js?v=142"></script>
+  <script src="levels/05.js?v=142"></script>
+  <script src="levels/06.js?v=142"></script>
+  <script src="levels/07.js?v=142"></script>
+  <script src="levels/08.js?v=142"></script>
+  <script src="levels/09.js?v=142"></script>
+  <script src="levels/10.js?v=142"></script>
+  <script src="levels/11.js?v=142"></script>
+  <script src="levels/12.js?v=142"></script>
+  <script src="levels/12-catalog.js?v=142"></script>
+  <script src="levels/12-world.js?v=142"></script>
+  <script src="levels/13.js?v=142"></script>
+  <script src="levels/14.js?v=142"></script>
+  <script src="levels/14-tower.js?v=142"></script>
+  <script src="levels/15.js?v=142"></script>
+  <script src="levels/15-subway.js?v=142"></script>
+  <script src="levels/16.js?v=142"></script>
+  <script src="levels/16-range.js?v=142"></script>
+  <script src="levels/17.js?v=142"></script>
+  <script src="levels/17-battle.js?v=142"></script>
+  <script src="levels/18.js?v=142"></script>
+  <script src="levels/18-school.js?v=142"></script>
+  <script src="levels/19.js?v=142"></script>
+  <script src="levels/19-music.js?v=142"></script>
+  <script src="levels/20.js?v=142"></script>
+  <script src="levels/20-date.js?v=142"></script>
+  <script src="levels/21.js?v=142"></script>
+  <script src="levels/21-kong.js?v=142"></script>
+  <script src="levels/22.js?v=142"></script>
+  <script src="levels/22-starhouse.js?v=142"></script>
+  <script src="levels/23.js?v=142"></script>
+  <script src="levels/23-match.js?v=142"></script>
+  <script src="levels/24.js?v=142"></script>
+  <script src="levels/24-furnace.js?v=142"></script>
+  <script src="levels/25.js?v=142"></script>
+  <script src="levels/25-twin.js?v=142"></script>
+  <script src="levels/26.js?v=142"></script>
+  <script src="levels/26-plane.js?v=142"></script>
+  <script src="levels/27.js?v=142"></script>
+  <script src="levels/27-pipe.js?v=142"></script>
+  <script src="lib/social.js?v=142"></script>
+  <script src="lib/draw.js?v=142"></script>
+  <script src="game.js?v=142"></script>
 </body>
 </html>

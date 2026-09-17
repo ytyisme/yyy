@@ -342,6 +342,21 @@
     noiseBurst(0.03, 0.04, 2500, "highpass");
   }
 
+  // 钢管落地/互撞：金属铿锵
+  function playPipeClang() {
+    if (!ensure()) return;
+    noiseBurst(0.12, 0.16, 900, "bandpass");
+    tone("square", 220, 0.08, 0.1, 80);
+    tone("sawtooth", 140, 0.16, 0.12, 50);
+    setTimeout(() => {
+      tone("triangle", 90, 0.2, 0.08, 40);
+      noiseBurst(0.15, 0.1, 400, "lowpass");
+    }, 50);
+    setTimeout(() => {
+      tone("square", 60, 0.12, 0.06);
+    }, 110);
+  }
+
   function playRocket() {
     if (!ensure()) return;
     // whoosh lift
@@ -1343,6 +1358,7 @@
     playWin,
     playDeath,
     playClick,
+    playPipeClang,
     playRocket,
     playZombieBark,
     playGunShot,

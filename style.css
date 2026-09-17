@@ -3319,3 +3319,47 @@ body.craft-on .craft-only {
   box-shadow: 0 1px 0 #1a0c08;
 }
 
+
+/* ── 第 27 关 · 钢管大战 BOSS 按钮 ── */
+.lv27-boss-btn {
+  position: absolute;
+  top: 72px;
+  right: 14px;
+  z-index: 9;
+  appearance: none;
+  cursor: pointer;
+  user-select: none;
+  border: 2px solid #ff2a2a;
+  background: linear-gradient(180deg, #ff3b3b 0%, #b01010 100%);
+  color: #fff5f5;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 12px 18px;
+  box-shadow: 0 4px 0 #5a0000, 0 0 16px rgba(255, 40, 40, 0.35);
+  animation: lv27-boss-pulse 1.2s ease-in-out infinite;
+}
+
+.lv27-boss-btn.hidden {
+  display: none;
+}
+
+.lv27-boss-btn:hover {
+  filter: brightness(1.08);
+}
+
+.lv27-boss-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #5a0000;
+}
+
+@keyframes lv27-boss-pulse {
+  0%,
+  100% {
+    box-shadow: 0 4px 0 #5a0000, 0 0 12px rgba(255, 40, 40, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 0 #5a0000, 0 0 22px rgba(255, 80, 80, 0.55);
+  }
+}

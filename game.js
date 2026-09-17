@@ -189,7 +189,7 @@
   let homePeerReady = false;
   let banTimerId = 0;
   const TOTAL_LEVELS = 35;
-  const MAX_PLAYABLE = 25;
+  const MAX_PLAYABLE = 27;
   let cameraX = 0;
   let worldMin = 0;
   let worldWidth = 3200;
@@ -220,6 +220,8 @@
   let matchScene = null; // level 23 match-3 shooter
   let furnaceScene = null; // level 24 countdown furnace
   let twinScene = null; // level 25 twin pressure plates
+  let planeScene = null; // level 26 plane crash skydive
+  let pipeScene = null; // level 27 steel pipe battle
   let initTower14 = null;
   let updateTower14 = null;
   let drawTowerExtras = null;
@@ -272,6 +274,14 @@
   let updateTwin25 = null;
   let drawTwinExtras = null;
   let syncTwin25OnLeave = null;
+  let initPlane26 = null;
+  let updatePlane26 = null;
+  let drawPlaneExtras = null;
+  let syncPlane26OnLeave = null;
+  let initPipe27 = null;
+  let updatePipe27 = null;
+  let drawPipeExtras = null;
+  let syncPipe27OnLeave = null;
   let homeMode = false;
   let spikes = [];
   let maces = [];
@@ -489,6 +499,8 @@
     if (opts.matchScene !== undefined) matchScene = opts.matchScene;
     if (opts.furnaceScene !== undefined) furnaceScene = opts.furnaceScene;
     if (opts.twinScene !== undefined) twinScene = opts.twinScene;
+    if (opts.planeScene !== undefined) planeScene = opts.planeScene;
+    if (opts.pipeScene !== undefined) pipeScene = opts.pipeScene;
     if (opts.player) player = opts.player;
     if ("star" in opts) star = opts.star;
   }
@@ -522,6 +534,8 @@
     matchScene = null;
     furnaceScene = null;
     twinScene = null;
+    planeScene = null;
+    pipeScene = null;
     homeMode = false;
     spikes = [];
     maces = [];
@@ -1432,6 +1446,11 @@
         player.y = battleScene.groundY - player.h;
         player.onGround = true;
       }
+    } else if (level === 26 && planeScene && planeScene.phase !== "cabin") {
+      // 下落/着陆由 updatePlane26 接管
+    } else if (level === 26 && planeScene && planeScene.phase === "cabin") {
+      // 舱内可左右走，跳跃键只用于跳机（不普通起跳）
+      moveActor(player, eatAnim ? 0 : ax, false, null);
     } else {
       moveActor(player, eatAnim ? 0 : ax, eatAnim ? false : jump, null);
     }
@@ -1589,6 +1608,8 @@
     if (matchScene && updateMatch23) updateMatch23(dt);
     if (furnaceScene && updateFurnace24) updateFurnace24(dt);
     if (twinScene && updateTwin25) updateTwin25(dt);
+    if (planeScene && updatePlane26) updatePlane26(dt);
+    if (pipeScene && updatePipe27) updatePipe27(dt);
 
     updateCoop(dt);
     cameraX = cameraForView();
@@ -1639,6 +1660,8 @@
     if (syncMatch23OnLeave) syncMatch23OnLeave();
     if (syncFurnace24OnLeave) syncFurnace24OnLeave();
     if (syncTwin25OnLeave) syncTwin25OnLeave();
+    if (syncPlane26OnLeave) syncPlane26OnLeave();
+    if (syncPipe27OnLeave) syncPipe27OnLeave();
   }
 
   function die(cause) {
@@ -1704,7 +1727,7 @@
     if (level >= MAX_PLAYABLE) {
       showOverlay(
         "到达终点！",
-        `第 ${level} 关完成！<br />第 25 关「双人板」是目前的终点，后面作者还在做，敬请期待。`,
+        `第 ${level} 关完成！<br />第 27 关「钢管大战」是目前的终点，后面作者还在做，敬请期待。`,
         "回主页",
         { hideHint: true }
       );
@@ -1785,6 +1808,12 @@
     } else if (next === 25) {
       warn =
         `<br /><span style="color:#ffb347">第 25 关：双人板。你走上路、镜像 NPC 走下路，同时踩压力板出桥，10 秒内一起冲终点。</span>`;
+    } else if (next === 26) {
+      warn =
+        `<br /><span style="color:#ffb347">第 26 关：飞机事故。海拔 9000 米，按跳跃跳下飞机，躲避障碍安全落地。</span>`;
+    } else if (next === 27) {
+      warn =
+        `<br /><span style="color:#ffb347">第 27 关：钢管大战。吃豆子升级，点红色按钮挑战超级钢管 BOSS。</span>`;
     }
 
     showOverlay(
@@ -2391,6 +2420,8 @@
       23: "消消乐",
       24: "倒计时熔炉",
       25: "双人板",
+      26: "飞机事故",
+      27: "钢管大战",
     };
     for (let i = 1; i <= TOTAL_LEVELS; i++) {
       if (i === 1) {
@@ -2590,7 +2621,7 @@
   function selectLevel(n) {
     playUiClick();
     if (n > MAX_PLAYABLE) {
-      levelTip.textContent = "后面作者还在做，敬请期待（第 25 关「双人板」是目前终点）";
+      levelTip.textContent = "后面作者还在做，敬请期待（第 27 关「钢管大战」是目前终点）";
       levelTip.classList.remove("hidden");
       return;
     }
@@ -2982,6 +3013,10 @@
     else if (syncFurnace24OnLeave) syncFurnace24OnLeave();
     if (level === 25 && initTwin25) initTwin25();
     else if (syncTwin25OnLeave) syncTwin25OnLeave();
+    if (level === 26 && initPlane26) initPlane26();
+    else if (syncPlane26OnLeave) syncPlane26OnLeave();
+    if (level === 27 && initPipe27) initPipe27();
+    else if (syncPipe27OnLeave) syncPipe27OnLeave();
     if (window.GameAudio) {
       GameAudio.unlock();
       GameAudio.syncAmbience({
@@ -3054,7 +3089,7 @@
   const S = GameUtil.liveScope(
     (n) => eval(n),
     (n, value) => eval(n + " = value"),
-    "COOP_COLORS,DESIGN_H,DESIGN_W,GRAVITY,H,JUMP,LAVA_Y,MAX_PLAYABLE,MOVE,PORTRAIT_PROMPT_KEY,PORTRAIT_W,SHOP_CATALOG,TOTAL_LEVELS,W,ZOMBIE_COUNT,adOpen,announceChat,announceDeath,announceJoin,announceLeave,applyBrightness,applyCoopMap,applyLevelCounts,applyLevelOpts,applyVolume,armPickaxe,armSword,backpack,banLeft,banMsg,banScreen,banTimerId,beginPlaying,belly,breakWithPickaxe,bridgePieceW,bridgeY,brightness,brightnessSlider,brightnessValue,buildLevelGrid,buyItem,cameraForView,cameraX,canvas,canvasScale,chatBtn,chatClose,chatDock,chatInput,chatLog,chatLogEl,chatLogLevel,chatPanel,chatSend,chatUserCancel,chatUserDialog,chatUserFriend,chatUserMsg,chatUserReport,chatUserTarget,clamp,clearInput,clientToWorld,closeChat,closeLoginScreen,closeSettings,closeShop,colorForCoopId,comingSoon,confirmPlayerName,controlHintText,coopAcc,coopAnchorX,coopAnnounceAt,coopCount,coopFurthestX,coopHostId,cornerActions,craftCoopBtn,crate,craters,ctx,deathLine,die,eatAnim,endSign,enterLevel,escapeHtml,extendEndlessParkour,fakeButtons,fakeLava,findRoofAhead,friendCenter,friendCenterOpen,friendChatInput,friendChatLogEl,friendChatSend,friendChatTitle,friendInviteBtn,friendInviteLevel,friendListEl,friendReqCurrent,friendReqDialog,friendReqMsg,friendReqNo,friendReqQueue,friendReqYes,friendUnread,friends,friendsBtn,friendsClose,gameTitle,globalChat,globalChatBtn,globalChatClose,globalChatInput,globalChatLogEl,globalChatOpen,globalChatPanel,globalChatSend,globalChatUnread,goHome,handleCoopMessage,handleHomePeer,hideLevelSelect,hideOverlay,hidePortraitPrompt,hideSandboxMode,hideUnlockDialog,hitRemotePlayer,homeBtn,homeMode,homeNotices,homeNoticesEl,homePeerQuietUntil,homePeerReady,inboxBtn,inboxClear,inboxClose,inboxListEl,inboxOpen,inboxPanel,inboxReports,inboxUnread,inventory,inviteCurrent,inviteDialog,inviteMsg,inviteNo,inviteQueue,inviteYes,isCoopHost,isDevicePortrait,isLevelUnlocked,isMobileLike,isPortraitPlay,itemBar,joinNotices,joinNoticesEl,keys,killZombieWithSword,lastCoopPos,lastMapSendAt,lastTs,lavaDrainAt,lavaDrains,level,levelGrid,levelLabel,levelPlayerCounts,levelSelect,levelTip,levelUses,loadJson,loadProgress,loadSettings,loadStr,localChat,localChatUntil,localCoopId,loggedIn,loginError,loginIdcard,loginMode,loginMoonBtn,loginPaneAccount,loginPaneIdcard,loginPanePhone,loginPass,loginPhone,loginScreen,loginSms,loginSubmit,loginTabs,loginUser,logoutBtn,loop,maces,makeLevel,mapChance,mapRand,mapRngFn,markLevelCleared,maxCleared,maybeSendMap,maybeShowPortraitPrompt,minorNotice,minorOk,mockSmsCode,moonCoopBtn,moonEarthGrad,moonSkyGrad,moonVoidGrad,moveActor,myDisplayName,nameForm,nameInput,nearestHuntTarget,needsPlayerName,onViewportChange,openChat,openLoginScreen,openSettings,openShop,overlay,overlayHint,overlayMsg,overlayTitle,packMap,parseIdAge,particles,pendingFriend,pendingUnlockLevel,pickups,pitStart,pitWidth,placeBridgeButton,platforms,playCraftCoopNow,playMoonCoopNow,playUiClick,player,playerLabel,playerName,portraitAccept,portraitDecline,portraitDialog,portraitPromptDismissed,portraitPromptOpen,potion,preferTouchControls,pushHomeNotice,pushJoinNotice,pushZombie,puzzleMode,puzzleTools,rand,rectsOverlap,refreshShopUI,remainingFor,remoteCamX,remotePlayers,renderChatLog,renderHomeNotices,renderJoinNotices,reportCancel,reportDialog,reportMsg,resetLevelUses,resetPuzzleButtons,returnToHomeMenu,reverseGoal,rockets,sandboxCreative,sandboxModeEl,sandboxSurvival,saveCleared,saveInventory,saveJson,saveStars,saveStr,seededRng,selectLevel,selectedFriendId,sendChat,sendSmsCode,setLoginMode,settingsBtn,settingsClose,settingsOpen,settingsPanel,setupPuzzleDrag,setupTouchControls,shake,shopBtn,shopClose,shopOpen,shopPanel,shopScene,shopStarCount,shopTip,showLevelSelect,towerScene,subwayScene,rangeScene,battleScene,schoolScene,musicScene,dateScene,kongScene,starHouseScene,matchScene,furnaceScene,twinScene,showLoginError,showMinorNotice,showNamePrompt,showOverlay,showPhoneJoin,showPortraitPrompt,showSandboxMode,showUnlockDialog,skipBtn,skipPreviousAndEnter,smsBtn,smsCooldown,smsTimer,socialOpen,socialToastEl,socialToastTimer,solidAt,spawnBurst,spawnX,speedBoost,spikes,star,starLabel,stars,startBtn,startCraftWorld,startGame,startLevelCoop,state,statusLabel,stopLevelCoop,submitLogin,syncChatBtn,syncCoopStatus,syncHomeBtn,syncItemBar,syncPuzzleTools,syncTouchPad,syncViewport,time,toolMode,touch,touchPad,tryClickPlayerName,tryUseToolClick,unlockCancelBtn,unlockDialog,unlockMsg,unlockOnce,unlockSkipBtn,update,updateCoop,updateParticles,useBucketItem,useInventoryItem,usePotionItem,useSkipCard,volumePct,volumeSlider,volumeValue,watchLobbyCounts,winLevel,worldMin,worldWidth,zombies"
+    "COOP_COLORS,DESIGN_H,DESIGN_W,GRAVITY,H,JUMP,LAVA_Y,MAX_PLAYABLE,MOVE,PORTRAIT_PROMPT_KEY,PORTRAIT_W,SHOP_CATALOG,TOTAL_LEVELS,W,ZOMBIE_COUNT,adOpen,announceChat,announceDeath,announceJoin,announceLeave,applyBrightness,applyCoopMap,applyLevelCounts,applyLevelOpts,applyVolume,armPickaxe,armSword,backpack,banLeft,banMsg,banScreen,banTimerId,beginPlaying,belly,breakWithPickaxe,bridgePieceW,bridgeY,brightness,brightnessSlider,brightnessValue,buildLevelGrid,buyItem,cameraForView,cameraX,canvas,canvasScale,chatBtn,chatClose,chatDock,chatInput,chatLog,chatLogEl,chatLogLevel,chatPanel,chatSend,chatUserCancel,chatUserDialog,chatUserFriend,chatUserMsg,chatUserReport,chatUserTarget,clamp,clearInput,clientToWorld,closeChat,closeLoginScreen,closeSettings,closeShop,colorForCoopId,comingSoon,confirmPlayerName,controlHintText,coopAcc,coopAnchorX,coopAnnounceAt,coopCount,coopFurthestX,coopHostId,cornerActions,craftCoopBtn,crate,craters,ctx,deathLine,die,eatAnim,endSign,enterLevel,escapeHtml,extendEndlessParkour,fakeButtons,fakeLava,findRoofAhead,friendCenter,friendCenterOpen,friendChatInput,friendChatLogEl,friendChatSend,friendChatTitle,friendInviteBtn,friendInviteLevel,friendListEl,friendReqCurrent,friendReqDialog,friendReqMsg,friendReqNo,friendReqQueue,friendReqYes,friendUnread,friends,friendsBtn,friendsClose,gameTitle,globalChat,globalChatBtn,globalChatClose,globalChatInput,globalChatLogEl,globalChatOpen,globalChatPanel,globalChatSend,globalChatUnread,goHome,handleCoopMessage,handleHomePeer,hideLevelSelect,hideOverlay,hidePortraitPrompt,hideSandboxMode,hideUnlockDialog,hitRemotePlayer,homeBtn,homeMode,homeNotices,homeNoticesEl,homePeerQuietUntil,homePeerReady,inboxBtn,inboxClear,inboxClose,inboxListEl,inboxOpen,inboxPanel,inboxReports,inboxUnread,inventory,inviteCurrent,inviteDialog,inviteMsg,inviteNo,inviteQueue,inviteYes,isCoopHost,isDevicePortrait,isLevelUnlocked,isMobileLike,isPortraitPlay,itemBar,joinNotices,joinNoticesEl,keys,killZombieWithSword,lastCoopPos,lastMapSendAt,lastTs,lavaDrainAt,lavaDrains,level,levelGrid,levelLabel,levelPlayerCounts,levelSelect,levelTip,levelUses,loadJson,loadProgress,loadSettings,loadStr,localChat,localChatUntil,localCoopId,loggedIn,loginError,loginIdcard,loginMode,loginMoonBtn,loginPaneAccount,loginPaneIdcard,loginPanePhone,loginPass,loginPhone,loginScreen,loginSms,loginSubmit,loginTabs,loginUser,logoutBtn,loop,maces,makeLevel,mapChance,mapRand,mapRngFn,markLevelCleared,maxCleared,maybeSendMap,maybeShowPortraitPrompt,minorNotice,minorOk,mockSmsCode,moonCoopBtn,moonEarthGrad,moonSkyGrad,moonVoidGrad,moveActor,myDisplayName,nameForm,nameInput,nearestHuntTarget,needsPlayerName,onViewportChange,openChat,openLoginScreen,openSettings,openShop,overlay,overlayHint,overlayMsg,overlayTitle,packMap,parseIdAge,particles,pendingFriend,pendingUnlockLevel,pickups,pitStart,pitWidth,placeBridgeButton,platforms,playCraftCoopNow,playMoonCoopNow,playUiClick,player,playerLabel,playerName,portraitAccept,portraitDecline,portraitDialog,portraitPromptDismissed,portraitPromptOpen,potion,preferTouchControls,pushHomeNotice,pushJoinNotice,pushZombie,puzzleMode,puzzleTools,rand,rectsOverlap,refreshShopUI,remainingFor,remoteCamX,remotePlayers,renderChatLog,renderHomeNotices,renderJoinNotices,reportCancel,reportDialog,reportMsg,resetLevelUses,resetPuzzleButtons,returnToHomeMenu,reverseGoal,rockets,sandboxCreative,sandboxModeEl,sandboxSurvival,saveCleared,saveInventory,saveJson,saveStars,saveStr,seededRng,selectLevel,selectedFriendId,sendChat,sendSmsCode,setLoginMode,settingsBtn,settingsClose,settingsOpen,settingsPanel,setupPuzzleDrag,setupTouchControls,shake,shopBtn,shopClose,shopOpen,shopPanel,shopScene,shopStarCount,shopTip,showLevelSelect,towerScene,subwayScene,rangeScene,battleScene,schoolScene,musicScene,dateScene,kongScene,starHouseScene,matchScene,furnaceScene,twinScene,planeScene,pipeScene,showLoginError,showMinorNotice,showNamePrompt,showOverlay,showPhoneJoin,showPortraitPrompt,showSandboxMode,showUnlockDialog,skipBtn,skipPreviousAndEnter,smsBtn,smsCooldown,smsTimer,socialOpen,socialToastEl,socialToastTimer,solidAt,spawnBurst,spawnX,speedBoost,spikes,star,starLabel,stars,startBtn,startCraftWorld,startGame,startLevelCoop,state,statusLabel,stopLevelCoop,submitLogin,syncChatBtn,syncCoopStatus,syncHomeBtn,syncItemBar,syncPuzzleTools,syncTouchPad,syncViewport,time,toolMode,touch,touchPad,tryClickPlayerName,tryUseToolClick,unlockCancelBtn,unlockDialog,unlockMsg,unlockOnce,unlockSkipBtn,update,updateCoop,updateParticles,useBucketItem,useInventoryItem,usePotionItem,useSkipCard,volumePct,volumeSlider,volumeValue,watchLobbyCounts,winLevel,worldMin,worldWidth,zombies"
   );
   window.installGameSocial(S);
   window.installGameDraw(S);
@@ -3070,6 +3105,8 @@
   if (typeof window.installMatch23 === "function") window.installMatch23(S);
   if (typeof window.installFurnace24 === "function") window.installFurnace24(S);
   if (typeof window.installTwin25 === "function") window.installTwin25(S);
+  if (typeof window.installPlane26 === "function") window.installPlane26(S);
+  if (typeof window.installPipe27 === "function") window.installPipe27(S);
   initTower14 = S.initTower14 || null;
   updateTower14 = S.updateTower14 || null;
   drawTowerExtras = S.drawTowerExtras || null;
@@ -3122,6 +3159,14 @@
   updateTwin25 = S.updateTwin25 || null;
   drawTwinExtras = S.drawTwinExtras || null;
   syncTwin25OnLeave = S.syncTwin25OnLeave || null;
+  initPlane26 = S.initPlane26 || null;
+  updatePlane26 = S.updatePlane26 || null;
+  drawPlaneExtras = S.drawPlaneExtras || null;
+  syncPlane26OnLeave = S.syncPlane26OnLeave || null;
+  initPipe27 = S.initPipe27 || null;
+  updatePipe27 = S.updatePipe27 || null;
+  drawPipeExtras = S.drawPipeExtras || null;
+  syncPipe27OnLeave = S.syncPipe27OnLeave || null;
   const {
     loadFriends,
     syncFriendsBtn,
