@@ -22,16 +22,32 @@ window.installPipe27 = function (S) {
     }
 
     function pipeScale(lv) {
-      return clamp(0.55 + Math.log10(Math.max(1, lv)) * 0.55, 0.55, 4.2);
+      // 体积随等级无限增长（无上限）
+      const n = Math.max(1, lv);
+      return Math.max(0.55, 0.4 + Math.log10(n) * 0.65 + Math.pow(n, 0.28) * 0.012);
     }
 
     function resizePlayerPipe() {
       if (!player || !pipeScene) return;
       const s = pipeScale(pipeScene.level);
       const feet = player.y + player.h;
-      player.w = Math.round(18 * s);
-      player.h = Math.round(36 * s);
-      player.y = feet - player.h;
+      player.w = Math.max(10, Math.round(18 * s));
+      player.h = Math.max(16, Math.round(36 * s));
+      player.y = pipeScene.groundY - player.h;
+      // 超大时仍尽量留在地图内
+      if (worldWidth) {
+        player.x = clamp(player.x, 0, Math.max(0, worldWidth - player.w));
+      }
+    }
+
+    const beanColors = ["#ff4d5a", "#3ecf5a", "#ff9a2a", "#b46aff", "#5ce1ff", "#ffe27a"];
+
+    function respawnBean(bean) {
+      bean.taken = false;
+      bean.x = 60 + Math.random() * Math.max(200, (worldWidth || 2200) - 120);
+      bean.y = pipeScene.groundY - 14 - Math.random() * 10;
+      bean.color = beanColors[(Math.random() * beanColors.length) | 0];
+      bean.id = (bean.id || 0) + 1000 + ((Math.random() * 1000) | 0);
     }
 
     function summonBoss() {
@@ -152,7 +168,10 @@ window.installPipe27 = function (S) {
       pipeScene.toastT = 0;
       pipeScene.done = false;
       pipeScene.pulse = 0;
-      for (const b of pipeScene.beans) b.taken = false;
+      for (const b of pipeScene.beans) {
+        b.taken = false;
+        respawnBean(b);
+      }
       if (player) {
         player.x = 80;
         player.facing = 1;
@@ -163,7 +182,7 @@ window.installPipe27 = function (S) {
       }
       if (window.GameAudio && GameAudio.unlock) GameAudio.unlock();
       statusLabel.textContent = "钢管大战 · Lv.1 · 吃豆升级";
-      pipeToast("你是小钢管 Lv.1 · 吃彩色豆子 +500 级 · 点红色按钮挑战 BOSS", 3.8);
+      pipeToast("豆子无限刷新 · 体积无限变大 · 点红色按钮挑战 BOSS", 3.8);
       syncBossBtn();
     }
 
@@ -190,16 +209,19 @@ window.installPipe27 = function (S) {
 
       resizePlayerPipe();
 
-      // 吃豆子
+      // 吃豆子（无限：吃掉立刻在别处刷新）
       if (player) {
         for (const bean of pipeScene.beans) {
           if (bean.taken) continue;
           const box = { x: bean.x - bean.r, y: bean.y - bean.r, w: bean.r * 2, h: bean.r * 2 };
           if (rectsOverlap(player, box)) {
-            bean.taken = true;
+            const bx = bean.x;
+            const by = bean.y;
+            const col = bean.color;
             pipeScene.level += 500;
             resizePlayerPipe();
-            spawnBurst(bean.x, bean.y, bean.color, 10);
+            respawnBean(bean);
+            spawnBurst(bx, by, col, 10);
             pipeToast(`等级 +500！当前 Lv.${pipeScene.level}`, 1.2);
             statusLabel.textContent = `钢管 · Lv.${pipeScene.level} · HP ${pipeScene.hp}`;
             if (window.GameAudio && GameAudio.playStar) GameAudio.playStar();
@@ -315,10 +337,9 @@ window.installPipe27 = function (S) {
       ctx.fillText(`等级 Lv.${pipeScene.level}`, 26, 34);
       ctx.fillStyle = "#ff8a8a";
       ctx.fillText(`血量 ${pipeScene.hp}/${pipeScene.hpMax}`, 26, 54);
-      const leftBeans = pipeScene.beans.filter((b) => !b.taken).length;
       ctx.fillStyle = "#b8ffc8";
       ctx.font = "11px 'Noto Sans SC', sans-serif";
-      ctx.fillText(`剩余豆子 ${leftBeans} · 碰 BOSS 并按跳跃攻击`, 26, 72);
+      ctx.fillText(`豆子无限 · 体积无限 · 碰 BOSS 并按跳跃攻击`, 26, 72);
 
       // HP 条
       ctx.fillStyle = "#3a2020";

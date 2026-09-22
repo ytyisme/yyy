@@ -458,7 +458,7 @@ body {
 .shop-list {
   display: grid;
   gap: 8px;
-  max-height: min(52vh, 360px);
+  max-height: min(28vh, 200px);
   overflow: auto;
 }
 
@@ -508,6 +508,92 @@ body {
   color: #ffb347;
   font-size: 13px;
   margin: 0;
+}
+
+.shop-redeem,
+.shop-gun-codes {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #5a3020;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.shop-redeem-title {
+  color: #ffd24a;
+  font-size: 14px;
+}
+
+.shop-redeem-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+#redeem-input {
+  appearance: none;
+  border: 1px solid #7a4a2a;
+  background: rgba(0, 0, 0, 0.45);
+  color: #ffe8c8;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 13px;
+  padding: 8px 10px;
+  min-width: 0;
+}
+
+#redeem-btn,
+.gun-copy-btn {
+  appearance: none;
+  border: 1px solid #9a6030;
+  cursor: pointer;
+  background: linear-gradient(180deg, #5a3020, #3a1a10);
+  color: #ffe27a;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+#redeem-btn:hover,
+.gun-copy-btn:hover {
+  filter: brightness(1.1);
+}
+
+.gun-code-list {
+  display: grid;
+  gap: 8px;
+  max-height: min(28vh, 220px);
+  overflow: auto;
+}
+
+.gun-code-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: start;
+  padding: 8px;
+  border: 1px solid #4a2818;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.gun-code-item strong {
+  color: #ffd24a;
+  font-size: 13px;
+}
+
+.gun-code-item p {
+  margin: 2px 0 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.gun-code-item code {
+  display: block;
+  color: #c8e4ff;
+  font-size: 10px;
+  word-break: break-all;
+  line-height: 1.35;
 }
 
 #shop-close {
@@ -3355,6 +3441,51 @@ body.craft-on .craft-only {
 }
 
 @keyframes lv27-boss-pulse {
+  0%,
+  100% {
+    box-shadow: 0 4px 0 #5a0000, 0 0 12px rgba(255, 40, 40, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 0 #5a0000, 0 0 22px rgba(255, 80, 80, 0.55);
+  }
+}
+
+
+/* ── 第 31 关 · 我画好了 ── */
+.lv31-ready-btn {
+  position: absolute;
+  top: 72px;
+  right: 14px;
+  z-index: 9;
+  appearance: none;
+  cursor: pointer;
+  user-select: none;
+  border: 2px solid #ff2a2a;
+  background: linear-gradient(180deg, #ff3b3b 0%, #b01010 100%);
+  color: #fff5f5;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 12px 18px;
+  box-shadow: 0 4px 0 #5a0000, 0 0 16px rgba(255, 40, 40, 0.35);
+  animation: lv31-ready-pulse 1.2s ease-in-out infinite;
+}
+
+.lv31-ready-btn.hidden {
+  display: none;
+}
+
+.lv31-ready-btn:hover {
+  filter: brightness(1.08);
+}
+
+.lv31-ready-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #5a0000;
+}
+
+@keyframes lv31-ready-pulse {
   0%,
   100% {
     box-shadow: 0 4px 0 #5a0000, 0 0 12px rgba(255, 40, 40, 0.3);

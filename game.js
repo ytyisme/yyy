@@ -159,6 +159,77 @@
     bucket: { cost: 17, name: "桶" },
   };
 
+  // 礼包兑换码：每码限兑一次
+  const REDEEM_CODES = {
+    DELTA666: { stars: 66, skipCard: 1, label: "DELTA666" },
+    DELTA888: { stars: 88, skipCard: 1, label: "DELTA888" },
+    DELTA999: { stars: 99, skipCard: 2, label: "DELTA999" },
+    SJZ888: { stars: 88, potion: 1, label: "SJZ888" },
+    SJZ2026: { stars: 126, skipCard: 1, label: "SJZ2026" },
+    bilibili666: { stars: 66, sword: 1, label: "bilibili666" },
+    taptap888: { stars: 88, pickaxe: 1, label: "taptap888" },
+    taptap666: { stars: 66, bucket: 1, label: "taptap666" },
+    DOUYIN888: { stars: 88, skipCard: 1, label: "DOUYIN888" },
+    WELCOME2026: { stars: 202, skipCard: 2, potion: 1, label: "WELCOME2026" },
+    THANKYOU: { stars: 50, label: "THANKYOU" },
+    ACTIONNEWDROP: { stars: 100, sword: 1, skipCard: 1, label: "ACTIONNEWDROP" },
+    surprise: { stars: 77, potion: 1, label: "surprise" },
+    DJSJ666: { stars: 66, skipCard: 1, label: "DJSJ666" },
+    DJSJ888: { stars: 88, sword: 1, label: "DJSJ888" },
+    DELTA2026: { stars: 126, skipCard: 1, potion: 1, label: "DELTA2026" },
+    SPRING2026: { stars: 126, bucket: 1, label: "SPRING2026" },
+  };
+
+  // 改枪导入码（可复制）
+  const GUN_IMPORT_CODES = [
+    {
+      name: "K437突击步枪",
+      note: "烽火地带 · 34w性价比版",
+      code: "K437突击步枪‑烽火地带‑6LAEM6802G22C8LLI3CIN",
+    },
+    {
+      name: "MDR突击步枪",
+      note: "烽火地带 · 基础版",
+      code: "MDR突击步枪‑烽火地带‑6LA8USG058UBUV9RKBGRG",
+    },
+    {
+      name: "K416突击步枪",
+      note: "烽火地带 · 11万便宜改装",
+      code: "K416突击步枪‑烽火地带‑6G92QS407IJCACQJFRS26",
+    },
+    {
+      name: "QBZ‑95‑1",
+      note: "全面战场 · 三倍镜",
+      code: "QBZ95‑1突击步枪‑全面战场‑6FNTEO80FA95V6OTBBU2A",
+    },
+    {
+      name: "M14射手步枪",
+      note: "烽火地带 · 近战大改",
+      code: "M14射手步枪‑烽火地带‑6HMM19C0B12QASUQB4J4K",
+    },
+    {
+      name: "MP7冲锋枪",
+      note: "16w性价比",
+      code: "6I7QNVC0AEK0SD1PJ432L",
+    },
+    {
+      name: "M7战斗步枪",
+      note: "猛攻",
+      code: "6IEOODK0AEK0SD1PJ432L",
+    },
+    {
+      name: "QCQ‑171冲锋枪",
+      note: "21W",
+      code: "6IO8CQ00AEK0SD1PJ432L",
+    },
+  ];
+
+  const redeemInput = document.getElementById("redeem-input");
+  const redeemBtn = document.getElementById("redeem-btn");
+  const redeemTip = document.getElementById("redeem-tip");
+  const gunCodeList = document.getElementById("gun-code-list");
+  let redeemedCodes = {};
+
   let state = "login"; // login | select | menu | naming | playing | dead | win
   let level = 1;
   let stars = 0;
@@ -189,7 +260,7 @@
   let homePeerReady = false;
   let banTimerId = 0;
   const TOTAL_LEVELS = 35;
-  const MAX_PLAYABLE = 27;
+  const MAX_PLAYABLE = 31;
   let cameraX = 0;
   let worldMin = 0;
   let worldWidth = 3200;
@@ -222,6 +293,10 @@
   let twinScene = null; // level 25 twin pressure plates
   let planeScene = null; // level 26 plane crash skydive
   let pipeScene = null; // level 27 steel pipe battle
+  let labScene = null; // level 28 virus lab escape
+  let toiletScene = null; // level 29 toilet queue
+  let maliangScene = null; // level 30 magic brush Ma Liang
+  let ml31Scene = null; // level 31 draw shield vs bullets
   let initTower14 = null;
   let updateTower14 = null;
   let drawTowerExtras = null;
@@ -282,6 +357,25 @@
   let updatePipe27 = null;
   let drawPipeExtras = null;
   let syncPipe27OnLeave = null;
+  let initLab28 = null;
+  let updateLab28 = null;
+  let drawLabExtras = null;
+  let syncLab28OnLeave = null;
+  let initToilet29 = null;
+  let updateToilet29 = null;
+  let drawToiletExtras = null;
+  let syncToilet29OnLeave = null;
+  let tryClickToilet29 = null;
+  let initMaliang30 = null;
+  let updateMaliang30 = null;
+  let drawMaliangExtras = null;
+  let syncMaliang30OnLeave = null;
+  let tryClickMaliang30 = null;
+  let initMaliang31 = null;
+  let updateMaliang31 = null;
+  let drawMaliang31Extras = null;
+  let syncMaliang31OnLeave = null;
+  let tryClickMaliang31 = null;
   let homeMode = false;
   let spikes = [];
   let maces = [];
@@ -327,6 +421,8 @@
     loadStr,
     saveStr,
   } = window.GameUtil;
+
+  redeemedCodes = loadJson("yyy_redeemed_codes", {}) || {};
 
   function mapRand(a, b) {
     const u = mapRngFn ? mapRngFn() : Math.random();
@@ -501,6 +597,10 @@
     if (opts.twinScene !== undefined) twinScene = opts.twinScene;
     if (opts.planeScene !== undefined) planeScene = opts.planeScene;
     if (opts.pipeScene !== undefined) pipeScene = opts.pipeScene;
+    if (opts.labScene !== undefined) labScene = opts.labScene;
+    if (opts.toiletScene !== undefined) toiletScene = opts.toiletScene;
+    if (opts.maliangScene !== undefined) maliangScene = opts.maliangScene;
+    if (opts.ml31Scene !== undefined) ml31Scene = opts.ml31Scene;
     if (opts.player) player = opts.player;
     if ("star" in opts) star = opts.star;
   }
@@ -536,6 +636,10 @@
     twinScene = null;
     planeScene = null;
     pipeScene = null;
+    labScene = null;
+    toiletScene = null;
+    maliangScene = null;
+    ml31Scene = null;
     homeMode = false;
     spikes = [];
     maces = [];
@@ -546,27 +650,36 @@
     pickups = [];
     craters = [];
     mapRngFn = seededRng(11000 + n * 131);
-    GameLevels.build(n, {
-      n,
-      startY: 380,
-      roofY: 150,
-      zombieCount: ZOMBIE_COUNT,
-      clamp,
-      mapRand,
-      mapChance,
-      seededRng,
-      pushZombie,
-      makePlayer: GameLevels.makePlayer,
-      makeStar: GameLevels.makeStar,
-      platforms,
-      zombies,
-      spikes,
-      maces,
-      rockets,
-      pickups,
-      craters,
-      set: applyLevelOpts,
-    });
+    try {
+      GameLevels.build(n, {
+        n,
+        startY: 380,
+        roofY: 150,
+        zombieCount: ZOMBIE_COUNT,
+        clamp,
+        mapRand,
+        mapChance,
+        seededRng,
+        pushZombie,
+        makePlayer: GameLevels.makePlayer,
+        makeStar: GameLevels.makeStar,
+        platforms,
+        zombies,
+        spikes,
+        maces,
+        rockets,
+        pickups,
+        craters,
+        set: applyLevelOpts,
+      });
+    } catch (err) {
+      console.error("关卡加载失败", n, err);
+      // 兜底：至少铺一块地面，避免整屏黑掉
+      platforms.push({ x: 40, y: 380, w: 400, h: 28, lane: "ground" });
+      player = GameLevels.makePlayer(80, 340);
+      worldWidth = 1200;
+      if (statusLabel) statusLabel.textContent = "关卡加载失败，请刷新";
+    }
     particles = [];
     cameraX = 0;
     shake = 0;
@@ -1451,6 +1564,27 @@
     } else if (level === 26 && planeScene && planeScene.phase === "cabin") {
       // 舱内可左右走，跳跃键只用于跳机（不普通起跳）
       moveActor(player, eatAnim ? 0 : ax, false, null);
+    } else if (
+      level === 29 &&
+      toiletScene &&
+      (toiletScene.phase === "choose" ||
+        toiletScene.phase === "peeing" ||
+        toiletScene.phase === "done")
+    ) {
+      // 选厕/尿尿时锁定移动
+      moveActor(player, 0, false, null);
+      if (player) player.vx = 0;
+    } else if (level === 31 && ml31Scene) {
+      // 画盾挡弹：整关不能动
+      moveActor(player, 0, false, null);
+      if (player) {
+        player.vx = 0;
+        player.vy = 0;
+        player.x = 160;
+        player.y = ml31Scene.groundY - player.h;
+        player.onGround = true;
+        player.facing = 1;
+      }
     } else {
       moveActor(player, eatAnim ? 0 : ax, eatAnim ? false : jump, null);
     }
@@ -1610,6 +1744,10 @@
     if (twinScene && updateTwin25) updateTwin25(dt);
     if (planeScene && updatePlane26) updatePlane26(dt);
     if (pipeScene && updatePipe27) updatePipe27(dt);
+    if (labScene && updateLab28) updateLab28(dt);
+    if (toiletScene && updateToilet29) updateToilet29(dt);
+    if (maliangScene && updateMaliang30) updateMaliang30(dt);
+    if (ml31Scene && updateMaliang31) updateMaliang31(dt);
 
     updateCoop(dt);
     cameraX = cameraForView();
@@ -1662,6 +1800,10 @@
     if (syncTwin25OnLeave) syncTwin25OnLeave();
     if (syncPlane26OnLeave) syncPlane26OnLeave();
     if (syncPipe27OnLeave) syncPipe27OnLeave();
+    if (syncLab28OnLeave) syncLab28OnLeave();
+    if (syncToilet29OnLeave) syncToilet29OnLeave();
+    if (syncMaliang30OnLeave) syncMaliang30OnLeave();
+    if (syncMaliang31OnLeave) syncMaliang31OnLeave();
   }
 
   function die(cause) {
@@ -1727,7 +1869,7 @@
     if (level >= MAX_PLAYABLE) {
       showOverlay(
         "到达终点！",
-        `第 ${level} 关完成！<br />第 27 关「钢管大战」是目前的终点，后面作者还在做，敬请期待。`,
+        `第 ${level} 关完成！<br />第 31 关「画盾挡弹」是目前的终点，后面作者还在做，敬请期待。`,
         "回主页",
         { hideHint: true }
       );
@@ -1814,6 +1956,18 @@
     } else if (next === 27) {
       warn =
         `<br /><span style="color:#ffb347">第 27 关：钢管大战。吃豆子升级，点红色按钮挑战超级钢管 BOSS。</span>`;
+    } else if (next === 28) {
+      warn =
+        `<br /><span style="color:#ffb347">第 28 关：病毒爆发。实验室里跟着科学家往出口跑，僵尸在约 50 米外追来。</span>`;
+    } else if (next === 29) {
+      warn =
+        `<br /><span style="color:#ffb347">第 29 关：请排队上厕所。用宝剑解决排队的人，选男厕/女厕，尿尿 10 秒过关。</span>`;
+    } else if (next === 30) {
+      warn =
+        `<br /><span style="color:#ffb347">第 30 关：神笔马良。捡起神笔，画出成真的桥，逃出山谷。</span>`;
+    } else if (next === 31) {
+      warn =
+        `<br /><span style="color:#ffb347">第 31 关：画盾挡弹。你动不了，用神笔画盾，点「我画好了」后坚持挡住子弹 10 秒。</span>`;
     }
 
     showOverlay(
@@ -2050,6 +2204,119 @@
       const owned = inventory[key] || 0;
       btn.textContent = `${item.cost}★ 兑换（拥有 ${owned}）`;
     }
+    renderGunCodeList();
+  }
+
+  function saveRedeemedCodes() {
+    saveJson("yyy_redeemed_codes", redeemedCodes);
+  }
+
+  function normalizeRedeemCode(raw) {
+    return String(raw || "")
+      .trim()
+      .replace(/\s+/g, "");
+  }
+
+  function findRedeemReward(raw) {
+    const exact = normalizeRedeemCode(raw);
+    if (!exact) return null;
+    if (REDEEM_CODES[exact]) return { key: exact, reward: REDEEM_CODES[exact] };
+    const upper = exact.toUpperCase();
+    for (const [key, reward] of Object.entries(REDEEM_CODES)) {
+      if (key.toUpperCase() === upper) return { key, reward };
+    }
+    return null;
+  }
+
+  function applyRedeemReward(reward) {
+    const parts = [];
+    if (reward.stars) {
+      stars += reward.stars;
+      parts.push(`五角星 +${reward.stars}`);
+    }
+    if (reward.skipCard) {
+      inventory.skipCard = (inventory.skipCard || 0) + reward.skipCard;
+      parts.push(`跳过卡 +${reward.skipCard}`);
+    }
+    if (reward.potion) {
+      inventory.potion = (inventory.potion || 0) + reward.potion;
+      levelUses.potion += reward.potion;
+      parts.push(`加速 +${reward.potion}`);
+    }
+    if (reward.sword) {
+      inventory.sword = (inventory.sword || 0) + reward.sword;
+      levelUses.sword += reward.sword * 2;
+      parts.push(`宝剑 +${reward.sword}`);
+    }
+    if (reward.pickaxe) {
+      inventory.pickaxe = (inventory.pickaxe || 0) + reward.pickaxe;
+      levelUses.pickaxe += reward.pickaxe * 25;
+      parts.push(`稿子 +${reward.pickaxe}`);
+    }
+    if (reward.bucket) {
+      inventory.bucket = (inventory.bucket || 0) + reward.bucket;
+      levelUses.bucket += reward.bucket * 10;
+      parts.push(`桶 +${reward.bucket}`);
+    }
+    saveStars();
+    saveInventory();
+    return parts.join(" · ");
+  }
+
+  function redeemCode() {
+    const hit = findRedeemReward(redeemInput ? redeemInput.value : "");
+    if (!hit) {
+      if (redeemTip) redeemTip.textContent = "兑换码无效";
+      return;
+    }
+    if (redeemedCodes[hit.key]) {
+      if (redeemTip) redeemTip.textContent = "这个码已经兑换过了";
+      return;
+    }
+    redeemedCodes[hit.key] = Date.now();
+    saveRedeemedCodes();
+    const got = applyRedeemReward(hit.reward);
+    if (redeemTip) redeemTip.textContent = `兑换成功：${got}`;
+    if (redeemInput) redeemInput.value = "";
+    refreshShopUI();
+    syncItemBar();
+    if (window.GameAudio) GameAudio.playStar();
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise((resolve, reject) => {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  function renderGunCodeList() {
+    if (!gunCodeList || gunCodeList.dataset.ready === "1") return;
+    gunCodeList.dataset.ready = "1";
+    gunCodeList.innerHTML = GUN_IMPORT_CODES.map((g, i) => {
+      return `<div class="gun-code-item">
+        <div>
+          <strong>${g.name}</strong>
+          <p>${g.note}</p>
+          <code>${g.code}</code>
+        </div>
+        <button type="button" class="gun-copy-btn" data-gun="${i}">复制</button>
+      </div>`;
+    }).join("");
   }
 
   function buyItem(key) {
@@ -2081,6 +2348,7 @@
     toolMode = null;
     clearInput();
     if (shopTip) shopTip.textContent = "";
+    if (redeemTip) redeemTip.textContent = "";
     refreshShopUI();
     shopPanel.classList.remove("hidden");
     shopPanel.setAttribute("aria-hidden", "false");
@@ -2158,7 +2426,12 @@
       return;
     }
     toolMode = toolMode === "sword" ? null : "sword";
-    statusLabel.textContent = toolMode === "sword" ? "宝剑已举起：点击僵尸" : "取消宝剑";
+    statusLabel.textContent =
+      toolMode === "sword"
+        ? level === 29
+          ? "宝剑已举起：快点排队的人（2.5秒后扭头）"
+          : "宝剑已举起：点击僵尸"
+        : "取消宝剑";
     syncItemBar();
   }
 
@@ -2422,6 +2695,10 @@
       25: "双人板",
       26: "飞机事故",
       27: "钢管大战",
+      28: "病毒爆发",
+      29: "请排队上厕所",
+      30: "神笔马良",
+      31: "画盾挡弹",
     };
     for (let i = 1; i <= TOTAL_LEVELS; i++) {
       if (i === 1) {
@@ -2436,6 +2713,13 @@
         sep.className = "level-section-sep";
         sep.setAttribute("aria-hidden", "true");
         sep.innerHTML = "<span>休闲</span>";
+        levelGrid.appendChild(sep);
+      }
+      if (i === 30) {
+        const sep = document.createElement("div");
+        sep.className = "level-section-sep";
+        sep.setAttribute("aria-hidden", "true");
+        sep.innerHTML = "<span>神笔马良</span>";
         levelGrid.appendChild(sep);
       }
       const btn = document.createElement("button");
@@ -2621,7 +2905,7 @@
   function selectLevel(n) {
     playUiClick();
     if (n > MAX_PLAYABLE) {
-      levelTip.textContent = "后面作者还在做，敬请期待（第 27 关「钢管大战」是目前终点）";
+      levelTip.textContent = "后面作者还在做，敬请期待（第 31 关「画盾挡弹」是目前终点）";
       levelTip.classList.remove("hidden");
       return;
     }
@@ -3017,6 +3301,14 @@
     else if (syncPlane26OnLeave) syncPlane26OnLeave();
     if (level === 27 && initPipe27) initPipe27();
     else if (syncPipe27OnLeave) syncPipe27OnLeave();
+    if (level === 28 && initLab28) initLab28();
+    else if (syncLab28OnLeave) syncLab28OnLeave();
+    if (level === 29 && initToilet29) initToilet29();
+    else if (syncToilet29OnLeave) syncToilet29OnLeave();
+    if (level === 30 && initMaliang30) initMaliang30();
+    else if (syncMaliang30OnLeave) syncMaliang30OnLeave();
+    if (level === 31 && initMaliang31) initMaliang31();
+    else if (syncMaliang31OnLeave) syncMaliang31OnLeave();
     if (window.GameAudio) {
       GameAudio.unlock();
       GameAudio.syncAmbience({
@@ -3089,7 +3381,7 @@
   const S = GameUtil.liveScope(
     (n) => eval(n),
     (n, value) => eval(n + " = value"),
-    "COOP_COLORS,DESIGN_H,DESIGN_W,GRAVITY,H,JUMP,LAVA_Y,MAX_PLAYABLE,MOVE,PORTRAIT_PROMPT_KEY,PORTRAIT_W,SHOP_CATALOG,TOTAL_LEVELS,W,ZOMBIE_COUNT,adOpen,announceChat,announceDeath,announceJoin,announceLeave,applyBrightness,applyCoopMap,applyLevelCounts,applyLevelOpts,applyVolume,armPickaxe,armSword,backpack,banLeft,banMsg,banScreen,banTimerId,beginPlaying,belly,breakWithPickaxe,bridgePieceW,bridgeY,brightness,brightnessSlider,brightnessValue,buildLevelGrid,buyItem,cameraForView,cameraX,canvas,canvasScale,chatBtn,chatClose,chatDock,chatInput,chatLog,chatLogEl,chatLogLevel,chatPanel,chatSend,chatUserCancel,chatUserDialog,chatUserFriend,chatUserMsg,chatUserReport,chatUserTarget,clamp,clearInput,clientToWorld,closeChat,closeLoginScreen,closeSettings,closeShop,colorForCoopId,comingSoon,confirmPlayerName,controlHintText,coopAcc,coopAnchorX,coopAnnounceAt,coopCount,coopFurthestX,coopHostId,cornerActions,craftCoopBtn,crate,craters,ctx,deathLine,die,eatAnim,endSign,enterLevel,escapeHtml,extendEndlessParkour,fakeButtons,fakeLava,findRoofAhead,friendCenter,friendCenterOpen,friendChatInput,friendChatLogEl,friendChatSend,friendChatTitle,friendInviteBtn,friendInviteLevel,friendListEl,friendReqCurrent,friendReqDialog,friendReqMsg,friendReqNo,friendReqQueue,friendReqYes,friendUnread,friends,friendsBtn,friendsClose,gameTitle,globalChat,globalChatBtn,globalChatClose,globalChatInput,globalChatLogEl,globalChatOpen,globalChatPanel,globalChatSend,globalChatUnread,goHome,handleCoopMessage,handleHomePeer,hideLevelSelect,hideOverlay,hidePortraitPrompt,hideSandboxMode,hideUnlockDialog,hitRemotePlayer,homeBtn,homeMode,homeNotices,homeNoticesEl,homePeerQuietUntil,homePeerReady,inboxBtn,inboxClear,inboxClose,inboxListEl,inboxOpen,inboxPanel,inboxReports,inboxUnread,inventory,inviteCurrent,inviteDialog,inviteMsg,inviteNo,inviteQueue,inviteYes,isCoopHost,isDevicePortrait,isLevelUnlocked,isMobileLike,isPortraitPlay,itemBar,joinNotices,joinNoticesEl,keys,killZombieWithSword,lastCoopPos,lastMapSendAt,lastTs,lavaDrainAt,lavaDrains,level,levelGrid,levelLabel,levelPlayerCounts,levelSelect,levelTip,levelUses,loadJson,loadProgress,loadSettings,loadStr,localChat,localChatUntil,localCoopId,loggedIn,loginError,loginIdcard,loginMode,loginMoonBtn,loginPaneAccount,loginPaneIdcard,loginPanePhone,loginPass,loginPhone,loginScreen,loginSms,loginSubmit,loginTabs,loginUser,logoutBtn,loop,maces,makeLevel,mapChance,mapRand,mapRngFn,markLevelCleared,maxCleared,maybeSendMap,maybeShowPortraitPrompt,minorNotice,minorOk,mockSmsCode,moonCoopBtn,moonEarthGrad,moonSkyGrad,moonVoidGrad,moveActor,myDisplayName,nameForm,nameInput,nearestHuntTarget,needsPlayerName,onViewportChange,openChat,openLoginScreen,openSettings,openShop,overlay,overlayHint,overlayMsg,overlayTitle,packMap,parseIdAge,particles,pendingFriend,pendingUnlockLevel,pickups,pitStart,pitWidth,placeBridgeButton,platforms,playCraftCoopNow,playMoonCoopNow,playUiClick,player,playerLabel,playerName,portraitAccept,portraitDecline,portraitDialog,portraitPromptDismissed,portraitPromptOpen,potion,preferTouchControls,pushHomeNotice,pushJoinNotice,pushZombie,puzzleMode,puzzleTools,rand,rectsOverlap,refreshShopUI,remainingFor,remoteCamX,remotePlayers,renderChatLog,renderHomeNotices,renderJoinNotices,reportCancel,reportDialog,reportMsg,resetLevelUses,resetPuzzleButtons,returnToHomeMenu,reverseGoal,rockets,sandboxCreative,sandboxModeEl,sandboxSurvival,saveCleared,saveInventory,saveJson,saveStars,saveStr,seededRng,selectLevel,selectedFriendId,sendChat,sendSmsCode,setLoginMode,settingsBtn,settingsClose,settingsOpen,settingsPanel,setupPuzzleDrag,setupTouchControls,shake,shopBtn,shopClose,shopOpen,shopPanel,shopScene,shopStarCount,shopTip,showLevelSelect,towerScene,subwayScene,rangeScene,battleScene,schoolScene,musicScene,dateScene,kongScene,starHouseScene,matchScene,furnaceScene,twinScene,planeScene,pipeScene,showLoginError,showMinorNotice,showNamePrompt,showOverlay,showPhoneJoin,showPortraitPrompt,showSandboxMode,showUnlockDialog,skipBtn,skipPreviousAndEnter,smsBtn,smsCooldown,smsTimer,socialOpen,socialToastEl,socialToastTimer,solidAt,spawnBurst,spawnX,speedBoost,spikes,star,starLabel,stars,startBtn,startCraftWorld,startGame,startLevelCoop,state,statusLabel,stopLevelCoop,submitLogin,syncChatBtn,syncCoopStatus,syncHomeBtn,syncItemBar,syncPuzzleTools,syncTouchPad,syncViewport,time,toolMode,touch,touchPad,tryClickPlayerName,tryUseToolClick,unlockCancelBtn,unlockDialog,unlockMsg,unlockOnce,unlockSkipBtn,update,updateCoop,updateParticles,useBucketItem,useInventoryItem,usePotionItem,useSkipCard,volumePct,volumeSlider,volumeValue,watchLobbyCounts,winLevel,worldMin,worldWidth,zombies"
+    "COOP_COLORS,DESIGN_H,DESIGN_W,GRAVITY,H,JUMP,LAVA_Y,MAX_PLAYABLE,MOVE,PORTRAIT_PROMPT_KEY,PORTRAIT_W,SHOP_CATALOG,TOTAL_LEVELS,W,ZOMBIE_COUNT,adOpen,announceChat,announceDeath,announceJoin,announceLeave,applyBrightness,applyCoopMap,applyLevelCounts,applyLevelOpts,applyVolume,armPickaxe,armSword,backpack,banLeft,banMsg,banScreen,banTimerId,beginPlaying,belly,breakWithPickaxe,bridgePieceW,bridgeY,brightness,brightnessSlider,brightnessValue,buildLevelGrid,buyItem,cameraForView,cameraX,canvas,canvasScale,chatBtn,chatClose,chatDock,chatInput,chatLog,chatLogEl,chatLogLevel,chatPanel,chatSend,chatUserCancel,chatUserDialog,chatUserFriend,chatUserMsg,chatUserReport,chatUserTarget,clamp,clearInput,clientToWorld,closeChat,closeLoginScreen,closeSettings,closeShop,colorForCoopId,comingSoon,confirmPlayerName,controlHintText,coopAcc,coopAnchorX,coopAnnounceAt,coopCount,coopFurthestX,coopHostId,cornerActions,craftCoopBtn,crate,craters,ctx,deathLine,die,eatAnim,endSign,enterLevel,escapeHtml,extendEndlessParkour,fakeButtons,fakeLava,findRoofAhead,friendCenter,friendCenterOpen,friendChatInput,friendChatLogEl,friendChatSend,friendChatTitle,friendInviteBtn,friendInviteLevel,friendListEl,friendReqCurrent,friendReqDialog,friendReqMsg,friendReqNo,friendReqQueue,friendReqYes,friendUnread,friends,friendsBtn,friendsClose,gameTitle,globalChat,globalChatBtn,globalChatClose,globalChatInput,globalChatLogEl,globalChatOpen,globalChatPanel,globalChatSend,globalChatUnread,goHome,handleCoopMessage,handleHomePeer,hideLevelSelect,hideOverlay,hidePortraitPrompt,hideSandboxMode,hideUnlockDialog,hitRemotePlayer,homeBtn,homeMode,homeNotices,homeNoticesEl,homePeerQuietUntil,homePeerReady,inboxBtn,inboxClear,inboxClose,inboxListEl,inboxOpen,inboxPanel,inboxReports,inboxUnread,inventory,inviteCurrent,inviteDialog,inviteMsg,inviteNo,inviteQueue,inviteYes,isCoopHost,isDevicePortrait,isLevelUnlocked,isMobileLike,isPortraitPlay,itemBar,joinNotices,joinNoticesEl,keys,killZombieWithSword,lastCoopPos,lastMapSendAt,lastTs,lavaDrainAt,lavaDrains,level,levelGrid,levelLabel,levelPlayerCounts,levelSelect,levelTip,levelUses,loadJson,loadProgress,loadSettings,loadStr,localChat,localChatUntil,localCoopId,loggedIn,loginError,loginIdcard,loginMode,loginMoonBtn,loginPaneAccount,loginPaneIdcard,loginPanePhone,loginPass,loginPhone,loginScreen,loginSms,loginSubmit,loginTabs,loginUser,logoutBtn,loop,maces,makeLevel,mapChance,mapRand,mapRngFn,markLevelCleared,maxCleared,maybeSendMap,maybeShowPortraitPrompt,minorNotice,minorOk,mockSmsCode,moonCoopBtn,moonEarthGrad,moonSkyGrad,moonVoidGrad,moveActor,myDisplayName,nameForm,nameInput,nearestHuntTarget,needsPlayerName,onViewportChange,openChat,openLoginScreen,openSettings,openShop,overlay,overlayHint,overlayMsg,overlayTitle,packMap,parseIdAge,particles,pendingFriend,pendingUnlockLevel,pickups,pitStart,pitWidth,placeBridgeButton,platforms,playCraftCoopNow,playMoonCoopNow,playUiClick,player,playerLabel,playerName,portraitAccept,portraitDecline,portraitDialog,portraitPromptDismissed,portraitPromptOpen,potion,preferTouchControls,pushHomeNotice,pushJoinNotice,pushZombie,puzzleMode,puzzleTools,rand,rectsOverlap,refreshShopUI,remainingFor,remoteCamX,remotePlayers,renderChatLog,renderHomeNotices,renderJoinNotices,reportCancel,reportDialog,reportMsg,resetLevelUses,resetPuzzleButtons,returnToHomeMenu,reverseGoal,rockets,sandboxCreative,sandboxModeEl,sandboxSurvival,saveCleared,saveInventory,saveJson,saveStars,saveStr,seededRng,selectLevel,selectedFriendId,sendChat,sendSmsCode,setLoginMode,settingsBtn,settingsClose,settingsOpen,settingsPanel,setupPuzzleDrag,setupTouchControls,shake,shopBtn,shopClose,shopOpen,shopPanel,shopScene,shopStarCount,shopTip,showLevelSelect,towerScene,subwayScene,rangeScene,battleScene,schoolScene,musicScene,dateScene,kongScene,starHouseScene,matchScene,furnaceScene,twinScene,planeScene,pipeScene,labScene,toiletScene,maliangScene,ml31Scene,showLoginError,showMinorNotice,showNamePrompt,showOverlay,showPhoneJoin,showPortraitPrompt,showSandboxMode,showUnlockDialog,skipBtn,skipPreviousAndEnter,smsBtn,smsCooldown,smsTimer,socialOpen,socialToastEl,socialToastTimer,solidAt,spawnBurst,spawnX,speedBoost,spikes,star,starLabel,stars,startBtn,startCraftWorld,startGame,startLevelCoop,state,statusLabel,stopLevelCoop,submitLogin,syncChatBtn,syncCoopStatus,syncHomeBtn,syncItemBar,syncPuzzleTools,syncTouchPad,syncViewport,time,toolMode,touch,touchPad,tryClickPlayerName,tryUseToolClick,unlockCancelBtn,unlockDialog,unlockMsg,unlockOnce,unlockSkipBtn,update,updateCoop,updateParticles,useBucketItem,useInventoryItem,usePotionItem,useSkipCard,volumePct,volumeSlider,volumeValue,watchLobbyCounts,winLevel,worldMin,worldWidth,zombies"
   );
   window.installGameSocial(S);
   window.installGameDraw(S);
@@ -3107,6 +3399,10 @@
   if (typeof window.installTwin25 === "function") window.installTwin25(S);
   if (typeof window.installPlane26 === "function") window.installPlane26(S);
   if (typeof window.installPipe27 === "function") window.installPipe27(S);
+  if (typeof window.installLab28 === "function") window.installLab28(S);
+  if (typeof window.installToilet29 === "function") window.installToilet29(S);
+  if (typeof window.installMaliang30 === "function") window.installMaliang30(S);
+  if (typeof window.installMaliang31 === "function") window.installMaliang31(S);
   initTower14 = S.initTower14 || null;
   updateTower14 = S.updateTower14 || null;
   drawTowerExtras = S.drawTowerExtras || null;
@@ -3167,6 +3463,25 @@
   updatePipe27 = S.updatePipe27 || null;
   drawPipeExtras = S.drawPipeExtras || null;
   syncPipe27OnLeave = S.syncPipe27OnLeave || null;
+  initLab28 = S.initLab28 || null;
+  updateLab28 = S.updateLab28 || null;
+  drawLabExtras = S.drawLabExtras || null;
+  syncLab28OnLeave = S.syncLab28OnLeave || null;
+  initToilet29 = S.initToilet29 || null;
+  updateToilet29 = S.updateToilet29 || null;
+  drawToiletExtras = S.drawToiletExtras || null;
+  syncToilet29OnLeave = S.syncToilet29OnLeave || null;
+  tryClickToilet29 = S.tryClickToilet29 || null;
+  initMaliang30 = S.initMaliang30 || null;
+  updateMaliang30 = S.updateMaliang30 || null;
+  drawMaliangExtras = S.drawMaliangExtras || null;
+  syncMaliang30OnLeave = S.syncMaliang30OnLeave || null;
+  tryClickMaliang30 = S.tryClickMaliang30 || null;
+  initMaliang31 = S.initMaliang31 || null;
+  updateMaliang31 = S.updateMaliang31 || null;
+  drawMaliang31Extras = S.drawMaliang31Extras || null;
+  syncMaliang31OnLeave = S.syncMaliang31OnLeave || null;
+  tryClickMaliang31 = S.tryClickMaliang31 || null;
   const {
     loadFriends,
     syncFriendsBtn,
@@ -3309,6 +3624,9 @@
     if (e.button != null && e.button !== 0) return;
     if (settingsOpen || adOpen || shopOpen || socialOpen) return;
     if (!toolMode && tryClickPlayerName(e.clientX, e.clientY)) return;
+    if (tryClickToilet29 && tryClickToilet29(e.clientX, e.clientY)) return;
+    if (tryClickMaliang30 && tryClickMaliang30(e.clientX, e.clientY)) return;
+    if (tryClickMaliang31 && tryClickMaliang31(e.clientX, e.clientY)) return;
     if (tryUseToolClick(e.clientX, e.clientY)) return;
     if (tryClickShopStar(e.clientX, e.clientY)) return;
     if (tryClickTower14 && tryClickTower14(e.clientX, e.clientY)) return;
@@ -3406,6 +3724,40 @@
         buyItem(btn.dataset.buy);
       });
     }
+    if (gunCodeList) {
+      gunCodeList.addEventListener("click", (e) => {
+        const btn = e.target.closest(".gun-copy-btn");
+        if (!btn) return;
+        playUiClick();
+        const g = GUN_IMPORT_CODES[Number(btn.dataset.gun)];
+        if (!g) return;
+        copyText(g.code)
+          .then(() => {
+            btn.textContent = "已复制";
+            setTimeout(() => {
+              btn.textContent = "复制";
+            }, 1200);
+          })
+          .catch(() => {
+            if (redeemTip) redeemTip.textContent = "复制失败，请手动选中复制";
+          });
+      });
+    }
+  }
+  if (redeemBtn) {
+    redeemBtn.addEventListener("click", () => {
+      playUiClick();
+      redeemCode();
+    });
+  }
+  if (redeemInput) {
+    redeemInput.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+      if (e.key === "Enter") {
+        e.preventDefault();
+        redeemCode();
+      }
+    });
   }
   if (itemBar) {
     for (const btn of itemBar.querySelectorAll(".item-btn")) {
