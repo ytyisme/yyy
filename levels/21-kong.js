@@ -1,11 +1,7 @@
 // 第 21 关：DONKEY KONG · 爬梯躲桶、救出顶层
 window.installKong21 = function (S) {
   with (S) {
-    function kongToast(msg, sec) {
-      if (!kongScene) return;
-      kongScene.toast = msg;
-      kongScene.toastT = sec || 2.2;
-    }
+    const kongToast = GameLevelKit.makeToast(() => kongScene, 2.2);
 
     function ladderAt(actor) {
       if (!kongScene || !actor) return null;
@@ -220,10 +216,7 @@ window.installKong21 = function (S) {
     function updateKong21(dt) {
       if (!kongScene || level !== 21 || state !== "playing") return;
 
-      if (kongScene.toastT > 0) {
-        kongScene.toastT -= dt;
-        if (kongScene.toastT <= 0) kongScene.toast = "";
-      }
+      GameLevelKit.tickToast(kongScene, dt);
 
       kongScene.kong.bob += dt;
       if (kongScene.kong.throwT > 0) kongScene.kong.throwT -= dt;

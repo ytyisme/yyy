@@ -1,11 +1,7 @@
 // 第 30 关：神笔马良 · 开篇 —— 神笔现世，画桥过岩浆
 window.installMaliang30 = function (S) {
   with (S) {
-    function mlToast(msg, sec) {
-      if (!maliangScene) return;
-      maliangScene.toast = msg;
-      maliangScene.toastT = sec || 2.6;
-    }
+    const mlToast = GameLevelKit.makeToast(() => maliangScene, 2.6);
 
     function wantPaint() {
       return (
@@ -125,10 +121,7 @@ window.installMaliang30 = function (S) {
     function updateMaliang30(dt) {
       if (!maliangScene || level !== 30 || state !== "playing") return;
       maliangScene.pulse += dt;
-      if (maliangScene.toastT > 0) {
-        maliangScene.toastT -= dt;
-        if (maliangScene.toastT <= 0) maliangScene.toast = "";
-      }
+      GameLevelKit.tickToast(maliangScene, dt);
       if (maliangScene.placeCd > 0) maliangScene.placeCd -= dt;
 
       // 捡神笔

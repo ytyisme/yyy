@@ -8,11 +8,7 @@ window.installTower14 = function (S) {
     let phoneBound = false;
     const MAP_AIRPORT = "跑酷国际机场";
 
-    function towerToast(msg, sec) {
-      if (!towerScene) return;
-      towerScene.toast = msg;
-      towerScene.toastT = sec || 2.5;
-    }
+    const towerToast = GameLevelKit.makeToast(() => towerScene, 2.5);
 
     function syncTowerPhoneBtn() {
       if (!phoneBtn) return;
@@ -374,10 +370,7 @@ window.installTower14 = function (S) {
       if (!towerScene || state !== "playing") return;
       const ts = towerScene;
 
-      if (ts.toastT > 0) {
-        ts.toastT -= dt;
-        if (ts.toastT <= 0) ts.toast = "";
-      }
+      GameLevelKit.tickToast(ts, dt);
 
       if (ts.charging) {
         ts.chargeT += dt;

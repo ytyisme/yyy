@@ -34,11 +34,7 @@ window.installStarHouse22 = function (S) {
       return starSprites;
     }
 
-    function starToast(msg, sec) {
-      if (!starHouseScene) return;
-      starHouseScene.toast = msg;
-      starHouseScene.toastT = sec || 2.2;
-    }
+    const starToast = GameLevelKit.makeToast(() => starHouseScene, 2.2);
 
     function drawStarShape(cx, cy, r, fill, stroke) {
       GameUtil.drawStarShape(ctx, cx, cy, r, fill, stroke);
@@ -142,10 +138,7 @@ window.installStarHouse22 = function (S) {
       starHouseScene.pulse += dt;
       if (eruptSoundCd > 0) eruptSoundCd -= dt;
       if (collectFxCd > 0) collectFxCd -= dt;
-      if (starHouseScene.toastT > 0) {
-        starHouseScene.toastT -= dt;
-        if (starHouseScene.toastT <= 0) starHouseScene.toast = "";
-      }
+      GameLevelKit.tickToast(starHouseScene, dt);
 
       starHouseScene.burstT -= dt;
       // 每帧最多喷 1 次，保证每次都是满额 10000 颗

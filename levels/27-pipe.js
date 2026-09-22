@@ -3,11 +3,7 @@ window.installPipe27 = function (S) {
   with (S) {
     const bossBtn = document.getElementById("lv27-boss-btn");
 
-    function pipeToast(msg, sec) {
-      if (!pipeScene) return;
-      pipeScene.toast = msg;
-      pipeScene.toastT = sec || 2.4;
-    }
+    const pipeToast = GameLevelKit.makeToast(() => pipeScene, 2.4);
 
     function syncBossBtn() {
       if (!bossBtn) return;
@@ -200,10 +196,7 @@ window.installPipe27 = function (S) {
         return;
       }
       pipeScene.pulse += dt;
-      if (pipeScene.toastT > 0) {
-        pipeScene.toastT -= dt;
-        if (pipeScene.toastT <= 0) pipeScene.toast = "";
-      }
+      GameLevelKit.tickToast(pipeScene, dt);
       if (pipeScene.atkCd > 0) pipeScene.atkCd -= dt;
       if (pipeScene.hurtCd > 0) pipeScene.hurtCd -= dt;
 

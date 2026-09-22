@@ -1,11 +1,7 @@
 // 第 24 关：倒计时熔炉 · 岩浆上涨 · 向上建造 · 集星开传送门
 window.installFurnace24 = function (S) {
   with (S) {
-    function furnaceToast(msg, sec) {
-      if (!furnaceScene) return;
-      furnaceScene.toast = msg;
-      furnaceScene.toastT = sec || 2.4;
-    }
+    const furnaceToast = GameLevelKit.makeToast(() => furnaceScene, 2.4);
 
     function wantPlace() {
       return (
@@ -210,10 +206,7 @@ window.installFurnace24 = function (S) {
       if (!furnaceScene || level !== 24 || state !== "playing") return;
 
       furnaceScene.pulse += dt;
-      if (furnaceScene.toastT > 0) {
-        furnaceScene.toastT -= dt;
-        if (furnaceScene.toastT <= 0) furnaceScene.toast = "";
-      }
+      GameLevelKit.tickToast(furnaceScene, dt);
       if (furnaceScene.placeCd > 0) furnaceScene.placeCd -= dt;
 
       syncCam(dt);

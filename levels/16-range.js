@@ -13,11 +13,7 @@ window.installRange16 = function (S) {
     const btnAimRight = document.getElementById("lv16-aim-right");
     let bound = false;
 
-    function rangeToast(msg, sec) {
-      if (!rangeScene) return;
-      rangeScene.toast = msg;
-      rangeScene.toastT = sec || 2;
-    }
+    const rangeToast = GameLevelKit.makeToast(() => rangeScene, 2);
 
     function clampAim() {
       if (!rangeScene) return;
@@ -261,10 +257,7 @@ window.installRange16 = function (S) {
       if (!rangeScene || state !== "playing" || level !== 16) return;
       const rs = rangeScene;
 
-      if (rs.toastT > 0) {
-        rs.toastT -= dt;
-        if (rs.toastT <= 0) rs.toast = "";
-      }
+      GameLevelKit.tickToast(rs, dt);
       if (rs.cooldown > 0) rs.cooldown -= dt;
       if (rs.muzzleFlash > 0) rs.muzzleFlash -= dt;
       rs.crosshairPulse += dt * 6;

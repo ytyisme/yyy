@@ -1,11 +1,7 @@
 // 第 26 关：飞机事故 · 9000 米跳伞 · 躲障碍落地过关
 window.installPlane26 = function (S) {
   with (S) {
-    function planeToast(msg, sec) {
-      if (!planeScene) return;
-      planeScene.toast = msg;
-      planeScene.toastT = sec || 2.6;
-    }
+    const planeToast = GameLevelKit.makeToast(() => planeScene, 2.6);
 
     function wantJump() {
       return (
@@ -132,10 +128,7 @@ window.installPlane26 = function (S) {
       if (!planeScene || level !== 26 || state !== "playing") return;
       syncLava();
 
-      if (planeScene.toastT > 0) {
-        planeScene.toastT -= dt;
-        if (planeScene.toastT <= 0) planeScene.toast = "";
-      }
+      GameLevelKit.tickToast(planeScene, dt);
       if (planeScene.shakePlane > 0) planeScene.shakePlane -= dt;
       planeScene.wind += dt;
 

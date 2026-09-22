@@ -1,11 +1,7 @@
 // 第 20 关：西餐厅约会 · 选性别 · 放松纯音乐
 window.installDate20 = function (S) {
   with (S) {
-    function dateToast(msg, sec) {
-      if (!dateScene) return;
-      dateScene.toast = msg;
-      dateScene.toastT = sec || 2.4;
-    }
+    const dateToast = GameLevelKit.makeToast(() => dateScene, 2.4);
 
     function seatPlayer() {
       if (!dateScene || !player) return;
@@ -118,10 +114,7 @@ window.installDate20 = function (S) {
 
     function updateDate20(dt) {
       if (!dateScene || level !== 20 || state !== "playing") return;
-      if (dateScene.toastT > 0) {
-        dateScene.toastT -= dt;
-        if (dateScene.toastT <= 0) dateScene.toast = "";
-      }
+      GameLevelKit.tickToast(dateScene, dt);
       if (dateScene.partnerSayT > 0) {
         dateScene.partnerSayT -= dt;
         if (dateScene.partnerSayT <= 0) dateScene.partnerSay = "";

@@ -3452,7 +3452,8 @@ body.craft-on .craft-only {
 
 
 /* ── 第 31 关 · 我画好了 ── */
-.lv31-ready-btn {
+.lv31-ready-btn,
+.lv32-ready-btn {
   position: absolute;
   top: 72px;
   right: 14px;
@@ -3472,15 +3473,18 @@ body.craft-on .craft-only {
   animation: lv31-ready-pulse 1.2s ease-in-out infinite;
 }
 
-.lv31-ready-btn.hidden {
+.lv31-ready-btn.hidden,
+.lv32-ready-btn.hidden {
   display: none;
 }
 
-.lv31-ready-btn:hover {
+.lv31-ready-btn:hover,
+.lv32-ready-btn:hover {
   filter: brightness(1.08);
 }
 
-.lv31-ready-btn:active {
+.lv31-ready-btn:active,
+.lv32-ready-btn:active {
   transform: translateY(2px);
   box-shadow: 0 2px 0 #5a0000;
 }

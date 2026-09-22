@@ -1,11 +1,7 @@
 // 第 28 关：病毒爆发 · 跟科学家逃出实验室 · 僵尸在 50 米外追来
 window.installLab28 = function (S) {
   with (S) {
-    function labToast(msg, sec) {
-      if (!labScene) return;
-      labScene.toast = msg;
-      labScene.toastT = sec || 2.6;
-    }
+    const labToast = GameLevelKit.makeToast(() => labScene, 2.6);
 
     function packX() {
       if (!labScene) return 0;
@@ -132,10 +128,7 @@ window.installLab28 = function (S) {
       if (!labScene || level !== 28 || state !== "playing") return;
       labScene.pulse += dt;
       labScene.siren += dt;
-      if (labScene.toastT > 0) {
-        labScene.toastT -= dt;
-        if (labScene.toastT <= 0) labScene.toast = "";
-      }
+      GameLevelKit.tickToast(labScene, dt);
 
       if (labScene.done) return;
 

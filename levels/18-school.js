@@ -1,11 +1,7 @@
 // 第 18 关：抢饭 · 教室 → 走廊 → 楼梯 → 马路 → 其他班级 → 直行500米 → 食堂
 window.installSchool18 = function (S) {
   with (S) {
-    function schoolToast(msg, sec) {
-      if (!schoolScene) return;
-      schoolScene.toast = msg;
-      schoolScene.toastT = sec || 2.2;
-    }
+    const schoolToast = GameLevelKit.makeToast(() => schoolScene, 2.2);
 
     function openClassroomDoor() {
       if (!schoolScene || schoolScene.doorOpen) return;
@@ -269,10 +265,7 @@ window.installSchool18 = function (S) {
 
     function updateSchool18(dt) {
       if (!schoolScene || level !== 18 || state !== "playing") return;
-      if (schoolScene.toastT > 0) {
-        schoolScene.toastT -= dt;
-        if (schoolScene.toastT <= 0) schoolScene.toast = "";
-      }
+      GameLevelKit.tickToast(schoolScene, dt);
 
       if (schoolScene.phase === "class") {
         schoolScene.classT -= dt;

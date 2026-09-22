@@ -10,28 +10,17 @@ window.installMaliang31 = function (S) {
     const CONNECT_DIST = STROKE_W * 1.35;
     const MIN_PILLARS = 2;
 
-    function ml31Toast(msg, sec) {
-      if (!ml31Scene) return;
-      ml31Scene.toast = msg;
-      ml31Scene.toastT = sec || 2.5;
-    }
+    const ml31Toast = GameLevelKit.makeToast(() => ml31Scene);
 
     function syncReadyBtn() {
-      if (!readyBtn) return;
-      const show =
-        state === "playing" &&
-        level === 31 &&
-        ml31Scene &&
-        ml31Scene.phase === "draw" &&
-        !ml31Scene.done;
-      readyBtn.classList.toggle("hidden", !show);
-      readyBtn.setAttribute("aria-hidden", show ? "false" : "true");
+      GameLevelKit.syncReadyButton(
+        readyBtn,
+        !!(state === "playing" && level === 31 && ml31Scene && ml31Scene.phase === "draw" && !ml31Scene.done)
+      );
     }
 
     function inkLabel() {
-      if (!ml31Scene) return "0";
-      if (!Number.isFinite(ml31Scene.ink)) return "∞";
-      return String(Math.ceil(ml31Scene.ink));
+      return GameLevelKit.inkLabel(ml31Scene);
     }
 
     function inkUsed() {
@@ -56,66 +45,19 @@ window.installMaliang31 = function (S) {
       };
     }
 
-    function beginStroke(wx, wy) {
-      if (!ml31Scene || ml31Scene.phase !== "draw" || ml31Scene.ink <= 0) return false;
-      const p = clampDrawPoint(wx, wy);
-      ml31Scene.drawing = {
-        points: [p],
-        width: STROKE_W,
-        supported: true,
-        falling: false,
-      };
-      ml31Scene.strokes.push(ml31Scene.drawing);
-      statusLabel.textContent = `手绘盾牌 · 墨水 ${inkLabel()}`;
-      return true;
-    }
+    const strokeTool = GameLevelKit.createStrokeTool({
+      sceneRef: () => ml31Scene,
+      strokeWidth: STROKE_W,
+      clampPoint: clampDrawPoint,
+      makeStroke: (p, width) => ({ points: [p], width, supported: true, falling: false }),
+      onStatus: () => {
+        statusLabel.textContent = `手绘盾牌 · 墨水 ${inkLabel()}`;
+      },
+      onInkOut: () => ml31Toast("墨水用完了", 1.4),
+    });
+    const endStroke = strokeTool.end;
 
-    function extendStroke(wx, wy) {
-      if (!ml31Scene || !ml31Scene.drawing || ml31Scene.ink <= 0) return;
-      const p = clampDrawPoint(wx, wy);
-      const pts = ml31Scene.drawing.points;
-      const last = pts[pts.length - 1];
-      const dx = p.x - last.x;
-      const dy = p.y - last.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist < 2.5) return;
-
-      let use = dist;
-      if (use > ml31Scene.ink) {
-        const t = ml31Scene.ink / use;
-        p.x = last.x + dx * t;
-        p.y = last.y + dy * t;
-        use = ml31Scene.ink;
-      }
-      ml31Scene.ink -= use;
-      ml31Scene.inkSpent = (ml31Scene.inkSpent || 0) + use;
-      pts.push(p);
-      statusLabel.textContent = `手绘盾牌 · 墨水 ${inkLabel()}`;
-      if (Number.isFinite(ml31Scene.ink) && ml31Scene.ink <= 0) {
-        ml31Scene.ink = 0;
-        ml31Scene.drawing = null;
-        ml31Toast("墨水用完了", 1.4);
-      }
-    }
-
-    function endStroke() {
-      if (!ml31Scene) return;
-      if (ml31Scene.drawing && ml31Scene.drawing.points.length < 2) {
-        const i = ml31Scene.strokes.indexOf(ml31Scene.drawing);
-        if (i >= 0) ml31Scene.strokes.splice(i, 1);
-      }
-      ml31Scene.drawing = null;
-    }
-
-    function pointSegDist(px, py, ax, ay, bx, by) {
-      const abx = bx - ax;
-      const aby = by - ay;
-      const len2 = abx * abx + aby * aby;
-      if (len2 < 1e-6) return Math.hypot(px - ax, py - ay);
-      let t = ((px - ax) * abx + (py - ay) * aby) / len2;
-      t = clamp(t, 0, 1);
-      return Math.hypot(px - (ax + abx * t), py - (ay + aby * t));
-    }
+    const pointSegDist = GameLevelKit.pointSegDist;
 
     function strokeBounds(stroke) {
       let minX = Infinity;
@@ -445,10 +387,7 @@ window.installMaliang31 = function (S) {
         return;
       }
       ml31Scene.pulse += dt;
-      if (ml31Scene.toastT > 0) {
-        ml31Scene.toastT -= dt;
-        if (ml31Scene.toastT <= 0) ml31Scene.toast = "";
-      }
+      GameLevelKit.tickToast(ml31Scene, dt);
 
       if (player) {
         player.x = 160;
@@ -692,39 +631,18 @@ window.installMaliang31 = function (S) {
       }
     }
 
-    if (readyBtn && !readyBtn._ml31Bound) {
-      readyBtn._ml31Bound = true;
-      readyBtn.addEventListener("click", () => {
-        if (level !== 31 || state !== "playing") return;
-        startShooting();
-      });
-    }
-
-    if (canvas && !canvas._ml31DrawBound) {
-      canvas._ml31DrawBound = true;
-      canvas.addEventListener("pointerdown", (e) => {
-        if (level !== 31 || state !== "playing" || !ml31Scene) return;
-        if (ml31Scene.phase !== "draw") return;
-        if (e.button != null && e.button !== 0) return;
-        if (settingsOpen || adOpen || shopOpen || socialOpen) return;
-        const world = clientToWorld(e.clientX, e.clientY);
-        if (beginStroke(world.x, world.y)) {
-          try {
-            canvas.setPointerCapture(e.pointerId);
-          } catch (_) {}
-          e.preventDefault();
-        }
-      });
-      canvas.addEventListener("pointermove", (e) => {
-        if (!ml31Scene || !ml31Scene.drawing || level !== 31) return;
-        const world = clientToWorld(e.clientX, e.clientY);
-        extendStroke(world.x, world.y);
-      });
-      const stopDraw = () => endStroke();
-      canvas.addEventListener("pointerup", stopDraw);
-      canvas.addEventListener("pointercancel", stopDraw);
-      window.addEventListener("pointerup", stopDraw);
-    }
+    GameLevelKit.bindDrawPointer({
+      canvas,
+      sceneRef: () => (level === 31 && state === "playing" && ml31Scene && ml31Scene.phase === "draw" ? ml31Scene : null),
+      clientToWorld,
+      isBlocked: () => !!(settingsOpen || adOpen || shopOpen || socialOpen),
+      tool: strokeTool,
+      boundKey: "_ml31DrawBound",
+    });
+    GameLevelKit.bindReadyButton(readyBtn, () => {
+      if (level !== 31 || state !== "playing") return;
+      startShooting();
+    });
 
     S.initMaliang31 = initMaliang31;
     S.updateMaliang31 = updateMaliang31;

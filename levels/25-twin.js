@@ -1,11 +1,7 @@
 // 第 25 关：双人压力板 · 镜像 NPC · 10 秒桥冲终点
 window.installTwin25 = function (S) {
   with (S) {
-    function twinToast(msg, sec) {
-      if (!twinScene) return;
-      twinScene.toast = msg;
-      twinScene.toastT = sec || 2.4;
-    }
+    const twinToast = GameLevelKit.makeToast(() => twinScene, 2.4);
 
     function makeNpc() {
       return {
@@ -145,10 +141,7 @@ window.installTwin25 = function (S) {
       if (!twinScene || level !== 25 || state !== "playing") return;
 
       twinScene.pulse += dt;
-      if (twinScene.toastT > 0) {
-        twinScene.toastT -= dt;
-        if (twinScene.toastT <= 0) twinScene.toast = "";
-      }
+      GameLevelKit.tickToast(twinScene, dt);
 
       const left =
         keys.has("ArrowLeft") || keys.has("a") || keys.has("A") || touch.left;

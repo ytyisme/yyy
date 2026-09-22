@@ -1,11 +1,7 @@
 // 第 29 关：请“排队”上厕所 · 13 把宝剑 · 扭头机制 · 分厕尿尿
 window.installToilet29 = function (S) {
   with (S) {
-    function toiletToast(msg, sec) {
-      if (!toiletScene) return;
-      toiletScene.toast = msg;
-      toiletScene.toastT = sec || 2.5;
-    }
+    const toiletToast = GameLevelKit.makeToast(() => toiletScene, 2.5);
 
     function pointIn(px, py, r) {
       return px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h;
@@ -266,10 +262,7 @@ window.installToilet29 = function (S) {
     function updateToilet29(dt) {
       if (!toiletScene || level !== 29 || state !== "playing") return;
 
-      if (toiletScene.toastT > 0) {
-        toiletScene.toastT -= dt;
-        if (toiletScene.toastT <= 0) toiletScene.toast = "";
-      }
+      GameLevelKit.tickToast(toiletScene, dt);
 
       // 宝剑掏出/收起 → 警戒
       const swordOn = toolMode === "sword";

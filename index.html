@@ -12,9 +12,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=154" />
+  <link rel="stylesheet" href="style.css?v=161" />
   <script>
-    window.GAME_BUILD = "154";
+    window.GAME_BUILD = "161";
     (function () {
       try {
         var u = new URL(location.href);
@@ -122,6 +122,7 @@
 
       <button id="lv27-boss-btn" class="lv27-boss-btn hidden" type="button" aria-hidden="true">挑战BOSS</button>
       <button id="lv31-ready-btn" class="lv31-ready-btn hidden" type="button" aria-hidden="true">我画好了</button>
+      <button id="lv32-ready-btn" class="lv32-ready-btn hidden" type="button" aria-hidden="true">我画好了</button>
 
       <div id="chat-dock" class="chat-dock hidden">
         <button id="chat-btn" class="chat-btn" type="button">聊天</button>
@@ -480,63 +481,68 @@
       </div>
     </div>
   </div>
-  <script src="lib/util.js?v=154"></script>
-  <script src="audio.js?v=154"></script>
-  <script src="coop.js?v=154"></script>
-  <script src="levels/boot.js?v=154"></script>
-  <script src="levels/01.js?v=154"></script>
-  <script src="levels/02.js?v=154"></script>
-  <script src="levels/03.js?v=154"></script>
-  <script src="levels/04.js?v=154"></script>
-  <script src="levels/05.js?v=154"></script>
-  <script src="levels/06.js?v=154"></script>
-  <script src="levels/07.js?v=154"></script>
-  <script src="levels/08.js?v=154"></script>
-  <script src="levels/09.js?v=154"></script>
-  <script src="levels/10.js?v=154"></script>
-  <script src="levels/11.js?v=154"></script>
-  <script src="levels/12.js?v=154"></script>
-  <script src="levels/12-catalog.js?v=154"></script>
-  <script src="levels/12-world.js?v=154"></script>
-  <script src="levels/13.js?v=154"></script>
-  <script src="levels/14.js?v=154"></script>
-  <script src="levels/14-tower.js?v=154"></script>
-  <script src="levels/15.js?v=154"></script>
-  <script src="levels/15-subway.js?v=154"></script>
-  <script src="levels/16.js?v=154"></script>
-  <script src="levels/16-range.js?v=154"></script>
-  <script src="levels/17.js?v=154"></script>
-  <script src="levels/17-battle.js?v=154"></script>
-  <script src="levels/18.js?v=154"></script>
-  <script src="levels/18-school.js?v=154"></script>
-  <script src="levels/19.js?v=154"></script>
-  <script src="levels/19-music.js?v=154"></script>
-  <script src="levels/20.js?v=154"></script>
-  <script src="levels/20-date.js?v=154"></script>
-  <script src="levels/21.js?v=154"></script>
-  <script src="levels/21-kong.js?v=154"></script>
-  <script src="levels/22.js?v=154"></script>
-  <script src="levels/22-starhouse.js?v=154"></script>
-  <script src="levels/23.js?v=154"></script>
-  <script src="levels/23-match.js?v=154"></script>
-  <script src="levels/24.js?v=154"></script>
-  <script src="levels/24-furnace.js?v=154"></script>
-  <script src="levels/25.js?v=154"></script>
-  <script src="levels/25-twin.js?v=154"></script>
-  <script src="levels/26.js?v=154"></script>
-  <script src="levels/26-plane.js?v=154"></script>
-  <script src="levels/27.js?v=154"></script>
-  <script src="levels/27-pipe.js?v=154"></script>
-  <script src="levels/28.js?v=154"></script>
-  <script src="levels/28-lab.js?v=154"></script>
-  <script src="levels/29.js?v=154"></script>
-  <script src="levels/29-toilet.js?v=154"></script>
-  <script src="levels/30.js?v=154"></script>
-  <script src="levels/30-maliang.js?v=154"></script>
-  <script src="levels/31.js?v=154"></script>
-  <script src="levels/31-maliang.js?v=154"></script>
-  <script src="lib/social.js?v=154"></script>
-  <script src="lib/draw.js?v=154"></script>
-  <script src="game.js?v=154"></script>
+  <script src="lib/util.js?v=161"></script>
+  <script src="lib/progress.js?v=161"></script>
+  <script src="audio.js?v=161"></script>
+  <script src="coop.js?v=161"></script>
+  <script src="levels/boot.js?v=161"></script>
+  <script src="levels/01.js?v=161"></script>
+  <script src="levels/02.js?v=161"></script>
+  <script src="levels/03.js?v=161"></script>
+  <script src="levels/04.js?v=161"></script>
+  <script src="levels/05.js?v=161"></script>
+  <script src="levels/06.js?v=161"></script>
+  <script src="levels/07.js?v=161"></script>
+  <script src="levels/08.js?v=161"></script>
+  <script src="levels/09.js?v=161"></script>
+  <script src="levels/10.js?v=161"></script>
+  <script src="levels/11.js?v=161"></script>
+  <script src="levels/12.js?v=161"></script>
+  <script src="levels/12-catalog.js?v=161"></script>
+  <script src="levels/12-world.js?v=161"></script>
+  <script src="levels/13.js?v=161"></script>
+  <script src="levels/14.js?v=161"></script>
+  <script src="levels/14-tower.js?v=161"></script>
+  <script src="levels/15.js?v=161"></script>
+  <script src="levels/15-subway.js?v=161"></script>
+  <script src="levels/16.js?v=161"></script>
+  <script src="levels/16-range.js?v=161"></script>
+  <script src="levels/17.js?v=161"></script>
+  <script src="levels/17-battle.js?v=161"></script>
+  <script src="levels/18.js?v=161"></script>
+  <script src="levels/18-school.js?v=161"></script>
+  <script src="levels/19.js?v=161"></script>
+  <script src="levels/19-music.js?v=161"></script>
+  <script src="levels/20.js?v=161"></script>
+  <script src="levels/20-date.js?v=161"></script>
+  <script src="levels/21.js?v=161"></script>
+  <script src="levels/21-kong.js?v=161"></script>
+  <script src="levels/22.js?v=161"></script>
+  <script src="levels/22-starhouse.js?v=161"></script>
+  <script src="levels/23.js?v=161"></script>
+  <script src="levels/23-match.js?v=161"></script>
+  <script src="levels/24.js?v=161"></script>
+  <script src="levels/24-furnace.js?v=161"></script>
+  <script src="levels/25.js?v=161"></script>
+  <script src="levels/25-twin.js?v=161"></script>
+  <script src="levels/26.js?v=161"></script>
+  <script src="levels/26-plane.js?v=161"></script>
+  <script src="levels/27.js?v=161"></script>
+  <script src="levels/27-pipe.js?v=161"></script>
+  <script src="levels/28.js?v=161"></script>
+  <script src="levels/28-lab.js?v=161"></script>
+  <script src="levels/29.js?v=161"></script>
+  <script src="levels/29-toilet.js?v=161"></script>
+  <script src="levels/30.js?v=161"></script>
+  <script src="levels/30-maliang.js?v=161"></script>
+  <script src="levels/31.js?v=161"></script>
+  <script src="levels/31-maliang.js?v=161"></script>
+  <script src="levels/32.js?v=161"></script>
+  <script src="levels/32-pipe.js?v=161"></script>
+  <script src="lib/social.js?v=161"></script>
+  <script src="lib/scenes.js?v=161"></script>
+  <script src="lib/levelkit.js?v=161"></script>
+  <script src="lib/draw.js?v=161"></script>
+  <script src="game.js?v=161"></script>
 </body>
 </html>

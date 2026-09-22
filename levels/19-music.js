@@ -1,11 +1,7 @@
 // 第 19 关：音乐 · 真曲优先，否则合成音（非原唱）
 window.installMusic19 = function (S) {
   with (S) {
-    function musicToast(msg, sec) {
-      if (!musicScene) return;
-      musicScene.toast = msg;
-      musicScene.toastT = sec || 2.4;
-    }
+    const musicToast = GameLevelKit.makeToast(() => musicScene, 2.4);
 
     function currentSong() {
       if (!musicScene || !musicScene.songs) return null;
@@ -332,10 +328,7 @@ window.installMusic19 = function (S) {
 
     function updateMusic19(dt) {
       if (!musicScene || level !== 19 || state !== "playing") return;
-      if (musicScene.toastT > 0) {
-        musicScene.toastT -= dt;
-        if (musicScene.toastT <= 0) musicScene.toast = "";
-      }
+      GameLevelKit.tickToast(musicScene, dt);
       if (musicScene.hitFlash > 0) musicScene.hitFlash -= dt;
       for (const s of musicScene.sparks || []) s.life -= dt;
       musicScene.sparks = (musicScene.sparks || []).filter((s) => s.life > 0);

@@ -1,11 +1,7 @@
 // 第 23 关：消消乐 · 顶上炮台瞄准发射 · 90 行方块消完过关
 window.installMatch23 = function (S) {
   with (S) {
-    function matchToast(msg, sec) {
-      if (!matchScene) return;
-      matchScene.toast = msg;
-      matchScene.toastT = sec || 2.2;
-    }
+    const matchToast = GameLevelKit.makeToast(() => matchScene, 2.2);
 
     function cellAt(c, r) {
       if (!matchScene) return -1;
@@ -474,10 +470,7 @@ window.installMatch23 = function (S) {
     function updateMatch23(dt) {
       if (!matchScene || level !== 23 || state !== "playing") return;
 
-      if (matchScene.toastT > 0) {
-        matchScene.toastT -= dt;
-        if (matchScene.toastT <= 0) matchScene.toast = "";
-      }
+      GameLevelKit.tickToast(matchScene, dt);
       if (matchScene.cooldown > 0) matchScene.cooldown -= dt;
 
       // 本关无角色，仅炮台操作

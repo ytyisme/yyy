@@ -18,11 +18,7 @@ window.installSubway15 = function (S) {
     let ticketBound = false;
     let elevBound = false;
 
-    function subwayToast(msg, sec) {
-      if (!subwayScene) return;
-      subwayScene.toast = msg;
-      subwayScene.toastT = sec || 2.5;
-    }
+    const subwayToast = GameLevelKit.makeToast(() => subwayScene, 2.5);
 
     function subwayAnnounce(msg, sec) {
       if (!subwayScene) return;
@@ -617,10 +613,7 @@ window.installSubway15 = function (S) {
       if (!subwayScene || state !== "playing" || level !== 15) return;
       const ts = subwayScene;
 
-      if (ts.toastT > 0) {
-        ts.toastT -= dt;
-        if (ts.toastT <= 0) ts.toast = "";
-      }
+      GameLevelKit.tickToast(ts, dt);
       if (ts.announceT > 0) {
         ts.announceT -= dt;
         if (ts.announceT <= 0) {

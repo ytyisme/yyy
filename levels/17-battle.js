@@ -44,11 +44,7 @@ window.installBattle17 = function (S) {
       return "#333";
     }
 
-    function battleToast(msg, sec) {
-      if (!battleScene) return;
-      battleScene.toast = msg;
-      battleScene.toastT = sec || 2;
-    }
+    const battleToast = GameLevelKit.makeToast(() => battleScene, 2);
 
     function syncBattlePad() {
       if (!battlePad) return;
@@ -2035,10 +2031,7 @@ window.installBattle17 = function (S) {
     function updateBattle17(dt) {
       if (!battleScene || state !== "playing" || level !== 17) return;
       const bs = battleScene;
-      if (bs.toastT > 0) {
-        bs.toastT -= dt;
-        if (bs.toastT <= 0) bs.toast = "";
-      }
+      GameLevelKit.tickToast(bs, dt);
       if (bs.cooldown > 0) bs.cooldown -= dt;
       if (bs.muzzleFlash > 0) bs.muzzleFlash -= dt;
       if (bs.hurtFlash > 0) bs.hurtFlash -= dt;
