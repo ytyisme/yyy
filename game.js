@@ -141,7 +141,81 @@
     sword: 0,
     pickaxe: 0,
     bucket: 0,
+    smg: 0,
+    rifle: 0,
+    guns: {}, // id -> 1，已解锁的具体枪
   };
+  // 按类型：smg 连发 / rifle 冷却 0.5s
+  const GUN_SPECS = {
+    // 冲锋枪：弹匣 13，备弹极多；显示 100000000000/13发
+    smg: { name: "冲锋枪", interval: 0.12, range: 420, aimRange: 560, magSize: 13, reserveMax: 100000000000, ammoLabel: "发" },
+    // 手枪/步枪：200/5
+    rifle: { name: "手枪", interval: 0.5, range: 560, aimRange: 720, magSize: 5, reserveMax: 200, ammoLabel: "" },
+  };
+  // 每把枪的外形（握把在手心，枪管朝朝向）
+  const GUN_STYLES = {
+    k437:   { name: "K437",   type: "rifle", body: "#4a5568", accent: "#c0392b", barrel: 34, stock: 10, scope: true },
+    mdr:    { name: "MDR",    type: "rifle", body: "#3d4a3a", accent: "#8d6e63", barrel: 30, stock: 9,  scope: false },
+    k416:   { name: "K416",   type: "rifle", body: "#2f3e46", accent: "#f4a261", barrel: 32, stock: 10, scope: true },
+    qbz95:  { name: "QBZ95",  type: "rifle", body: "#3a4a2a", accent: "#e9c46a", barrel: 36, stock: 8,  scope: true },
+    m14:    { name: "M14",    type: "rifle", body: "#5a4030", accent: "#d4a373", barrel: 40, stock: 12, scope: true },
+    mp7:    { name: "MP7",    type: "smg",   body: "#2b2d42", accent: "#ef476f", barrel: 18, stock: 6,  scope: false },
+    m7:     { name: "M7",     type: "rifle", body: "#1d3557", accent: "#e63946", barrel: 33, stock: 10, scope: false },
+    qcq171: { name: "QCQ171", type: "smg",   body: "#264653", accent: "#2a9d8f", barrel: 16, stock: 5,  scope: false },
+  };
+  let gunState = {
+    gunId: null, // 具体枪 id，null = 没拿枪
+    holstered: false, // 收起在背包
+    aiming: false,
+    firing: false,
+    cooldown: 0,
+    muzzle: 0,
+    mag: 0, // 当前弹匣
+    reserve: 0, // 备弹
+  };
+
+  function resetGunAmmo(force) {
+    const style = gunState.gunId ? GUN_STYLES[gunState.gunId] : null;
+    const spec = style ? GUN_SPECS[style.type] : null;
+    if (!spec) return;
+    if (force || gunState.mag == null || gunState.reserve == null || gunState.reserve <= 0 && gunState.mag <= 0) {
+      gunState.mag = spec.magSize;
+      gunState.reserve = spec.reserveMax;
+    }
+  }
+
+  function ammoText() {
+    const style = currentGunStyle();
+    const spec = style ? GUN_SPECS[style.type] : null;
+    if (!spec) return "";
+    const tag = spec.ammoLabel || "";
+    return `${gunState.reserve}/${gunState.mag}${tag}`;
+  }
+
+  function tryReloadGun() {
+    const style = currentGunStyle();
+    const spec = style ? GUN_SPECS[style.type] : null;
+    if (!spec) return false;
+    if (gunState.mag >= spec.magSize) return false;
+    if (gunState.reserve <= 0) return false;
+    const need = spec.magSize - gunState.mag;
+    const take = Math.min(need, gunState.reserve);
+    gunState.mag += take;
+    gunState.reserve -= take;
+    return true;
+  }
+
+  function gunTypeOf(id) {
+    return (GUN_STYLES[id] && GUN_STYLES[id].type) || null;
+  }
+
+  function unlockedGunIds() {
+    const out = [];
+    for (const id of Object.keys(GUN_STYLES)) {
+      if (inventory.guns && inventory.guns[id]) out.push(id);
+    }
+    return out;
+  }
   let levelUses = {
     potion: 0,
     sword: 0,
@@ -178,48 +252,82 @@
     DJSJ888: { stars: 88, sword: 1, label: "DJSJ888" },
     DELTA2026: { stars: 126, skipCard: 1, potion: 1, label: "DELTA2026" },
     SPRING2026: { stars: 126, bucket: 1, label: "SPRING2026" },
+    // 枪械礼包码（与 GUN_IMPORT_CODES.gift 对应）
+    K437666: { stars: 66, skipCard: 1, sword: 1, rifle: 1, gunId: "k437", label: "K437666" },
+    MDR888: { stars: 88, potion: 1, rifle: 1, gunId: "mdr", label: "MDR888" },
+    K416VIP: { stars: 66, skipCard: 1, rifle: 1, gunId: "k416", label: "K416VIP" },
+    QBZ95GIFT: { stars: 88, bucket: 1, rifle: 1, gunId: "qbz95", label: "QBZ95GIFT" },
+    M14WIN: { stars: 99, sword: 1, rifle: 1, gunId: "m14", label: "M14WIN" },
+    MP7FAST: { stars: 66, potion: 1, smg: 1, gunId: "mp7", label: "MP7FAST" },
+    M7POWER: { stars: 88, pickaxe: 1, rifle: 1, gunId: "m7", label: "M7POWER" },
+    QCQ171GO: { stars: 77, skipCard: 1, smg: 1, gunId: "qcq171", label: "QCQ171GO" },
   };
 
   // 改枪导入码（可复制）
+  // gift = REDEEM_CODES 里的礼包码，显示在枪名旁
   const GUN_IMPORT_CODES = [
     {
       name: "K437突击步枪",
+      id: "k437",
+      gunType: "rifle",
       note: "烽火地带 · 34w性价比版",
+      gift: "K437666",
       code: "K437突击步枪‑烽火地带‑6LAEM6802G22C8LLI3CIN",
     },
     {
       name: "MDR突击步枪",
+      id: "mdr",
+      gunType: "rifle",
       note: "烽火地带 · 基础版",
+      gift: "MDR888",
       code: "MDR突击步枪‑烽火地带‑6LA8USG058UBUV9RKBGRG",
     },
     {
       name: "K416突击步枪",
+      id: "k416",
+      gunType: "rifle",
       note: "烽火地带 · 11万便宜改装",
+      gift: "K416VIP",
       code: "K416突击步枪‑烽火地带‑6G92QS407IJCACQJFRS26",
     },
     {
       name: "QBZ‑95‑1",
+      id: "qbz95",
+      gunType: "rifle",
       note: "全面战场 · 三倍镜",
+      gift: "QBZ95GIFT",
       code: "QBZ95‑1突击步枪‑全面战场‑6FNTEO80FA95V6OTBBU2A",
     },
     {
       name: "M14射手步枪",
+      id: "m14",
+      gunType: "rifle",
       note: "烽火地带 · 近战大改",
+      gift: "M14WIN",
       code: "M14射手步枪‑烽火地带‑6HMM19C0B12QASUQB4J4K",
     },
     {
       name: "MP7冲锋枪",
+      id: "mp7",
+      gunType: "smg",
       note: "16w性价比",
+      gift: "MP7FAST",
       code: "6I7QNVC0AEK0SD1PJ432L",
     },
     {
       name: "M7战斗步枪",
+      id: "m7",
+      gunType: "rifle",
       note: "猛攻",
+      gift: "M7POWER",
       code: "6IEOODK0AEK0SD1PJ432L",
     },
     {
       name: "QCQ‑171冲锋枪",
+      id: "qcq171",
+      gunType: "smg",
       note: "21W",
+      gift: "QCQ171GO",
       code: "6IO8CQ00AEK0SD1PJ432L",
     },
   ];
@@ -1636,6 +1744,7 @@
     if (comingSoon) comingSoon.pulse += dt * 2;
     if (shopScene) updateShopScene(dt);
     GameSceneReg.updateAll(dt);
+    updateGuns(dt);
 
     updateCoop(dt);
     cameraX = cameraForView();
@@ -1991,12 +2100,38 @@
     saveJson("yyy_inventory", inventory);
   }
 
+  function backfillGunUnlocks() {
+    if (!inventory.guns || typeof inventory.guns !== "object") inventory.guns = {};
+    for (const key of Object.keys(redeemedCodes || {})) {
+      const reward = REDEEM_CODES[key];
+      if (!reward) continue;
+      if (reward.smg) inventory.smg = Math.max(inventory.smg || 0, reward.smg);
+      if (reward.rifle) inventory.rifle = Math.max(inventory.rifle || 0, reward.rifle);
+      if (reward.gunId && GUN_STYLES[reward.gunId]) inventory.guns[reward.gunId] = 1;
+    }
+    for (const g of GUN_IMPORT_CODES) {
+      if (!g.gift || !g.id || !redeemedCodes || !redeemedCodes[g.gift]) continue;
+      inventory.guns[g.id] = 1;
+      if (g.gunType === "smg") inventory.smg = Math.max(inventory.smg || 0, 1);
+      if (g.gunType === "rifle") inventory.rifle = Math.max(inventory.rifle || 0, 1);
+    }
+    // 旧存档只有类别计数
+    if ((inventory.smg || 0) > 0) inventory.guns.mp7 = 1;
+    if ((inventory.rifle || 0) > 0) inventory.guns.k437 = inventory.guns.k437 || 1;
+    if (unlockedGunIds().length) {
+      saveInventory();
+      equipDefaultGun();
+    }
+  }
+
   function loadProgress() {
     const saved = GameProgress.load(inventory, MAX_PLAYABLE);
     stars = saved.stars;
     maxCleared = saved.maxCleared;
     Object.assign(inventory, saved.inventory);
+    backfillGunUnlocks();
     if (starLabel) starLabel.textContent = String(stars);
+    syncGunPad();
   }
 
   function saveCleared() {
@@ -2024,7 +2159,11 @@
       bucket: inventory.bucket * 10,
     };
     toolMode = null;
+    gunState.firing = false;
+    gunState.cooldown = 0;
+    equipDefaultGun();
     syncItemBar();
+    syncGunPad();
   }
 
   function lavaDrainAt(x) {
@@ -2053,6 +2192,7 @@
       btn.disabled = left <= 0;
       btn.classList.toggle("active", toolMode === key);
     }
+    if (typeof syncGunPad === "function") syncGunPad();
   }
 
   function refreshShopUI() {
@@ -2067,6 +2207,15 @@
       btn.textContent = `${item.cost}★ 兑换（拥有 ${owned}）`;
     }
     renderGunCodeList();
+    const gunHint = document.getElementById("gun-unlock-hint");
+    if (gunHint) {
+      const kind = typeof ownedGunKind === "function" ? ownedGunKind() : null;
+      gunHint.textContent = kind
+        ? kind === "smg"
+          ? "已解锁冲锋枪：进关后右下角有「瞄准 / 发射」，按住发射连发"
+          : "已解锁步枪：进关后右下角有「瞄准 / 发射」，冷却 0.5 秒"
+        : "兑换任一枪械礼包码后，进关右下角会出现「瞄准 / 发射」";
+    }
   }
 
   function saveRedeemedCodes() {
@@ -2120,8 +2269,32 @@
       levelUses.bucket += reward.bucket * 10;
       parts.push(`桶 +${reward.bucket}`);
     }
+    if (reward.smg) {
+      inventory.smg = (inventory.smg || 0) + reward.smg;
+    }
+    if (reward.rifle) {
+      inventory.rifle = (inventory.rifle || 0) + reward.rifle;
+    }
+    if (reward.gunId && GUN_STYLES[reward.gunId]) {
+      if (!inventory.guns) inventory.guns = {};
+      inventory.guns[reward.gunId] = 1;
+      const st = GUN_STYLES[reward.gunId];
+      if (st.type === "smg") inventory.smg = Math.max(inventory.smg || 0, 1);
+      if (st.type === "rifle") inventory.rifle = Math.max(inventory.rifle || 0, 1);
+      parts.push(`解锁 ${st.name}（已可拿在手上）`);
+      // 自动拿出最新解锁的枪
+      gunState.gunId = reward.gunId;
+      gunState.holstered = false;
+      gunState.firing = false;
+    } else if (reward.smg) {
+      parts.push("解锁冲锋枪（连发）");
+    } else if (reward.rifle) {
+      parts.push("解锁步枪（冷却0.5秒）");
+    }
     saveStars();
     saveInventory();
+    equipDefaultGun();
+    syncGunPad();
     return parts.join(" · ");
   }
 
@@ -2131,14 +2304,11 @@
       if (redeemTip) redeemTip.textContent = "兑换码无效";
       return;
     }
-    if (redeemedCodes[hit.key]) {
-      if (redeemTip) redeemTip.textContent = "这个码已经兑换过了";
-      return;
-    }
+    // 不限次数：可反复兑换
     redeemedCodes[hit.key] = Date.now();
     saveRedeemedCodes();
     const got = applyRedeemReward(hit.reward);
-    if (redeemTip) redeemTip.textContent = `兑换成功：${got}`;
+    if (redeemTip) redeemTip.textContent = `兑换成功（可再兑 ♾️）：${got}`;
     if (redeemInput) redeemInput.value = "";
     refreshShopUI();
     syncItemBar();
@@ -2170,9 +2340,14 @@
     if (!gunCodeList || gunCodeList.dataset.ready === "1") return;
     gunCodeList.dataset.ready = "1";
     gunCodeList.innerHTML = GUN_IMPORT_CODES.map((g, i) => {
+      const gunTag = g.gunType === "smg" ? "冲锋枪 · 连发" : g.gunType === "rifle" ? "步枪 · 冷却0.5秒" : "";
+      const gift = g.gift
+        ? `<p class="gun-gift">${gunTag ? gunTag + " · " : ""}礼包码 <code class="gun-gift-code" data-gift="${g.gift}" title="点击填入兑换框">${g.gift}</code></p>`
+        : "";
       return `<div class="gun-code-item">
         <div>
           <strong>${g.name}</strong>
+          ${gift}
           <p>${g.note}</p>
           <code>${g.code}</code>
         </div>
@@ -2232,6 +2407,226 @@
     syncTouchPad();
     syncItemBar();
     syncChatBtn();
+  }
+
+  function ownedGunKind() {
+    const ids = unlockedGunIds();
+    if (!ids.length) {
+      if ((inventory.smg || 0) > 0) return "smg";
+      if ((inventory.rifle || 0) > 0) return "rifle";
+      return null;
+    }
+    // 当前手上的枪优先
+    if (gunState.gunId && inventory.guns && inventory.guns[gunState.gunId]) {
+      return gunTypeOf(gunState.gunId);
+    }
+    return gunTypeOf(ids[0]);
+  }
+
+  function equipDefaultGun() {
+    const ids = unlockedGunIds();
+    // 兼容旧存档：只有 smg/rifle 计数时补一把默认枪
+    if (!ids.length && (inventory.smg || 0) > 0) {
+      if (!inventory.guns) inventory.guns = {};
+      inventory.guns.mp7 = 1;
+    }
+    if (!ids.length && (inventory.rifle || 0) > 0) {
+      if (!inventory.guns) inventory.guns = {};
+      inventory.guns.k437 = 1;
+    }
+    const list = unlockedGunIds();
+    if (!list.length) {
+      gunState.gunId = null;
+      gunState.aiming = false;
+      gunState.firing = false;
+      return;
+    }
+    if (!gunState.gunId || !inventory.guns[gunState.gunId]) {
+      gunState.gunId = list[list.length - 1]; // 最近解锁的
+      gunState.holstered = false;
+      resetGunAmmo(true);
+    }
+  }
+
+  function equipGunById(id) {
+    if (!inventory.guns || !inventory.guns[id] || !GUN_STYLES[id]) return;
+    if (gunState.gunId !== id) resetGunAmmo(true);
+    gunState.gunId = id;
+    gunState.holstered = false;
+    gunState.aiming = false;
+    gunState.firing = false;
+    gunState.cooldown = 0;
+    statusLabel.textContent = `拿起 ${GUN_STYLES[id].name}`;
+    if (window.GameAudio) GameAudio.playClick();
+    syncGunPad();
+  }
+
+  function holsterGun() {
+    if (!gunState.gunId) return;
+    gunState.holstered = !gunState.holstered;
+    gunState.firing = false;
+    gunState.aiming = false;
+    statusLabel.textContent = gunState.holstered
+      ? `${GUN_STYLES[gunState.gunId].name} 已放入背包`
+      : `拿起 ${GUN_STYLES[gunState.gunId].name}`;
+    if (window.GameAudio) GameAudio.playClick();
+    syncGunPad();
+  }
+
+  function currentGunStyle() {
+    return gunState.gunId ? GUN_STYLES[gunState.gunId] : null;
+  }
+
+  function gunHeld() {
+    return !!(gunState.gunId && !gunState.holstered && inventory.guns && inventory.guns[gunState.gunId]);
+  }
+
+  function syncGunPad() {
+    const pad = document.getElementById("gun-pad");
+    if (!pad) return;
+    equipDefaultGun();
+    const held = gunHeld();
+    const hasAny = unlockedGunIds().length > 0;
+    const show =
+      state === "playing" &&
+      hasAny &&
+      !adOpen &&
+      !settingsOpen &&
+      !shopOpen &&
+      !socialOpen &&
+      !portraitPromptOpen;
+    pad.classList.toggle("hidden", !show);
+    pad.setAttribute("aria-hidden", show ? "false" : "true");
+    const aimBtn = document.getElementById("gun-aim-btn");
+    const fireBtn = document.getElementById("gun-fire-btn");
+    const stowBtn = document.getElementById("gun-stow-btn");
+    const style = currentGunStyle();
+    const type = style ? style.type : null;
+    const spec = type ? GUN_SPECS[type] : null;
+    if (aimBtn) {
+      aimBtn.classList.toggle("active", !!gunState.aiming);
+      aimBtn.textContent = gunState.aiming ? "瞄准中" : "瞄准";
+      aimBtn.disabled = !held;
+    }
+    if (fireBtn) {
+      fireBtn.textContent = spec ? `发射 · ${style.name}` : "发射";
+      fireBtn.classList.toggle("active", !!gunState.firing);
+      fireBtn.disabled = !held;
+    }
+    if (stowBtn) {
+      stowBtn.textContent = gunState.holstered ? "拿起" : "收起";
+      stowBtn.disabled = !gunState.gunId;
+    }
+    const label = document.getElementById("gun-kind-label");
+    if (label) {
+      if (!style) label.textContent = "";
+      else if (gunState.holstered) label.textContent = `${style.name} · 在背包`;
+      else label.textContent = `${style.name} · ${ammoText()}`;
+    }
+    // 背包栏：所有已兑枪
+    const listEl = document.getElementById("gun-bag-list");
+    if (listEl) {
+      const ids = unlockedGunIds();
+      listEl.innerHTML = ids
+        .map((id) => {
+          const st = GUN_STYLES[id];
+          const active = gunState.gunId === id;
+          return `<button type="button" class="gun-bag-item${active ? " active" : ""}" data-gun-id="${id}" title="点击拿起/切换">${st.name}</button>`;
+        })
+        .join("");
+    }
+  }
+
+  function toggleGunAim() {
+    if (!gunHeld()) return;
+    gunState.aiming = !gunState.aiming;
+    statusLabel.textContent = gunState.aiming ? "已瞄准（射程更远）" : "取消瞄准";
+    if (window.GameAudio) GameAudio.playClick();
+    syncGunPad();
+  }
+
+  function gunRange() {
+    const style = currentGunStyle();
+    const spec = style ? GUN_SPECS[style.type] : null;
+    if (!spec) return 0;
+    return gunState.aiming ? spec.aimRange : spec.range;
+  }
+
+  function fireGunShot() {
+    if (state !== "playing" || !gunHeld() || !player) return false;
+    const style = currentGunStyle();
+    const spec = style ? GUN_SPECS[style.type] : null;
+    if (!spec || gunState.cooldown > 0) return false;
+    if (gunState.mag <= 0) {
+      if (!tryReloadGun()) {
+        statusLabel.textContent = "没子弹了";
+        gunState.firing = false;
+        syncGunPad();
+        return false;
+      }
+    }
+    gunState.cooldown = spec.interval;
+    gunState.muzzle = 0.12;
+    gunState.mag = Math.max(0, gunState.mag - 1);
+    if (gunState.mag <= 0) tryReloadGun();
+    const dir = player.facing || 1;
+    const sx = player.x + player.w / 2 + dir * 10;
+    const sy = player.y + 18;
+    const range = gunRange();
+    const ex = sx + dir * range;
+
+    // 枪线命中最近僵尸
+    let hit = null;
+    let hitDist = Infinity;
+    for (const z of zombies) {
+      if (z.alive === false) continue;
+      const zx = z.x + z.w / 2;
+      const zy = z.y + z.h / 2;
+      // 大致在射线上
+      if (dir > 0 && zx < sx - 8) continue;
+      if (dir < 0 && zx > sx + 8) continue;
+      if (Math.abs(zx - sx) > range) continue;
+      if (Math.abs(zy - sy) > (z.h || 40) + 30) continue;
+      const d = Math.abs(zx - sx);
+      if (d < hitDist) {
+        hitDist = d;
+        hit = z;
+      }
+    }
+
+    spawnBurst(sx + dir * 8, sy, "#ffe27a", 4);
+    spawnBurst((hit ? hit.x + hit.w / 2 : ex * 0.5 + sx * 0.5), hit ? hit.y + hit.h / 2 : sy, "#ffb347", hit ? 16 : 6);
+    if (window.GameAudio) {
+      if (GameAudio.playGunShot) GameAudio.playGunShot();
+      else GameAudio.playClick();
+    }
+    shake = Math.max(shake, style && style.type === "smg" ? 2 : 4);
+
+    if (hit) {
+      const idx = zombies.indexOf(hit);
+      spawnBurst(hit.x + hit.w / 2, hit.y + hit.h / 2, "#ffe566", 22);
+      spawnBurst(hit.x + hit.w / 2, hit.y + hit.h / 2, "#ff5533", 14);
+      if (idx >= 0) zombies.splice(idx, 1);
+      shake = Math.max(shake, 8);
+      statusLabel.textContent = style && style.type === "smg" ? "连发击中！" : "步枪命中！";
+    }
+    return true;
+  }
+
+  function setGunFiring(on) {
+    if (!gunHeld()) return;
+    gunState.firing = !!on;
+    if (on) fireGunShot();
+    syncGunPad();
+  }
+
+  function updateGuns(dt) {
+    if (gunState.cooldown > 0) gunState.cooldown -= dt;
+    if (gunState.muzzle > 0) gunState.muzzle -= dt;
+    // 按住发射：冲锋枪连发（0.12s），步枪按住也是连发但冷却 0.5s
+    if (gunState.firing && gunHeld() && gunState.cooldown <= 0) {
+      if (state === "playing") fireGunShot();
+    }
   }
 
   function useSkipCard() {
@@ -3133,6 +3528,7 @@
     syncPuzzleTools();
     syncHomeBtn();
     syncItemBar();
+    syncGunPad();
     maybeShowPortraitPrompt();
     startLevelCoop();
     if (level === 12) showSandboxMode();
@@ -3209,10 +3605,11 @@
   const S = GameUtil.liveScope(
     (n) => eval(n),
     (n, value) => eval(n + " = value"),
-    "COOP_COLORS,DESIGN_H,DESIGN_W,GRAVITY,H,JUMP,LAVA_Y,MAX_PLAYABLE,MOVE,PORTRAIT_PROMPT_KEY,PORTRAIT_W,SHOP_CATALOG,TOTAL_LEVELS,W,ZOMBIE_COUNT,adOpen,announceChat,announceDeath,announceJoin,announceLeave,applyBrightness,applyCoopMap,applyLevelCounts,applyLevelOpts,applyVolume,armPickaxe,armSword,backpack,banLeft,banMsg,banScreen,banTimerId,beginPlaying,belly,breakWithPickaxe,bridgePieceW,bridgeY,brightness,brightnessSlider,brightnessValue,buildLevelGrid,buyItem,cameraForView,cameraX,canvas,canvasScale,chatBtn,chatClose,chatDock,chatInput,chatLog,chatLogEl,chatLogLevel,chatPanel,chatSend,chatUserCancel,chatUserDialog,chatUserFriend,chatUserMsg,chatUserReport,chatUserTarget,clamp,clearInput,clientToWorld,closeChat,closeLoginScreen,closeSettings,closeShop,colorForCoopId,comingSoon,confirmPlayerName,controlHintText,coopAcc,coopAnchorX,coopAnnounceAt,coopCount,coopFurthestX,coopHostId,cornerActions,craftCoopBtn,crate,craters,ctx,deathLine,die,eatAnim,endSign,enterLevel,escapeHtml,extendEndlessParkour,fakeButtons,fakeLava,findRoofAhead,friendCenter,friendCenterOpen,friendChatInput,friendChatLogEl,friendChatSend,friendChatTitle,friendInviteBtn,friendInviteLevel,friendListEl,friendReqCurrent,friendReqDialog,friendReqMsg,friendReqNo,friendReqQueue,friendReqYes,friendUnread,friends,friendsBtn,friendsClose,gameTitle,globalChat,globalChatBtn,globalChatClose,globalChatInput,globalChatLogEl,globalChatOpen,globalChatPanel,globalChatSend,globalChatUnread,goHome,handleCoopMessage,handleHomePeer,hideLevelSelect,hideOverlay,hidePortraitPrompt,hideSandboxMode,hideUnlockDialog,hitRemotePlayer,homeBtn,homeMode,homeNotices,homeNoticesEl,homePeerQuietUntil,homePeerReady,inboxBtn,inboxClear,inboxClose,inboxListEl,inboxOpen,inboxPanel,inboxReports,inboxUnread,inventory,inviteCurrent,inviteDialog,inviteMsg,inviteNo,inviteQueue,inviteYes,isCoopHost,isDevicePortrait,isLevelUnlocked,isMobileLike,isPortraitPlay,itemBar,joinNotices,joinNoticesEl,keys,killZombieWithSword,lastCoopPos,lastMapSendAt,lastTs,lavaDrainAt,lavaDrains,level,levelGrid,levelLabel,levelPlayerCounts,levelSelect,levelTip,levelUses,loadJson,loadProgress,loadSettings,loadStr,localChat,localChatUntil,localCoopId,loggedIn,loginError,loginIdcard,loginMode,loginMoonBtn,loginPaneAccount,loginPaneIdcard,loginPanePhone,loginPass,loginPhone,loginScreen,loginSms,loginSubmit,loginTabs,loginUser,logoutBtn,loop,maces,makeLevel,mapChance,mapRand,mapRngFn,markLevelCleared,maxCleared,maybeSendMap,maybeShowPortraitPrompt,minorNotice,minorOk,mockSmsCode,moonCoopBtn,moonEarthGrad,moonSkyGrad,moonVoidGrad,moveActor,myDisplayName,nameForm,nameInput,nearestHuntTarget,needsPlayerName,onViewportChange,openChat,openLoginScreen,openSettings,openShop,overlay,overlayHint,overlayMsg,overlayTitle,packMap,parseIdAge,particles,pendingFriend,pendingUnlockLevel,pickups,pitStart,pitWidth,placeBridgeButton,platforms,playCraftCoopNow,playMoonCoopNow,playUiClick,player,playerLabel,playerName,portraitAccept,portraitDecline,portraitDialog,portraitPromptDismissed,portraitPromptOpen,potion,preferTouchControls,pushHomeNotice,pushJoinNotice,pushZombie,puzzleMode,puzzleTools,rand,rectsOverlap,refreshShopUI,remainingFor,remoteCamX,remotePlayers,renderChatLog,renderHomeNotices,renderJoinNotices,reportCancel,reportDialog,reportMsg,resetLevelUses,resetPuzzleButtons,returnToHomeMenu,reverseGoal,rockets,sandboxCreative,sandboxModeEl,sandboxSurvival,saveCleared,saveInventory,saveJson,saveStars,saveStr,seededRng,selectLevel,selectedFriendId,sendChat,sendSmsCode,setLoginMode,settingsBtn,settingsClose,settingsOpen,settingsPanel,setupPuzzleDrag,setupTouchControls,shake,shopBtn,shopClose,shopOpen,shopPanel,shopScene,shopStarCount,shopTip,showLevelSelect,towerScene,subwayScene,rangeScene,battleScene,schoolScene,musicScene,dateScene,kongScene,starHouseScene,matchScene,furnaceScene,twinScene,planeScene,pipeScene,labScene,toiletScene,maliangScene,ml31Scene,pipe32Scene,showLoginError,showMinorNotice,showNamePrompt,showOverlay,showPhoneJoin,showPortraitPrompt,showSandboxMode,showUnlockDialog,skipBtn,skipPreviousAndEnter,smsBtn,smsCooldown,smsTimer,socialOpen,socialToastEl,socialToastTimer,solidAt,spawnBurst,spawnX,speedBoost,spikes,star,starLabel,stars,startBtn,startCraftWorld,startGame,startLevelCoop,state,statusLabel,stopLevelCoop,submitLogin,syncChatBtn,syncCoopStatus,syncHomeBtn,syncItemBar,syncPuzzleTools,syncTouchPad,syncViewport,time,toolMode,touch,touchPad,tryClickPlayerName,tryUseToolClick,unlockCancelBtn,unlockDialog,unlockMsg,unlockOnce,unlockSkipBtn,update,updateCoop,updateParticles,useBucketItem,useInventoryItem,usePotionItem,useSkipCard,volumePct,volumeSlider,volumeValue,watchLobbyCounts,winLevel,worldMin,worldWidth,zombies"
+    "gunState,gunHeld,currentGunStyle,GUN_STYLES,GUN_SPECS,unlockedGunIds,equipGunById,holsterGun,ammoText,tryReloadGun,resetGunAmmo,tryClickGunBag,drawGunBackpack,COOP_COLORS,DESIGN_H,DESIGN_W,GRAVITY,H,JUMP,LAVA_Y,MAX_PLAYABLE,MOVE,PORTRAIT_PROMPT_KEY,PORTRAIT_W,SHOP_CATALOG,TOTAL_LEVELS,W,ZOMBIE_COUNT,adOpen,announceChat,announceDeath,announceJoin,announceLeave,applyBrightness,applyCoopMap,applyLevelCounts,applyLevelOpts,applyVolume,armPickaxe,armSword,backpack,banLeft,banMsg,banScreen,banTimerId,beginPlaying,belly,breakWithPickaxe,bridgePieceW,bridgeY,brightness,brightnessSlider,brightnessValue,buildLevelGrid,buyItem,cameraForView,cameraX,canvas,canvasScale,chatBtn,chatClose,chatDock,chatInput,chatLog,chatLogEl,chatLogLevel,chatPanel,chatSend,chatUserCancel,chatUserDialog,chatUserFriend,chatUserMsg,chatUserReport,chatUserTarget,clamp,clearInput,clientToWorld,closeChat,closeLoginScreen,closeSettings,closeShop,colorForCoopId,comingSoon,confirmPlayerName,controlHintText,coopAcc,coopAnchorX,coopAnnounceAt,coopCount,coopFurthestX,coopHostId,cornerActions,craftCoopBtn,crate,craters,ctx,deathLine,die,eatAnim,endSign,enterLevel,escapeHtml,extendEndlessParkour,fakeButtons,fakeLava,findRoofAhead,friendCenter,friendCenterOpen,friendChatInput,friendChatLogEl,friendChatSend,friendChatTitle,friendInviteBtn,friendInviteLevel,friendListEl,friendReqCurrent,friendReqDialog,friendReqMsg,friendReqNo,friendReqQueue,friendReqYes,friendUnread,friends,friendsBtn,friendsClose,gameTitle,globalChat,globalChatBtn,globalChatClose,globalChatInput,globalChatLogEl,globalChatOpen,globalChatPanel,globalChatSend,globalChatUnread,goHome,handleCoopMessage,handleHomePeer,hideLevelSelect,hideOverlay,hidePortraitPrompt,hideSandboxMode,hideUnlockDialog,hitRemotePlayer,homeBtn,homeMode,homeNotices,homeNoticesEl,homePeerQuietUntil,homePeerReady,inboxBtn,inboxClear,inboxClose,inboxListEl,inboxOpen,inboxPanel,inboxReports,inboxUnread,inventory,inviteCurrent,inviteDialog,inviteMsg,inviteNo,inviteQueue,inviteYes,isCoopHost,isDevicePortrait,isLevelUnlocked,isMobileLike,isPortraitPlay,itemBar,joinNotices,joinNoticesEl,keys,killZombieWithSword,lastCoopPos,lastMapSendAt,lastTs,lavaDrainAt,lavaDrains,level,levelGrid,levelLabel,levelPlayerCounts,levelSelect,levelTip,levelUses,loadJson,loadProgress,loadSettings,loadStr,localChat,localChatUntil,localCoopId,loggedIn,loginError,loginIdcard,loginMode,loginMoonBtn,loginPaneAccount,loginPaneIdcard,loginPanePhone,loginPass,loginPhone,loginScreen,loginSms,loginSubmit,loginTabs,loginUser,logoutBtn,loop,maces,makeLevel,mapChance,mapRand,mapRngFn,markLevelCleared,maxCleared,maybeSendMap,maybeShowPortraitPrompt,minorNotice,minorOk,mockSmsCode,moonCoopBtn,moonEarthGrad,moonSkyGrad,moonVoidGrad,moveActor,myDisplayName,nameForm,nameInput,nearestHuntTarget,needsPlayerName,onViewportChange,openChat,openLoginScreen,openSettings,openShop,overlay,overlayHint,overlayMsg,overlayTitle,packMap,parseIdAge,particles,pendingFriend,pendingUnlockLevel,pickups,pitStart,pitWidth,placeBridgeButton,platforms,playCraftCoopNow,playMoonCoopNow,playUiClick,player,playerLabel,playerName,portraitAccept,portraitDecline,portraitDialog,portraitPromptDismissed,portraitPromptOpen,potion,preferTouchControls,pushHomeNotice,pushJoinNotice,pushZombie,puzzleMode,puzzleTools,rand,rectsOverlap,refreshShopUI,remainingFor,remoteCamX,remotePlayers,renderChatLog,renderHomeNotices,renderJoinNotices,reportCancel,reportDialog,reportMsg,resetLevelUses,resetPuzzleButtons,returnToHomeMenu,reverseGoal,rockets,sandboxCreative,sandboxModeEl,sandboxSurvival,saveCleared,saveInventory,saveJson,saveStars,saveStr,seededRng,selectLevel,selectedFriendId,sendChat,sendSmsCode,setLoginMode,settingsBtn,settingsClose,settingsOpen,settingsPanel,setupPuzzleDrag,setupTouchControls,shake,shopBtn,shopClose,shopOpen,shopPanel,shopScene,shopStarCount,shopTip,showLevelSelect,towerScene,subwayScene,rangeScene,battleScene,schoolScene,musicScene,dateScene,kongScene,starHouseScene,matchScene,furnaceScene,twinScene,planeScene,pipeScene,labScene,toiletScene,maliangScene,ml31Scene,pipe32Scene,showLoginError,showMinorNotice,showNamePrompt,showOverlay,showPhoneJoin,showPortraitPrompt,showSandboxMode,showUnlockDialog,skipBtn,skipPreviousAndEnter,smsBtn,smsCooldown,smsTimer,socialOpen,socialToastEl,socialToastTimer,solidAt,spawnBurst,spawnX,speedBoost,spikes,star,starLabel,stars,startBtn,startCraftWorld,startGame,startLevelCoop,state,statusLabel,stopLevelCoop,submitLogin,syncChatBtn,syncCoopStatus,syncHomeBtn,syncItemBar,syncPuzzleTools,syncTouchPad,syncViewport,time,toolMode,touch,touchPad,tryClickPlayerName,tryUseToolClick,unlockCancelBtn,unlockDialog,unlockMsg,unlockOnce,unlockSkipBtn,update,updateCoop,updateParticles,useBucketItem,useInventoryItem,usePotionItem,useSkipCard,volumePct,volumeSlider,volumeValue,watchLobbyCounts,winLevel,worldMin,worldWidth,zombies"
   );
   window.installGameSocial(S);
   window.installGameDraw(S);
+  let tryClickGunBag = S.tryClickGunBag || null;
   GameSceneReg.installAll(S);
   const {
     loadFriends,
@@ -3358,6 +3755,7 @@
     if (!toolMode && tryClickPlayerName(e.clientX, e.clientY)) return;
     if (GameSceneReg.tryClickAll(e.clientX, e.clientY)) return;
     if (tryUseToolClick(e.clientX, e.clientY)) return;
+    if (tryClickGunBag && tryClickGunBag(e.clientX, e.clientY)) return;
     if (tryClickShopStar(e.clientX, e.clientY)) return;
     if (tryClickLevel6(e.clientX, e.clientY)) return;
     if (tryClickLevel7(e.clientX, e.clientY)) return;
@@ -3471,6 +3869,19 @@
       });
     }
   }
+  if (gunCodeList) {
+    gunCodeList.addEventListener("click", (e) => {
+      const t = e.target;
+      if (t && t.classList && t.classList.contains("gun-gift-code") && t.dataset.gift) {
+        if (redeemInput) {
+          redeemInput.value = t.dataset.gift;
+          redeemInput.focus();
+        }
+        if (redeemTip) redeemTip.textContent = `已填入礼包码 ${t.dataset.gift}，点「兑换」领取`;
+      }
+    });
+  }
+
   if (redeemBtn) {
     redeemBtn.addEventListener("click", () => {
       playUiClick();
@@ -3492,6 +3903,56 @@
         playUiClick();
         useInventoryItem(btn.dataset.use);
       });
+    }
+  }
+  {
+    const aimBtn = document.getElementById("gun-aim-btn");
+    const fireBtn = document.getElementById("gun-fire-btn");
+    if (aimBtn) {
+      aimBtn.addEventListener("click", () => {
+        playUiClick();
+        toggleGunAim();
+      });
+    }
+    const stowBtn = document.getElementById("gun-stow-btn");
+    if (stowBtn) {
+      stowBtn.addEventListener("click", () => {
+        playUiClick();
+        holsterGun();
+      });
+    }
+    const bagList = document.getElementById("gun-bag-list");
+    if (bagList && !bagList._bound) {
+      bagList._bound = true;
+      bagList.addEventListener("click", (e) => {
+        const t = e.target.closest ? e.target.closest("[data-gun-id]") : null;
+        if (!t) return;
+        playUiClick();
+        const id = t.dataset.gunId;
+        if (gunState.gunId === id && !gunState.holstered) {
+          holsterGun();
+        } else {
+          equipGunById(id);
+        }
+      });
+    }
+    if (fireBtn) {
+      // 按住连发，松开停火
+      fireBtn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        playUiClick();
+        setGunFiring(true);
+        try {
+          fireBtn.setPointerCapture(e.pointerId);
+        } catch (_) {}
+      });
+      const stopFire = () => setGunFiring(false);
+      fireBtn.addEventListener("pointerup", stopFire);
+      fireBtn.addEventListener("pointercancel", stopFire);
+      fireBtn.addEventListener("pointerleave", () => {
+        if (gunState.firing) setGunFiring(false);
+      });
+      window.addEventListener("pointerup", stopFire);
     }
   }
   if (settingsClose) {

@@ -411,6 +411,121 @@ body {
   filter: brightness(1.12);
 }
 
+/* ── 枪械 · 瞄准 / 发射 ── */
+.gun-pad {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 8;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 10px;
+  border: 2px solid #8a5a28;
+  background: rgba(28, 14, 10, 0.92);
+  box-shadow: 0 0 0 1px rgba(255, 210, 74, 0.15);
+  pointer-events: auto;
+}
+
+.gun-pad.hidden {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .gun-pad {
+    right: 8px;
+    bottom: 78px;
+    flex-wrap: wrap;
+    max-width: 46%;
+  }
+  .gun-btn {
+    font-size: 13px;
+    padding: 12px 10px;
+  }
+}
+
+.gun-kind-label {
+  color: #ffb347;
+  font-size: 11px;
+  font-family: "Noto Sans SC", sans-serif;
+  min-width: 7.5em;
+}
+
+.gun-btn {
+  pointer-events: auto;
+  appearance: none;
+  border: 2px solid #8a5a28;
+  background: linear-gradient(180deg, #3a2418, #24140e);
+  color: #ffd24a;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 16px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+
+.gun-btn.fire {
+  border-color: #c0392b;
+  background: linear-gradient(180deg, #8a2018, #4a100c);
+  color: #ffd0c0;
+  min-width: 7em;
+}
+
+.gun-btn.active {
+  border-color: #4ade80;
+  color: #4ade80;
+  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.35);
+}
+
+.gun-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #1a0c08;
+}
+
+.gun-btn.stow {
+  border-color: #8a6a40;
+  background: linear-gradient(180deg, #3a3428, #221c14);
+  color: #e0c090;
+  font-size: 13px;
+  padding: 10px 12px;
+}
+
+.gun-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.gun-bag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 220px;
+}
+
+.gun-bag-item {
+  appearance: none;
+  border: 1px solid #8a6a40;
+  background: rgba(40, 28, 16, 0.95);
+  color: #e0c090;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 11px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.gun-bag-item.active {
+  border-color: #ffe07a;
+  color: #ffe07a;
+  background: rgba(80, 50, 16, 0.95);
+}
+
+.gun-bag-item:active {
+  transform: translateY(1px);
+}
+
 .shop-panel {
   position: absolute;
   inset: 0;
@@ -594,6 +709,29 @@ body {
   font-size: 10px;
   word-break: break-all;
   line-height: 1.35;
+}
+
+.gun-code-item .gun-gift {
+  margin: 2px 0 2px;
+  color: #ffb347;
+  font-size: 11px;
+}
+
+.gun-code-item .gun-gift-code {
+  display: inline;
+  margin-left: 4px;
+  padding: 1px 6px;
+  color: #2a1208;
+  background: linear-gradient(180deg, #ffe07a, #ffb347);
+  border: 1px solid #8a4a18;
+  font-size: 11px;
+  font-weight: 700;
+  word-break: break-all;
+  cursor: pointer;
+}
+
+.gun-code-item .gun-gift-code:hover {
+  filter: brightness(1.08);
 }
 
 #shop-close {
