@@ -9,7 +9,7 @@ import sys
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
 ROOT = os.path.dirname(os.path.abspath(__file__))
-BUILD = "166"
+BUILD = "170"
 
 
 def lan_ips():

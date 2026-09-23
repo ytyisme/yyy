@@ -203,7 +203,7 @@ function registry() {
 test("scene click priority includes zero and stops when handled", () => {
   const { reg, calls } = registry();
   reg.tryClickAll(0, 0);
-  assert.deepEqual(calls, ["29:click", "30:click", "31:click", "32:click", "14:click", "15:click", "20:click"]);
+  assert.deepEqual(calls, ["29:click", "30:click", "31:click", "32:click", "35:click", "14:click", "15:click", "20:click"]);
   calls.length = 0;
   reg.hooks.tryClickMaliang30 = () => true;
   assert.equal(reg.tryClickAll(0, 0), true);

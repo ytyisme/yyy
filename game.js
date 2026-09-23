@@ -147,10 +147,26 @@
   };
   // 按类型：smg 连发 / rifle 冷却 0.5s
   const GUN_SPECS = {
-    // 冲锋枪：弹匣 13，备弹极多；显示 100000000000/13发
-    smg: { name: "冲锋枪", interval: 0.12, range: 420, aimRange: 560, magSize: 13, reserveMax: 100000000000, ammoLabel: "发" },
-    // 手枪/步枪：200/5
-    rifle: { name: "手枪", interval: 0.5, range: 560, aimRange: 720, magSize: 5, reserveMax: 200, ammoLabel: "" },
+    // 冲锋枪：显示 1000/19发（备弹/弹匣）
+    smg: {
+      name: "冲锋枪",
+      interval: 0.12,
+      range: 420,
+      aimRange: 560,
+      magSize: 19,
+      reserveMax: 1000,
+      ammoText: (reserve, mag) => `${reserve}/${mag}发`,
+    },
+    // 手枪：显示 5/200（弹匣/备弹）
+    rifle: {
+      name: "手枪",
+      interval: 0.5,
+      range: 560,
+      aimRange: 720,
+      magSize: 5,
+      reserveMax: 200,
+      ammoText: (reserve, mag) => `${mag}/${reserve}`,
+    },
   };
   // 每把枪的外形（握把在手心，枪管朝朝向）
   const GUN_STYLES = {
@@ -188,8 +204,10 @@
     const style = currentGunStyle();
     const spec = style ? GUN_SPECS[style.type] : null;
     if (!spec) return "";
-    const tag = spec.ammoLabel || "";
-    return `${gunState.reserve}/${gunState.mag}${tag}`;
+    if (typeof spec.ammoText === "function") {
+      return spec.ammoText(gunState.reserve, gunState.mag);
+    }
+    return `${gunState.reserve}/${gunState.mag}`;
   }
 
   function tryReloadGun() {
@@ -368,7 +386,9 @@
   let homePeerReady = false;
   let banTimerId = 0;
   const TOTAL_LEVELS = 35;
-  const MAX_PLAYABLE = 32;
+  const MAX_PLAYABLE = 35;
+  // 33、34 剧情未做完：选关显示未开放
+  const LEVELS_NOT_OPEN = new Set([33, 34]);
   let cameraX = 0;
   let worldMin = 0;
   let worldWidth = 3200;
@@ -406,6 +426,7 @@
   let maliangScene = null; // level 30 magic brush Ma Liang
   let ml31Scene = null; // level 31 draw shield vs bullets
   let pipe32Scene = null; // level 32 draw pipes to fill cup
+  let pvpScene = null; // level 35 player PVP race
 
   // 场景读写（供 GameSceneReg 循环使用；直接 eval 本作用域 let）
   GameSceneReg.bind({
@@ -1041,6 +1062,14 @@
       announceDeath(name, msg.cause);
       return;
     }
+    if (msg.type === "pvp-finish") {
+      if (level === 35 && pvpScene && pvpScene.phase === "race" && !pvpScene.winner) {
+        pvpScene.winner = "foe";
+        pvpScene.phase = "done";
+        statusLabel.textContent = `${pvpScene.foeName || "对手"}先到终点`;
+      }
+      return;
+    }
     if (msg.type === "pickup" && msg.starId != null) {
       const p = pickups.find((s) => s.id === msg.starId);
       if (p && !p.collected) {
@@ -1598,6 +1627,16 @@
         player.onGround = true;
         player.facing = 1;
       }
+    } else if (level === 35 && pvpScene && (pvpScene.phase === "match" || pvpScene.phase === "intro")) {
+      // 匹配/开场阶段锁住
+      moveActor(player, 0, false, null);
+      if (player) {
+        player.vx = 0;
+        player.vy = 0;
+        player.x = pvpScene.raceStartX;
+        player.y = pvpScene.groundY - player.h;
+        player.onGround = true;
+      }
     } else {
       moveActor(player, eatAnim ? 0 : ax, eatAnim ? false : jump, null);
     }
@@ -1849,7 +1888,7 @@
     if (level >= MAX_PLAYABLE) {
       showOverlay(
         "到达终点！",
-        `第 ${level} 关完成！<br />第 32 关「画水管」是目前的终点，后面作者还在做，敬请期待。`,
+        `第 ${level} 关完成！<br />第 35 关「玩家PVP」是目前的终点，后面作者还在做，敬请期待。`,
         "回主页",
         { hideHint: true }
       );
@@ -1947,7 +1986,7 @@
         `<br /><span style="color:#ffb347">第 30 关：神笔马良。捡起神笔，画出成真的桥，逃出山谷。</span>`;
     } else if (next === 31) {
       warn =
-        `<br /><span style="color:#ffb347">第 32 关：画水管。用无限墨水手绘管道，把水源接到左下角杯子，点「我画好了」放水接满杯子。</span>`;
+        `<br /><span style="color:#ffb347">第 35 关：玩家PVP。至少 2 人匹配后红蓝 VS 开场，在 500 米障碍平路上抢先冲线。</span>`;
     }
 
     showOverlay(
@@ -2147,7 +2186,10 @@
   }
 
   function isLevelUnlocked(n) {
+    if (LEVELS_NOT_OPEN.has(n)) return false;
     if (n <= 1 || n === 11 || n === 12 || n === 22) return true;
+    // 33、34 未开放，35 在通关 32 后直接开放
+    if (n === 35) return maxCleared >= 32;
     return maxCleared >= n - 1;
   }
 
@@ -2957,6 +2999,7 @@
       30: "神笔马良",
       31: "画盾挡弹",
       32: "画水管",
+      35: "玩家PVP",
     };
     for (let i = 1; i <= TOTAL_LEVELS; i++) {
       if (i === 1) {
@@ -2984,7 +3027,7 @@
       btn.type = "button";
       btn.className = "level-cell";
       btn.dataset.level = String(i);
-      if (i > MAX_PLAYABLE) {
+      if (i > MAX_PLAYABLE || LEVELS_NOT_OPEN.has(i)) {
         btn.classList.add("locked");
         btn.innerHTML = `${i}<span class="badge">未开放</span>`;
       } else if (!isLevelUnlocked(i)) {
@@ -3162,8 +3205,11 @@
 
   function selectLevel(n) {
     playUiClick();
-    if (n > MAX_PLAYABLE) {
-      levelTip.textContent = "后面作者还在做，敬请期待（第 32 关「画水管」是目前终点）";
+    if (n > MAX_PLAYABLE || LEVELS_NOT_OPEN.has(n)) {
+      levelTip.textContent =
+        n === 33 || n === 34
+          ? `第 ${n} 关还没做完，暂未开放（可先玩第 35 关「玩家PVP」）`
+          : "后面作者还在做，敬请期待（第 35 关「玩家PVP」是目前终点）";
       levelTip.classList.remove("hidden");
       return;
     }
@@ -3320,10 +3366,12 @@
     if (loginMode === "account") {
       const user = (loginUser.value || "").trim();
       const pass = loginPass.value || "";
-      if (!user || !pass) {
-        showLoginError("请输入账号和密码");
+      // 允许直接点「登录」进游戏；填了则校验两项都要有
+      if ((user && !pass) || (!user && pass)) {
+        showLoginError("账号和密码要一起填，或都留空用游客进入");
         return;
       }
+      if (user) playerName = user;
       returnToHomeMenu();
       return;
     }
@@ -3605,11 +3653,11 @@
   const S = GameUtil.liveScope(
     (n) => eval(n),
     (n, value) => eval(n + " = value"),
-    "gunState,gunHeld,currentGunStyle,GUN_STYLES,GUN_SPECS,unlockedGunIds,equipGunById,holsterGun,ammoText,tryReloadGun,resetGunAmmo,tryClickGunBag,drawGunBackpack,COOP_COLORS,DESIGN_H,DESIGN_W,GRAVITY,H,JUMP,LAVA_Y,MAX_PLAYABLE,MOVE,PORTRAIT_PROMPT_KEY,PORTRAIT_W,SHOP_CATALOG,TOTAL_LEVELS,W,ZOMBIE_COUNT,adOpen,announceChat,announceDeath,announceJoin,announceLeave,applyBrightness,applyCoopMap,applyLevelCounts,applyLevelOpts,applyVolume,armPickaxe,armSword,backpack,banLeft,banMsg,banScreen,banTimerId,beginPlaying,belly,breakWithPickaxe,bridgePieceW,bridgeY,brightness,brightnessSlider,brightnessValue,buildLevelGrid,buyItem,cameraForView,cameraX,canvas,canvasScale,chatBtn,chatClose,chatDock,chatInput,chatLog,chatLogEl,chatLogLevel,chatPanel,chatSend,chatUserCancel,chatUserDialog,chatUserFriend,chatUserMsg,chatUserReport,chatUserTarget,clamp,clearInput,clientToWorld,closeChat,closeLoginScreen,closeSettings,closeShop,colorForCoopId,comingSoon,confirmPlayerName,controlHintText,coopAcc,coopAnchorX,coopAnnounceAt,coopCount,coopFurthestX,coopHostId,cornerActions,craftCoopBtn,crate,craters,ctx,deathLine,die,eatAnim,endSign,enterLevel,escapeHtml,extendEndlessParkour,fakeButtons,fakeLava,findRoofAhead,friendCenter,friendCenterOpen,friendChatInput,friendChatLogEl,friendChatSend,friendChatTitle,friendInviteBtn,friendInviteLevel,friendListEl,friendReqCurrent,friendReqDialog,friendReqMsg,friendReqNo,friendReqQueue,friendReqYes,friendUnread,friends,friendsBtn,friendsClose,gameTitle,globalChat,globalChatBtn,globalChatClose,globalChatInput,globalChatLogEl,globalChatOpen,globalChatPanel,globalChatSend,globalChatUnread,goHome,handleCoopMessage,handleHomePeer,hideLevelSelect,hideOverlay,hidePortraitPrompt,hideSandboxMode,hideUnlockDialog,hitRemotePlayer,homeBtn,homeMode,homeNotices,homeNoticesEl,homePeerQuietUntil,homePeerReady,inboxBtn,inboxClear,inboxClose,inboxListEl,inboxOpen,inboxPanel,inboxReports,inboxUnread,inventory,inviteCurrent,inviteDialog,inviteMsg,inviteNo,inviteQueue,inviteYes,isCoopHost,isDevicePortrait,isLevelUnlocked,isMobileLike,isPortraitPlay,itemBar,joinNotices,joinNoticesEl,keys,killZombieWithSword,lastCoopPos,lastMapSendAt,lastTs,lavaDrainAt,lavaDrains,level,levelGrid,levelLabel,levelPlayerCounts,levelSelect,levelTip,levelUses,loadJson,loadProgress,loadSettings,loadStr,localChat,localChatUntil,localCoopId,loggedIn,loginError,loginIdcard,loginMode,loginMoonBtn,loginPaneAccount,loginPaneIdcard,loginPanePhone,loginPass,loginPhone,loginScreen,loginSms,loginSubmit,loginTabs,loginUser,logoutBtn,loop,maces,makeLevel,mapChance,mapRand,mapRngFn,markLevelCleared,maxCleared,maybeSendMap,maybeShowPortraitPrompt,minorNotice,minorOk,mockSmsCode,moonCoopBtn,moonEarthGrad,moonSkyGrad,moonVoidGrad,moveActor,myDisplayName,nameForm,nameInput,nearestHuntTarget,needsPlayerName,onViewportChange,openChat,openLoginScreen,openSettings,openShop,overlay,overlayHint,overlayMsg,overlayTitle,packMap,parseIdAge,particles,pendingFriend,pendingUnlockLevel,pickups,pitStart,pitWidth,placeBridgeButton,platforms,playCraftCoopNow,playMoonCoopNow,playUiClick,player,playerLabel,playerName,portraitAccept,portraitDecline,portraitDialog,portraitPromptDismissed,portraitPromptOpen,potion,preferTouchControls,pushHomeNotice,pushJoinNotice,pushZombie,puzzleMode,puzzleTools,rand,rectsOverlap,refreshShopUI,remainingFor,remoteCamX,remotePlayers,renderChatLog,renderHomeNotices,renderJoinNotices,reportCancel,reportDialog,reportMsg,resetLevelUses,resetPuzzleButtons,returnToHomeMenu,reverseGoal,rockets,sandboxCreative,sandboxModeEl,sandboxSurvival,saveCleared,saveInventory,saveJson,saveStars,saveStr,seededRng,selectLevel,selectedFriendId,sendChat,sendSmsCode,setLoginMode,settingsBtn,settingsClose,settingsOpen,settingsPanel,setupPuzzleDrag,setupTouchControls,shake,shopBtn,shopClose,shopOpen,shopPanel,shopScene,shopStarCount,shopTip,showLevelSelect,towerScene,subwayScene,rangeScene,battleScene,schoolScene,musicScene,dateScene,kongScene,starHouseScene,matchScene,furnaceScene,twinScene,planeScene,pipeScene,labScene,toiletScene,maliangScene,ml31Scene,pipe32Scene,showLoginError,showMinorNotice,showNamePrompt,showOverlay,showPhoneJoin,showPortraitPrompt,showSandboxMode,showUnlockDialog,skipBtn,skipPreviousAndEnter,smsBtn,smsCooldown,smsTimer,socialOpen,socialToastEl,socialToastTimer,solidAt,spawnBurst,spawnX,speedBoost,spikes,star,starLabel,stars,startBtn,startCraftWorld,startGame,startLevelCoop,state,statusLabel,stopLevelCoop,submitLogin,syncChatBtn,syncCoopStatus,syncHomeBtn,syncItemBar,syncPuzzleTools,syncTouchPad,syncViewport,time,toolMode,touch,touchPad,tryClickPlayerName,tryUseToolClick,unlockCancelBtn,unlockDialog,unlockMsg,unlockOnce,unlockSkipBtn,update,updateCoop,updateParticles,useBucketItem,useInventoryItem,usePotionItem,useSkipCard,volumePct,volumeSlider,volumeValue,watchLobbyCounts,winLevel,worldMin,worldWidth,zombies"
+    "gunState,gunHeld,currentGunStyle,GUN_STYLES,GUN_SPECS,unlockedGunIds,equipGunById,holsterGun,ammoText,tryReloadGun,resetGunAmmo,COOP_COLORS,DESIGN_H,DESIGN_W,GRAVITY,H,JUMP,LAVA_Y,MAX_PLAYABLE,MOVE,PORTRAIT_PROMPT_KEY,PORTRAIT_W,SHOP_CATALOG,TOTAL_LEVELS,W,ZOMBIE_COUNT,adOpen,announceChat,announceDeath,announceJoin,announceLeave,applyBrightness,applyCoopMap,applyLevelCounts,applyLevelOpts,applyVolume,armPickaxe,armSword,backpack,banLeft,banMsg,banScreen,banTimerId,beginPlaying,belly,breakWithPickaxe,bridgePieceW,bridgeY,brightness,brightnessSlider,brightnessValue,buildLevelGrid,buyItem,cameraForView,cameraX,canvas,canvasScale,chatBtn,chatClose,chatDock,chatInput,chatLog,chatLogEl,chatLogLevel,chatPanel,chatSend,chatUserCancel,chatUserDialog,chatUserFriend,chatUserMsg,chatUserReport,chatUserTarget,clamp,clearInput,clientToWorld,closeChat,closeLoginScreen,closeSettings,closeShop,colorForCoopId,comingSoon,confirmPlayerName,controlHintText,coopAcc,coopAnchorX,coopAnnounceAt,coopCount,coopFurthestX,coopHostId,cornerActions,craftCoopBtn,crate,craters,ctx,deathLine,die,eatAnim,endSign,enterLevel,escapeHtml,extendEndlessParkour,fakeButtons,fakeLava,findRoofAhead,friendCenter,friendCenterOpen,friendChatInput,friendChatLogEl,friendChatSend,friendChatTitle,friendInviteBtn,friendInviteLevel,friendListEl,friendReqCurrent,friendReqDialog,friendReqMsg,friendReqNo,friendReqQueue,friendReqYes,friendUnread,friends,friendsBtn,friendsClose,gameTitle,globalChat,globalChatBtn,globalChatClose,globalChatInput,globalChatLogEl,globalChatOpen,globalChatPanel,globalChatSend,globalChatUnread,goHome,handleCoopMessage,handleHomePeer,hideLevelSelect,hideOverlay,hidePortraitPrompt,hideSandboxMode,hideUnlockDialog,hitRemotePlayer,homeBtn,homeMode,homeNotices,homeNoticesEl,homePeerQuietUntil,homePeerReady,inboxBtn,inboxClear,inboxClose,inboxListEl,inboxOpen,inboxPanel,inboxReports,inboxUnread,inventory,inviteCurrent,inviteDialog,inviteMsg,inviteNo,inviteQueue,inviteYes,isCoopHost,isDevicePortrait,isLevelUnlocked,isMobileLike,isPortraitPlay,itemBar,joinNotices,joinNoticesEl,keys,killZombieWithSword,lastCoopPos,lastMapSendAt,lastTs,lavaDrainAt,lavaDrains,level,levelGrid,levelLabel,levelPlayerCounts,levelSelect,levelTip,levelUses,loadJson,loadProgress,loadSettings,loadStr,localChat,localChatUntil,localCoopId,loggedIn,loginError,loginIdcard,loginMode,loginMoonBtn,loginPaneAccount,loginPaneIdcard,loginPanePhone,loginPass,loginPhone,loginScreen,loginSms,loginSubmit,loginTabs,loginUser,logoutBtn,loop,maces,makeLevel,mapChance,mapRand,mapRngFn,markLevelCleared,maxCleared,maybeSendMap,maybeShowPortraitPrompt,minorNotice,minorOk,mockSmsCode,moonCoopBtn,moonEarthGrad,moonSkyGrad,moonVoidGrad,moveActor,myDisplayName,nameForm,nameInput,nearestHuntTarget,needsPlayerName,onViewportChange,openChat,openLoginScreen,openSettings,openShop,overlay,overlayHint,overlayMsg,overlayTitle,packMap,parseIdAge,particles,pendingFriend,pendingUnlockLevel,pickups,pitStart,pitWidth,placeBridgeButton,platforms,playCraftCoopNow,playMoonCoopNow,playUiClick,player,playerLabel,playerName,portraitAccept,portraitDecline,portraitDialog,portraitPromptDismissed,portraitPromptOpen,potion,preferTouchControls,pushHomeNotice,pushJoinNotice,pushZombie,puzzleMode,puzzleTools,rand,rectsOverlap,refreshShopUI,remainingFor,remoteCamX,remotePlayers,renderChatLog,renderHomeNotices,renderJoinNotices,reportCancel,reportDialog,reportMsg,resetLevelUses,resetPuzzleButtons,returnToHomeMenu,reverseGoal,rockets,sandboxCreative,sandboxModeEl,sandboxSurvival,saveCleared,saveInventory,saveJson,saveStars,saveStr,seededRng,selectLevel,selectedFriendId,sendChat,sendSmsCode,setLoginMode,settingsBtn,settingsClose,settingsOpen,settingsPanel,setupPuzzleDrag,setupTouchControls,shake,shopBtn,shopClose,shopOpen,shopPanel,shopScene,shopStarCount,shopTip,showLevelSelect,towerScene,subwayScene,rangeScene,battleScene,schoolScene,musicScene,dateScene,kongScene,starHouseScene,matchScene,furnaceScene,twinScene,planeScene,pipeScene,labScene,toiletScene,maliangScene,ml31Scene,pipe32Scene,pvpScene,showLoginError,showMinorNotice,showNamePrompt,showOverlay,showPhoneJoin,showPortraitPrompt,showSandboxMode,showUnlockDialog,skipBtn,skipPreviousAndEnter,smsBtn,smsCooldown,smsTimer,socialOpen,socialToastEl,socialToastTimer,solidAt,spawnBurst,spawnX,speedBoost,spikes,star,starLabel,stars,startBtn,startCraftWorld,startGame,startLevelCoop,state,statusLabel,stopLevelCoop,submitLogin,syncChatBtn,syncCoopStatus,syncHomeBtn,syncItemBar,syncPuzzleTools,syncTouchPad,syncViewport,time,toolMode,touch,touchPad,tryClickPlayerName,tryUseToolClick,unlockCancelBtn,unlockDialog,unlockMsg,unlockOnce,unlockSkipBtn,update,updateCoop,updateParticles,useBucketItem,useInventoryItem,usePotionItem,useSkipCard,volumePct,volumeSlider,volumeValue,watchLobbyCounts,winLevel,worldMin,worldWidth,zombies"
   );
   window.installGameSocial(S);
   window.installGameDraw(S);
-  let tryClickGunBag = S.tryClickGunBag || null;
+  let tryClickGunBag = null; // 场景若挂到 S.bag 可后续替换；默认不拦截点击
   GameSceneReg.installAll(S);
   const {
     loadFriends,
@@ -3730,7 +3778,7 @@
     if (e.code) keys.delete(e.code);
   });
 
-  startBtn.addEventListener("click", () => {
+  if (startBtn) startBtn.addEventListener("click", () => {
     playUiClick();
     if (state === "naming") confirmPlayerName();
     else if (state === "win") {
@@ -3740,7 +3788,7 @@
     else startGame("fresh");
   });
 
-  nameInput.addEventListener("keydown", (e) => {
+  if (nameInput) nameInput.addEventListener("keydown", (e) => {
     e.stopPropagation();
     if (e.key === "Enter") {
       e.preventDefault();
@@ -4075,7 +4123,7 @@
     loginMoonBtn.addEventListener("click", playMoonCoopNow);
   }
 
-  logoutBtn.addEventListener("click", () => {
+  if (logoutBtn) logoutBtn.addEventListener("click", () => {
     playUiClick();
     stars = 0;
     inventory = { skipCard: 0, potion: 0, sword: 0, pickaxe: 0, bucket: 0 };
@@ -4320,15 +4368,15 @@
     });
   }
 
-  loginSubmit.addEventListener("click", () => {
+  if (loginSubmit) loginSubmit.addEventListener("click", () => {
     playUiClick();
     submitLogin();
   });
-  smsBtn.addEventListener("click", () => {
+  if (smsBtn) smsBtn.addEventListener("click", () => {
     playUiClick();
     sendSmsCode();
   });
-  minorOk.addEventListener("click", () => {
+  if (minorOk) minorOk.addEventListener("click", () => {
     playUiClick();
     minorNotice.classList.add("hidden");
     loginSubmit.classList.remove("hidden");
