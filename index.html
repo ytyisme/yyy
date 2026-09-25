@@ -8,13 +8,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="mobile-web-app-capable" content="no" />
   <meta name="apple-mobile-web-app-capable" content="no" />
-  <title>岩浆跑酷 · 全关联机</title>
+  <title>岩浆跑酷·全关联机 - 岩浆跑酷小游戏</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=170" />
+  <link rel="stylesheet" href="style.css?v=192" />
   <script>
-    window.GAME_BUILD = "170";
+    window.GAME_BUILD = "192";
     (function () {
       try {
         var u = new URL(location.href);
@@ -171,6 +171,20 @@
         <button id="gun-stow-btn" type="button" class="gun-btn stow">收起</button>
         <div id="gun-bag-list" class="gun-bag-list" title="背包 · 全部已兑枪"></div>
       </div>
+      <div id="lv33-item-pad" class="lv33-item-pad hidden" aria-hidden="true">
+        <div class="lv33-item-head">道具 · 五角星 <strong id="lv33-item-stars">0</strong></div>
+        <button type="button" data-rider-item="skip">跳过3000米 29★ 买30次</button>
+        <button type="button" data-rider-item="ghost">穿透车辆 18★ 买30次</button>
+        <button type="button" data-rider-item="boost">加速成每秒15千米 23★ 买30次</button>
+      </div>
+      <div id="lv34-tower-pad" class="lv34-tower-pad hidden" aria-hidden="true">
+        <button type="button" data-tower34="arrow">箭塔 40币</button>
+        <button type="button" data-tower34="cannon">炮塔 70币</button>
+        <button type="button" data-tower34="fan" class="fan">风扇 55币</button>
+        <button type="button" data-tower34="slot" class="slot">开新位 3币</button>
+        <button type="button" data-tower34="star" class="star">1★换30币</button>
+        <button type="button" data-tower34="wave" class="wave">开始刷怪</button>
+      </div>
       </div>
 
       <div id="shop-panel" class="shop-panel hidden" aria-hidden="true">
@@ -282,9 +296,47 @@
           </button>
           <div id="level-grid" class="level-grid"></div>
           <p id="level-tip" class="level-tip hidden"></p>
+          <button id="rate-btn" class="rate-btn hidden" type="button">⭐ 评价游戏</button>
+          <button id="egg-btn" class="egg-btn hidden" type="button">🎁 神秘彩蛋</button>
           <button id="friends-btn" type="button">好友中心</button>
           <button id="global-chat-btn" type="button">全游戏聊天</button>
           <button id="logout-btn" type="button">退出登录</button>
+        </div>
+      </div>
+
+      <!-- 通关彩蛋舞台 -->
+      <div id="egg-stage" class="egg-stage hidden" aria-hidden="true">
+        <button id="egg-exit" class="egg-exit" type="button">← 退出</button>
+        <div class="egg-banner">恭喜通关，感谢游玩</div>
+        <div class="egg-confetti" id="egg-confetti"></div>
+        <div class="egg-audience" id="egg-audience"></div>
+        <div class="egg-stage-floor">
+          <div class="egg-hero" id="egg-hero"></div>
+          <div class="egg-hero-name">YOU</div>
+        </div>
+        <div id="egg-after" class="egg-after hidden" aria-hidden="true">
+          <p>第一季通关！要不要继续？</p>
+          <a id="egg-next-link" class="egg-next-btn" href="season2.html" target="_blank" rel="noopener noreferrer">🎮 打开第二季新游戏</a>
+          <button id="egg-back" class="egg-back-btn" type="button">留在本游戏</button>
+        </div>
+      </div>
+
+      <div id="rate-panel" class="rate-panel hidden" aria-hidden="true">
+        <div class="shop-card rate-card">
+          <h3>给游戏打个分</h3>
+          <p class="shop-stars">满分 5 颗星 · 谢谢支持！</p>
+          <div id="rate-stars" class="rate-stars" role="radiogroup" aria-label="评分">
+            <button type="button" class="rate-star" data-star="1" aria-label="1星">★</button>
+            <button type="button" class="rate-star" data-star="2" aria-label="2星">★</button>
+            <button type="button" class="rate-star" data-star="3" aria-label="3星">★</button>
+            <button type="button" class="rate-star" data-star="4" aria-label="4星">★</button>
+            <button type="button" class="rate-star" data-star="5" aria-label="5星">★</button>
+          </div>
+          <p id="rate-tip" class="rate-tip">点亮星星，点满 5 颗就是满分</p>
+          <label class="rate-msg-label" for="rate-msg">评价留言（可选）</label>
+          <textarea id="rate-msg" class="rate-msg" rows="3" maxlength="200" placeholder="说点什么吧，最多 200 字…"></textarea>
+          <button id="rate-submit" type="button">提交评价</button>
+          <button id="rate-close" type="button">关闭</button>
         </div>
       </div>
 
@@ -489,70 +541,74 @@
       </div>
     </div>
   </div>
-  <script src="lib/util.js?v=170"></script>
-  <script src="lib/progress.js?v=170"></script>
-  <script src="audio.js?v=170"></script>
-  <script src="coop.js?v=170"></script>
-  <script src="levels/boot.js?v=170"></script>
-  <script src="levels/01.js?v=170"></script>
-  <script src="levels/02.js?v=170"></script>
-  <script src="levels/03.js?v=170"></script>
-  <script src="levels/04.js?v=170"></script>
-  <script src="levels/05.js?v=170"></script>
-  <script src="levels/06.js?v=170"></script>
-  <script src="levels/07.js?v=170"></script>
-  <script src="levels/08.js?v=170"></script>
-  <script src="levels/09.js?v=170"></script>
-  <script src="levels/10.js?v=170"></script>
-  <script src="levels/11.js?v=170"></script>
-  <script src="levels/12.js?v=170"></script>
-  <script src="levels/12-catalog.js?v=170"></script>
-  <script src="levels/12-world.js?v=170"></script>
-  <script src="levels/13.js?v=170"></script>
-  <script src="levels/14.js?v=170"></script>
-  <script src="levels/14-tower.js?v=170"></script>
-  <script src="levels/15.js?v=170"></script>
-  <script src="levels/15-subway.js?v=170"></script>
-  <script src="levels/16.js?v=170"></script>
-  <script src="levels/16-range.js?v=170"></script>
-  <script src="levels/17.js?v=170"></script>
-  <script src="levels/17-battle.js?v=170"></script>
-  <script src="levels/18.js?v=170"></script>
-  <script src="levels/18-school.js?v=170"></script>
-  <script src="levels/19.js?v=170"></script>
-  <script src="levels/19-music.js?v=170"></script>
-  <script src="levels/20.js?v=170"></script>
-  <script src="levels/20-date.js?v=170"></script>
-  <script src="levels/21.js?v=170"></script>
-  <script src="levels/21-kong.js?v=170"></script>
-  <script src="levels/22.js?v=170"></script>
-  <script src="levels/22-starhouse.js?v=170"></script>
-  <script src="levels/23.js?v=170"></script>
-  <script src="levels/23-match.js?v=170"></script>
-  <script src="levels/24.js?v=170"></script>
-  <script src="levels/24-furnace.js?v=170"></script>
-  <script src="levels/25.js?v=170"></script>
-  <script src="levels/25-twin.js?v=170"></script>
-  <script src="levels/26.js?v=170"></script>
-  <script src="levels/26-plane.js?v=170"></script>
-  <script src="levels/27.js?v=170"></script>
-  <script src="levels/27-pipe.js?v=170"></script>
-  <script src="levels/28.js?v=170"></script>
-  <script src="levels/28-lab.js?v=170"></script>
-  <script src="levels/29.js?v=170"></script>
-  <script src="levels/29-toilet.js?v=170"></script>
-  <script src="levels/30.js?v=170"></script>
-  <script src="levels/30-maliang.js?v=170"></script>
-  <script src="levels/31.js?v=170"></script>
-  <script src="levels/31-maliang.js?v=170"></script>
-  <script src="levels/32.js?v=170"></script>
-  <script src="levels/32-pipe.js?v=170"></script>
-  <script src="levels/35.js?v=170"></script>
-  <script src="levels/35-pvp.js?v=170"></script>
-  <script src="lib/social.js?v=170"></script>
-  <script src="lib/scenes.js?v=170"></script>
-  <script src="lib/levelkit.js?v=170"></script>
-  <script src="lib/draw.js?v=170"></script>
-  <script src="game.js?v=170"></script>
+  <script src="lib/util.js?v=192"></script>
+  <script src="lib/progress.js?v=192"></script>
+  <script src="audio.js?v=192"></script>
+  <script src="coop.js?v=192"></script>
+  <script src="levels/boot.js?v=192"></script>
+  <script src="levels/01.js?v=192"></script>
+  <script src="levels/02.js?v=192"></script>
+  <script src="levels/03.js?v=192"></script>
+  <script src="levels/04.js?v=192"></script>
+  <script src="levels/05.js?v=192"></script>
+  <script src="levels/06.js?v=192"></script>
+  <script src="levels/07.js?v=192"></script>
+  <script src="levels/08.js?v=192"></script>
+  <script src="levels/09.js?v=192"></script>
+  <script src="levels/10.js?v=192"></script>
+  <script src="levels/11.js?v=192"></script>
+  <script src="levels/12.js?v=192"></script>
+  <script src="levels/12-catalog.js?v=192"></script>
+  <script src="levels/12-world.js?v=192"></script>
+  <script src="levels/13.js?v=192"></script>
+  <script src="levels/14.js?v=192"></script>
+  <script src="levels/14-tower.js?v=192"></script>
+  <script src="levels/15.js?v=192"></script>
+  <script src="levels/15-subway.js?v=192"></script>
+  <script src="levels/16.js?v=192"></script>
+  <script src="levels/16-range.js?v=192"></script>
+  <script src="levels/17.js?v=192"></script>
+  <script src="levels/17-battle.js?v=192"></script>
+  <script src="levels/18.js?v=192"></script>
+  <script src="levels/18-school.js?v=192"></script>
+  <script src="levels/19.js?v=192"></script>
+  <script src="levels/19-music.js?v=192"></script>
+  <script src="levels/20.js?v=192"></script>
+  <script src="levels/20-date.js?v=192"></script>
+  <script src="levels/21.js?v=192"></script>
+  <script src="levels/21-kong.js?v=192"></script>
+  <script src="levels/22.js?v=192"></script>
+  <script src="levels/22-starhouse.js?v=192"></script>
+  <script src="levels/23.js?v=192"></script>
+  <script src="levels/23-match.js?v=192"></script>
+  <script src="levels/24.js?v=192"></script>
+  <script src="levels/24-furnace.js?v=192"></script>
+  <script src="levels/25.js?v=192"></script>
+  <script src="levels/25-twin.js?v=192"></script>
+  <script src="levels/26.js?v=192"></script>
+  <script src="levels/26-plane.js?v=192"></script>
+  <script src="levels/27.js?v=192"></script>
+  <script src="levels/27-pipe.js?v=192"></script>
+  <script src="levels/28.js?v=192"></script>
+  <script src="levels/28-lab.js?v=192"></script>
+  <script src="levels/29.js?v=192"></script>
+  <script src="levels/29-toilet.js?v=192"></script>
+  <script src="levels/30.js?v=192"></script>
+  <script src="levels/30-maliang.js?v=192"></script>
+  <script src="levels/31.js?v=192"></script>
+  <script src="levels/31-maliang.js?v=192"></script>
+  <script src="levels/32.js?v=192"></script>
+  <script src="levels/32-pipe.js?v=192"></script>
+  <script src="levels/33.js?v=192"></script>
+  <script src="levels/33-rider.js?v=192"></script>
+  <script src="levels/34.js?v=192"></script>
+  <script src="levels/34-carrot.js?v=192"></script>
+  <script src="levels/35.js?v=192"></script>
+  <script src="levels/35-pvp.js?v=192"></script>
+  <script src="lib/social.js?v=192"></script>
+  <script src="lib/scenes.js?v=192"></script>
+  <script src="lib/levelkit.js?v=192"></script>
+  <script src="lib/draw.js?v=192"></script>
+  <script src="game.js?v=192"></script>
 </body>
 </html>

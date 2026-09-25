@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>第二季 · 第1关 · 蓝色跑酷</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #0a1a3a;
+      font-family: "Noto Sans SC", -apple-system, "PingFang SC", sans-serif;
+      color: #e8f4ff;
+      overflow: hidden;
+      user-select: none;
+      touch-action: none;
+    }
+    .wrap {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 12px;
+    }
+    .top {
+      width: min(960px, 96vw);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(16px, 3.5vw, 22px);
+      color: #7ec8ff;
+      letter-spacing: 0.04em;
+    }
+    .tag {
+      color: #8eb8e0;
+      font-size: 12px;
+      margin: 0;
+    }
+    .back {
+      appearance: none;
+      border: 1px solid #4a90c8;
+      background: rgba(30, 70, 120, 0.55);
+      color: #cfeaff;
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      font-family: inherit;
+    }
+    canvas {
+      width: min(960px, 96vw);
+      height: auto;
+      aspect-ratio: 16 / 9;
+      border-radius: 14px;
+      border: 2px solid #3d7eb8;
+      background: #0d2848;
+      box-shadow: 0 12px 40px rgba(0, 40, 100, 0.55);
+      display: block;
+    }
+    .hud {
+      width: min(960px, 96vw);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      color: #a8d4ff;
+      font-size: 13px;
+    }
+    .keys kbd {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid #4a90c8;
+      border-radius: 6px;
+      padding: 2px 7px;
+      margin: 0 2px;
+      font-size: 12px;
+    }
+    .touch {
+      width: min(960px, 96vw);
+      display: none;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 4px 0 10px;
+    }
+    .touch button {
+      appearance: none;
+      flex: 1;
+      min-height: 56px;
+      border: 2px solid #4a90c8;
+      border-radius: 14px;
+      background: rgba(30, 80, 140, 0.55);
+      color: #e8f4ff;
+      font-size: 18px;
+      font-weight: 700;
+      font-family: inherit;
+    }
+    .touch button:active {
+      background: rgba(70, 140, 220, 0.7);
+    }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 15, 40, 0.72);
+      z-index: 10;
+    }
+    .overlay.show { display: flex; }
+    .card {
+      text-align: center;
+      padding: 28px 24px;
+      border-radius: 18px;
+      background: rgba(15, 45, 90, 0.95);
+      border: 2px solid #4a90c8;
+      width: min(360px, 90vw);
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      color: #9fd6ff;
+      font-size: 22px;
+    }
+    .card p {
+      margin: 0 0 18px;
+      color: #cfe8ff;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .card button {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      margin: 6px;
+    }
+    .btn-primary {
+      background: linear-gradient(180deg, #7ec8ff, #2f7fd4);
+      color: #062040;
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid #4a90c8;
+      color: #cfeaff;
+    }
+    @media (pointer: coarse) {
+      .touch { display: flex; }
+      .keys { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>第二季 · 第 1 关 · 蓝色跑酷</h1>
+        <p class="tag">普通跑酷 · 跳过蓝色冰湖 · 冲到终点旗</p>
+      </div>
+      <a class="back" href="season2.html">← 第二季首页</a>
+    </div>
+    <canvas id="game" width="960" height="540"></canvas>
+    <div class="hud">
+      <div class="keys">
+        <kbd>←</kbd><kbd>→</kbd> / <kbd>A</kbd><kbd>D</kbd> 移动
+        <kbd>空格</kbd> / <kbd>↑</kbd> 跳跃
+        <kbd>R</kbd> 重开
+      </div>
+      <div id="status">蓝色世界 · 准备出发</div>
+    </div>
+    <div class="touch">
+      <button type="button" id="btn-left">◀</button>
+      <button type="button" id="btn-jump">跳</button>
+      <button type="button" id="btn-right">▶</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="card">
+      <h2 id="ov-title">通关！</h2>
+      <p id="ov-msg">蓝色跑酷完成</p>
+      <button class="btn-primary" type="button" id="ov-retry">再玩一次</button>
+      <button class="btn-ghost" type="button" id="ov-home">回第二季首页</button>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const statusEl = document.getElementById("status");
+      const overlay = document.getElementById("overlay");
+      const ovTitle = document.getElementById("ov-title");
+      const ovMsg = document.getElementById("ov-msg");
+
+      const W = canvas.width;
+      const H = canvas.height;
+      const GRAV = 0.55;
+      const MOVE = 4.2;
+      const JUMP = 11.2;
+
+      // 蓝色主题
+      const THEME = {
+        skyTop: "#0b2a55",
+        skyBot: "#1d63b8",
+        ice: "#6ec1ff",
+        iceDark: "#2f7fd4",
+        snow: "#e8f6ff",
+        water: "#1a4f9c",
+        waterDeep: "#0c2f6e",
+        block: "#3a8fd4",
+        blockTop: "#8ed0ff",
+        spike: "#c8ecff",
+        flag: "#ffd24a",
+      };
+
+      let player, platforms, spikes, finishX, cameraX, state, keys, touch, particles, time;
+
+      function reset() {
+        player = {
+          x: 80,
+          y: 400,
+          w: 28,
+          h: 40,
+          vx: 0,
+          vy: 0,
+          onGround: false,
+          facing: 1,
+        };
+        // 台阶高差控制在 ~60px，跳得上去
+        platforms = [
+          { x: 0, y: 460, w: 420, h: 40 },
+          { x: 480, y: 460, w: 240, h: 40 },
+          { x: 780, y: 430, w: 160, h: 30 },
+          { x: 990, y: 400, w: 150, h: 30 },
+          { x: 1190, y: 430, w: 180, h: 30 },
+          { x: 1430, y: 400, w: 160, h: 30 },
+          { x: 1650, y: 370, w: 180, h: 30 },
+          { x: 1890, y: 400, w: 200, h: 30 },
+          { x: 2150, y: 460, w: 450, h: 40 },
+          // 低矮踏板
+          { x: 260, y: 390, w: 90, h: 18 },
+          { x: 560, y: 380, w: 90, h: 18 },
+          { x: 880, y: 350, w: 90, h: 18 },
+          { x: 1280, y: 350, w: 100, h: 18 },
+          { x: 1720, y: 310, w: 100, h: 18 },
+          { x: 2040, y: 340, w: 90, h: 18 },
+        ];
+        spikes = [
+          { x: 700, y: 448, w: 36, h: 12 },
+          { x: 1380, y: 418, w: 36, h: 12 },
+          { x: 2020, y: 388, w: 40, h: 12 },
+          { x: 2320, y: 448, w: 48, h: 12 },
+        ];
+        finishX = 2520;
+        cameraX = 0;
+        state = "playing";
+        particles = [];
+        time = 0;
+        statusEl.textContent = "蓝色世界 · 出发！";
+        overlay.classList.remove("show");
+      }
+
+      keys = new Set();
+      touch = { left: false, right: false, jump: false };
+
+      function rects(a, b) {
+        return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+      }
+
+      function spawnBurst(x, y, color, n) {
+        for (let i = 0; i < n; i++) {
+          particles.push({
+            x,
+            y,
+            vx: (Math.random() - 0.5) * 6,
+            vy: (Math.random() - 1) * 6,
+            life: 0.6 + Math.random() * 0.5,
+            color,
+          });
+        }
+      }
+
+      function update(dt) {
+        if (state !== "playing") return;
+        time += dt;
+
+        const left = keys.has("ArrowLeft") || keys.has("a") || keys.has("A") || touch.left;
+        const right = keys.has("ArrowRight") || keys.has("d") || keys.has("D") || touch.right;
+        const jump = keys.has(" ") || keys.has("ArrowUp") || keys.has("w") || keys.has("W") || touch.jump;
+
+        player.vx = (right ? MOVE : 0) - (left ? MOVE : 0);
+        if (jump && player.onGround) {
+          player.vy = -JUMP;
+          player.onGround = false;
+          spawnBurst(player.x + player.w / 2, player.y + player.h, THEME.snow, 6);
+        }
+
+        player.vy += GRAV;
+        if (player.vy > 16) player.vy = 16;
+
+        // 水平
+        player.x += player.vx;
+        for (const p of platforms) {
+          if (rects(player, p)) {
+            if (player.vx > 0) player.x = p.x - player.w;
+            else if (player.vx < 0) player.x = p.x + p.w;
+            player.vx = 0;
+          }
+        }
+
+        // 垂直
+        player.y += player.vy;
+        player.onGround = false;
+        for (const p of platforms) {
+          if (rects(player, p)) {
+            if (player.vy > 0) {
+              player.y = p.y - player.h;
+              player.vy = 0;
+              player.onGround = true;
+            } else if (player.vy < 0) {
+              player.y = p.y + p.h;
+              player.vy = 0;
+            }
+          }
+        }
+
+        // 尖刺 / 掉水
+        for (const s of spikes) {
+          if (rects(player, s)) {
+            die("被冰刺扎到了");
+            return;
+          }
+        }
+        if (player.y > H + 80) {
+          die("掉进蓝色冰湖了");
+          return;
+        }
+
+        // 终点
+        if (player.x + player.w >= finishX) {
+          state = "win";
+          spawnBurst(player.x, player.y, THEME.flag, 28);
+          ovTitle.textContent = "第 1 关通关！";
+          ovMsg.textContent = "蓝色跑酷完成，第二季才刚刚开始。";
+          overlay.classList.add("show");
+          statusEl.textContent = "通关！";
+        }
+
+        cameraX = Math.max(0, Math.min(player.x - W * 0.35, finishX - W + 80));
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.life -= dt;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.15;
+          if (p.life <= 0) particles.splice(i, 1);
+        }
+      }
+
+      function die(msg) {
+        state = "dead";
+        spawnBurst(player.x + player.w / 2, player.y + player.h / 2, "#8ed0ff", 18);
+        ovTitle.textContent = "再来一次";
+        ovMsg.textContent = msg;
+        overlay.classList.add("show");
+        statusEl.textContent = msg;
+      }
+
+      function drawBackground() {
+        const g = ctx.createLinearGradient(0, 0, 0, H);
+        g.addColorStop(0, THEME.skyTop);
+        g.addColorStop(1, THEME.skyBot);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+
+        // 远处冰山
+        ctx.fillStyle = "rgba(180, 220, 255, 0.18)";
+        for (let i = 0; i < 8; i++) {
+          const bx = ((i * 260 - cameraX * 0.2) % (W + 300)) - 100;
+          const bh = 80 + (i % 3) * 40;
+          ctx.beginPath();
+          ctx.moveTo(bx, 360);
+          ctx.lineTo(bx + 120, 360 - bh);
+          ctx.lineTo(bx + 240, 360);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        // 水面
+        ctx.fillStyle = THEME.water;
+        ctx.fillRect(0, 470, W, 70);
+        ctx.fillStyle = THEME.waterDeep;
+        ctx.fillRect(0, 510, W, 30);
+        ctx.strokeStyle = "rgba(200, 235, 255, 0.35)";
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 6; i++) {
+          const y = 480 + i * 8;
+          ctx.beginPath();
+          for (let x = 0; x <= W; x += 20) {
+            const yy = y + Math.sin((x + time * 40 + i * 30) * 0.02) * 3;
+            if (x === 0) ctx.moveTo(x, yy);
+            else ctx.lineTo(x, yy);
+          }
+          ctx.stroke();
+        }
+      }
+
+      function drawWorld() {
+        ctx.save();
+        ctx.translate(-cameraX, 0);
+
+        for (const p of platforms) {
+          // 冰块
+          ctx.fillStyle = THEME.block;
+          ctx.fillRect(p.x, p.y, p.w, p.h);
+          ctx.fillStyle = THEME.blockTop;
+          ctx.fillRect(p.x, p.y, p.w, 8);
+          ctx.fillStyle = THEME.snow;
+          ctx.fillRect(p.x, p.y, p.w, 3);
+          // 冰裂纹
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+          ctx.lineWidth = 1;
+          for (let x = p.x + 16; x < p.x + p.w; x += 36) {
+            ctx.beginPath();
+            ctx.moveTo(x, p.y + 10);
+            ctx.lineTo(x + 12, p.y + p.h - 6);
+            ctx.stroke();
+          }
+        }
+
+        for (const s of spikes) {
+          ctx.fillStyle = THEME.spike;
+          const n = Math.max(2, Math.floor(s.w / 12));
+          for (let i = 0; i < n; i++) {
+            const x = s.x + (s.w / n) * i;
+            ctx.beginPath();
+            ctx.moveTo(x, s.y + s.h);
+            ctx.lineTo(x + s.w / n / 2, s.y);
+            ctx.lineTo(x + s.w / n, s.y + s.h);
+            ctx.closePath();
+            ctx.fill();
+          }
+        }
+
+        // 终点旗
+        ctx.fillStyle = "#d8f0ff";
+        ctx.fillRect(finishX, 280, 8, 180);
+        ctx.fillStyle = THEME.flag;
+        ctx.beginPath();
+        ctx.moveTo(finishX + 8, 290);
+        ctx.lineTo(finishX + 70, 312);
+        ctx.lineTo(finishX + 8, 334);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.font = "700 14px 'Noto Sans SC', sans-serif";
+        ctx.fillText("终点", finishX + 16, 320);
+
+        // 玩家（第一季同款配色：青上衣 + 深蓝裤）
+        const p = player;
+        // 腿
+        ctx.fillStyle = "#245a8a";
+        ctx.fillRect(p.x + 2, p.y + 26, 10, 14);
+        ctx.fillRect(p.x + 16, p.y + 26, 10, 14);
+        // 身体
+        ctx.fillStyle = "#3ec6ff";
+        ctx.fillRect(p.x, p.y + 12, p.w, 16);
+        // 头
+        ctx.fillStyle = "#ffe0b8";
+        ctx.fillRect(p.x + 5, p.y, 18, 14);
+        // 眼睛
+        ctx.fillStyle = "#2a2118";
+        ctx.fillRect(p.x + (p.facing > 0 ? 15 : 8), p.y + 5, 4, 4);
+        // 手臂
+        ctx.fillStyle = "#3ec6ff";
+        ctx.fillRect(p.x - 2, p.y + 14, 6, 12);
+        ctx.fillRect(p.x + p.w - 4, p.y + 14, 6, 12);
+
+        for (const pt of particles) {
+          ctx.globalAlpha = Math.max(0, pt.life);
+          ctx.fillStyle = pt.color;
+          ctx.fillRect(pt.x, pt.y, 4, 4);
+          ctx.globalAlpha = 1;
+        }
+
+        ctx.restore();
+      }
+
+      function drawUI() {
+        ctx.fillStyle = "rgba(8, 25, 55, 0.55)";
+        ctx.fillRect(16, 14, 220, 36);
+        ctx.fillStyle = "#cfeaff";
+        ctx.font = "700 14px 'Noto Sans SC', sans-serif";
+        ctx.fillText(`第 1 关 · ${Math.max(0, Math.min(100, Math.floor((player.x / finishX) * 100)))}%`, 28, 38);
+      }
+
+      function draw() {
+        drawBackground();
+        drawWorld();
+        drawUI();
+      }
+
+      let last = 0;
+      function loop(ts) {
+        const dt = Math.min(0.033, (ts - last) / 1000 || 0.016);
+        last = ts;
+        update(dt);
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      window.addEventListener("keydown", (e) => {
+        if (["ArrowLeft", "ArrowRight", "ArrowUp", " ", "Space"].includes(e.key)) e.preventDefault();
+        keys.add(e.key);
+        if (e.key === "r" || e.key === "R") reset();
+      });
+      window.addEventListener("keyup", (e) => keys.delete(e.key));
+
+      function bindHold(id, key) {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        const on = (e) => {
+          e.preventDefault();
+          touch[key] = true;
+        };
+        const off = (e) => {
+          e.preventDefault();
+          touch[key] = false;
+        };
+        btn.addEventListener("pointerdown", on);
+        btn.addEventListener("pointerup", off);
+        btn.addEventListener("pointercancel", off);
+        btn.addEventListener("pointerleave", off);
+      }
+      bindHold("btn-left", "left");
+      bindHold("btn-right", "right");
+      bindHold("btn-jump", "jump");
+
+      document.getElementById("ov-retry").addEventListener("click", () => {
+        reset();
+      });
+      document.getElementById("ov-home").addEventListener("click", () => {
+        location.href = "season2.html";
+      });
+
+      reset();
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

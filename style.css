@@ -432,6 +432,102 @@ body {
   display: none;
 }
 
+.lv34-tower-pad {
+  position: absolute;
+  left: 10px;
+  bottom: 72px;
+  z-index: 12;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 2px solid #c45c26;
+  background: rgba(40, 18, 10, 0.96);
+  box-shadow: 0 0 0 1px rgba(255, 210, 74, 0.25);
+  pointer-events: auto;
+}
+
+.lv33-item-pad {
+  position: absolute;
+  left: 10px;
+  bottom: 72px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 2px solid #8a5a28;
+  background: rgba(28, 14, 10, 0.96);
+  box-shadow: 0 0 0 1px rgba(255, 210, 74, 0.25);
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+.lv33-item-pad.hidden,
+.lv34-tower-pad.hidden {
+  display: none;
+}
+
+.lv33-item-head {
+  color: #ffd24a;
+  font: 700 12px "Noto Sans SC", sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.lv33-item-pad button,
+.lv34-tower-pad button {
+  appearance: none;
+  border: 2px solid #8a5a28;
+  background: rgba(28, 14, 10, 0.9);
+  color: #ffe082;
+  font: 700 13px "Noto Sans SC", sans-serif;
+  padding: 10px 12px;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.lv33-item-pad button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.lv34-tower-pad button.wave {
+  border-color: #c45c26;
+  color: #ffb347;
+}
+
+.lv34-tower-pad button.slot {
+  border-color: #2e7d32;
+  color: #7dffb0;
+}
+
+.lv34-tower-pad button.fan {
+  border-color: #0288d1;
+  color: #81d4fa;
+}
+
+.lv34-tower-pad button.star {
+  border-color: #f9a825;
+  color: #ffe082;
+}
+
+@media (max-width: 720px) {
+  .lv33-item-pad,
+  .lv34-tower-pad {
+    left: 8px;
+    bottom: 78px;
+    flex-wrap: wrap;
+    max-width: 52%;
+  }
+  .lv33-item-pad button,
+  .lv34-tower-pad button {
+    font-size: 12px;
+    padding: 12px 10px;
+  }
+}
+
 @media (max-width: 720px) {
   .gun-pad {
     right: 8px;
@@ -1213,6 +1309,410 @@ body {
 
 #friends-btn:hover {
   filter: brightness(1.06);
+}
+
+.rate-btn {
+  appearance: none;
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  border: none;
+  background: linear-gradient(180deg, #ffe07a, #ffb347);
+  color: #2a1208;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 11px 12px;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px #8a4a18, 0 3px 0 #8a3a10;
+}
+
+.rate-btn.hidden {
+  display: none !important;
+}
+
+.rate-btn:hover {
+  filter: brightness(1.06);
+}
+
+/* ── 通关彩蛋舞台 ── */
+.egg-btn {
+  appearance: none;
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  border: none;
+  background: linear-gradient(180deg, #d4a5ff, #9b5de5);
+  color: #1a0a2a;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 11px 12px;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px #5b2d8a, 0 3px 0 #4a2270;
+}
+
+.egg-btn.hidden {
+  display: none !important;
+}
+
+.egg-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 20%, #3d2a6b 0%, #1a0f33 55%, #0d0620 100%);
+  pointer-events: auto;
+}
+
+.egg-stage.hidden {
+  display: none !important;
+}
+
+.egg-exit {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 5;
+  appearance: none;
+  border: 2px solid #ffd24a;
+  background: rgba(0, 0, 0, 0.45);
+  color: #ffd24a;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.egg-banner {
+  position: absolute;
+  top: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  white-space: nowrap;
+  padding: 18px 36px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffd76a, #ff9a2a);
+  color: #5a2200;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: clamp(22px, 5vw, 42px);
+  font-weight: 700;
+  box-shadow: 0 8px 30px rgba(255, 170, 40, 0.45), 0 0 0 4px #8a4a18;
+  letter-spacing: 0.08em;
+}
+
+.egg-confetti {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.egg-confetti i {
+  position: absolute;
+  top: -20px;
+  width: 10px;
+  height: 18px;
+  border-radius: 2px;
+  opacity: 0.95;
+  animation-name: eggFall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes eggFall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0.85;
+  }
+}
+
+.egg-audience {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 22%;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 0 4%;
+  pointer-events: none;
+}
+
+.egg-npc {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  animation: eggClap 0.55s ease-in-out infinite alternate;
+}
+
+.egg-npc .npc-body {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px 16px 12px 12px;
+  background: var(--npc-color, #6aa0c8);
+  box-shadow: inset 0 -10px 0 rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.egg-npc .npc-name {
+  font-size: 10px;
+  color: #e8d8c8;
+  opacity: 0.9;
+  font-family: "Noto Sans SC", sans-serif;
+}
+
+.egg-npc .npc-hands {
+  font-size: 18px;
+  letter-spacing: 4px;
+}
+
+@keyframes eggClap {
+  from {
+    transform: translateY(0) scale(1);
+  }
+  to {
+    transform: translateY(-10px) scale(1.04);
+  }
+}
+
+.egg-stage-floor {
+  position: absolute;
+  left: 50%;
+  bottom: 12%;
+  transform: translateX(-50%);
+  z-index: 3;
+  width: min(720px, 90vw);
+  height: 22px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #c9a227, #8a6010);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), 0 0 50px rgba(255, 200, 60, 0.35);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.egg-hero {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #ffe07a, #ffb347);
+  box-shadow: 0 0 0 4px #8a4a18, 0 10px 24px rgba(255, 180, 40, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  animation: eggHeroBounce 1.1s ease-in-out infinite;
+}
+
+.egg-hero-name {
+  position: absolute;
+  left: 50%;
+  bottom: -28px;
+  transform: translateX(-50%);
+  color: #ffd24a;
+  font-family: "Press Start 2P", monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+@keyframes eggHeroBounce {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-12px);
+  }
+}
+
+.egg-after {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  transform: translateX(-50%);
+  z-index: 6;
+  text-align: center;
+  background: rgba(12, 6, 28, 0.88);
+  border: 2px solid #9b5de5;
+  border-radius: 16px;
+  padding: 18px 22px;
+  min-width: min(320px, 86vw);
+}
+
+.egg-after.hidden {
+  display: none !important;
+}
+
+.egg-after p {
+  color: #f0e6ff;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 15px;
+  margin: 0 0 12px;
+}
+
+.egg-back-btn {
+  appearance: none;
+  display: inline-block;
+  margin-top: 10px;
+  width: 100%;
+  border: 1px solid #7a6a9a;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8d8ff;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 13px;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.egg-next-btn {
+  display: inline-block;
+  text-decoration: none;
+  background: linear-gradient(180deg, #b8ff9a, #3ddc84);
+  color: #0b2a16;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 12px 22px;
+  border-radius: 12px;
+  box-shadow: 0 0 0 2px #1f7a45;
+}
+
+.egg-next-btn:hover {
+  filter: brightness(1.05);
+}
+
+.rate-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: auto;
+}
+
+.rate-panel.hidden {
+  display: none !important;
+}
+
+.rate-card {
+  width: min(360px, 92%);
+  text-align: center;
+}
+
+.rate-stars {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 14px 0 8px;
+}
+
+.rate-star {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #5a4030;
+  font-size: 36px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+  transition: transform 0.12s ease, color 0.12s ease;
+}
+
+.rate-star.on {
+  color: #ffd24a;
+  transform: scale(1.12);
+  text-shadow: 0 0 10px rgba(255, 210, 74, 0.55);
+}
+
+.rate-star:hover {
+  transform: scale(1.15);
+}
+
+.rate-tip {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 6px 0 12px;
+}
+
+.rate-msg-label {
+  display: block;
+  text-align: left;
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0 0 6px;
+}
+
+.rate-msg {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 72px;
+  resize: vertical;
+  border: 1px solid #7a3d24;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #f0e6d8;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 10px;
+  margin-bottom: 12px;
+  outline: none;
+}
+
+.rate-msg:focus {
+  border-color: #ffb347;
+  box-shadow: 0 0 0 1px rgba(255, 179, 71, 0.35);
+}
+
+#rate-submit {
+  appearance: none;
+  width: 100%;
+  border: none;
+  background: linear-gradient(180deg, #ffe07a, #ff9a2a);
+  color: #2a1208;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 11px;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px #8a4a18;
+  margin-bottom: 8px;
+}
+
+#rate-close {
+  appearance: none;
+  width: 100%;
+  border: 1px solid #7a3d24;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--muted);
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 13px;
+  padding: 10px;
+  cursor: pointer;
 }
 
 #global-chat-btn {

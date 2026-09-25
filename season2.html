@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>岩浆跑酷·全关联机2 - 选择关卡</title>
+  <meta name="description" content="岩浆跑酷·全关联机2 第二季，共 35 关。搜索「岩浆跑酷·全关联机2」即可游玩。" />
+  <link rel="canonical" href="./season2.html" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Noto Sans SC", -apple-system, "PingFang SC", sans-serif;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 10%, rgba(80, 160, 255, 0.2), transparent 55%),
+        #061228;
+      color: #e8f4ff;
+    }
+
+    .shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top {
+      padding: 18px 16px 8px;
+      text-align: center;
+    }
+    .top h1 {
+      margin: 0;
+      font-family: "Press Start 2P", "Noto Sans SC", sans-serif;
+      font-size: clamp(18px, 4vw, 28px);
+      color: #7ec8ff;
+      letter-spacing: 0.06em;
+    }
+    .top .tag {
+      margin: 8px 0 0;
+      color: #8eb8e0;
+      font-size: 13px;
+    }
+
+    .level-select {
+      display: grid;
+      place-items: start center;
+      padding: 8px 16px 28px;
+    }
+
+    .level-select-card {
+      width: min(720px, 100%);
+      padding: 22px 18px 18px;
+      background: rgba(10, 28, 58, 0.95);
+      border: 2px solid #2f7fd4;
+      border-radius: 12px;
+      box-shadow: 0 16px 50px rgba(0, 30, 80, 0.45);
+    }
+
+    .level-select-card h2 {
+      margin: 0 0 6px;
+      text-align: center;
+      font-size: 22px;
+      color: #7ec8ff;
+    }
+
+    .level-select-desc {
+      text-align: center;
+      color: #8eb8e0;
+      font-size: 13px;
+      margin: 0 0 14px;
+    }
+
+    .phone-join {
+      text-align: center;
+      color: #9fd6ff;
+      font-size: 12px;
+      line-height: 1.55;
+      margin: 0 0 12px;
+      padding: 8px 10px;
+      border: 1px dashed #4a90c8;
+      background: rgba(80, 160, 255, 0.08);
+    }
+
+    .level-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+      gap: 10px;
+    }
+
+    .level-section-sep {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #6aa8e0;
+      font-size: 12px;
+      margin: 6px 0 2px;
+    }
+    .level-section-sep::before,
+    .level-section-sep::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: rgba(100, 170, 230, 0.35);
+    }
+
+    .level-cell {
+      appearance: none;
+      position: relative;
+      min-height: 72px;
+      border-radius: 10px;
+      border: 2px solid #2f7fd4;
+      background: linear-gradient(180deg, #1a4a8c, #0f2f62);
+      color: #e8f4ff;
+      font-family: "Noto Sans SC", sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 12px 6px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .level-cell:hover { filter: brightness(1.08); }
+    .level-cell.playable {
+      border-color: #5ec0ff;
+      box-shadow: 0 0 0 1px rgba(120, 200, 255, 0.25);
+    }
+    .level-cell.endpoint {
+      border-color: #ffd24a;
+      background: linear-gradient(180deg, #2a60b0, #163c78);
+    }
+    .level-cell.locked,
+    .level-cell.locked-progress {
+      opacity: 0.72;
+      border-color: #3a5a88;
+      background: rgba(20, 40, 70, 0.75);
+      cursor: pointer;
+    }
+    .level-cell .badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: #ffd24a;
+      background: rgba(0, 0, 0, 0.28);
+      border-radius: 999px;
+      padding: 2px 8px;
+    }
+    .level-cell.locked .badge {
+      color: #8eb8e0;
+    }
+    .level-cell .online {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 3px;
+      text-align: center;
+      font-size: 9px;
+      color: #6a9cc8;
+    }
+
+    .level-tip {
+      margin: 12px 0 0;
+      padding: 10px;
+      text-align: center;
+      color: #ffd24a;
+      background: rgba(255, 180, 40, 0.1);
+      border: 1px solid rgba(255, 180, 40, 0.35);
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .level-tip.hidden { display: none; }
+
+    .side-btn {
+      appearance: none;
+      display: block;
+      width: 100%;
+      margin-top: 12px;
+      border: none;
+      border-radius: 10px;
+      padding: 11px 12px;
+      font-family: "Noto Sans SC", sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+    }
+    /* 与第一季同类按钮位置一致，只是改成蓝色系 */
+    .rate-btn {
+      background: linear-gradient(180deg, #9fd6ff, #4a90c8);
+      color: #062040;
+      box-shadow: 0 0 0 2px #1e5fa8, 0 3px 0 #174a86;
+    }
+    .egg-btn {
+      background: linear-gradient(180deg, #b8a0ff, #7b5de5);
+      color: #140a2a;
+      box-shadow: 0 0 0 2px #5b2d8a, 0 3px 0 #4a2270;
+    }
+    .friends-btn {
+      background: linear-gradient(180deg, #7dffc8, #2f9e78);
+      color: #062820;
+      box-shadow: 0 0 0 2px #1e6a50, 0 3px 0 #175540;
+    }
+    .ghost-btn {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid #2f7fd4;
+      color: #a8d4ff;
+      font-weight: 500;
+      font-size: 13px;
+      padding: 10px;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .footer-links a {
+      flex: 1;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="top">
+      <h1>岩浆跑酷·全关联机2</h1>
+      <p class="tag">第二季 · 选择关卡 · 颜色全新 · 蓝色世界</p>
+    </header>
+
+    <div class="level-select">
+      <div class="level-select-card">
+        <h2>选择关卡</h2>
+        <p class="level-select-desc">共 35 关 · 第二季 · 目前仅开放第 1 关</p>
+        <p class="phone-join">第二季蓝色世界 · 更多关卡制作中</p>
+
+        <div id="level-grid" class="level-grid"></div>
+
+        <p id="level-tip" class="level-tip hidden"></p>
+
+        <button id="rate-btn" class="side-btn rate-btn" type="button">⭐ 评价游戏</button>
+        <button id="egg-btn" class="side-btn egg-btn" type="button">🎁 神秘彩蛋</button>
+        <button id="friends-btn" class="side-btn friends-btn" type="button">好友中心</button>
+        <button id="global-chat-btn" class="side-btn ghost-btn" type="button">全游戏聊天</button>
+        <button id="logout-btn" class="side-btn ghost-btn" type="button">退出登录</button>
+
+        <div class="footer-links">
+          <a class="side-btn ghost-btn" href="index.html">返回第一季</a>
+          <a class="side-btn rate-btn" href="season2-lv1.html">开始第 1 关</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const grid = document.getElementById("level-grid");
+      const tip = document.getElementById("level-tip");
+      const TOTAL = 35;
+      const OPEN_LEVEL = 1;
+      const LEVEL_TITLES = {
+        1: "蓝色跑酷",
+      };
+
+      function showTip(text) {
+        tip.textContent = text;
+        tip.classList.remove("hidden");
+      }
+
+      function build() {
+        grid.innerHTML = "";
+        for (let i = 1; i <= TOTAL; i++) {
+          if (i === 1 || i === 19 || i === 30) {
+            const sep = document.createElement("div");
+            sep.className = "level-section-sep";
+            sep.innerHTML = "<span>" + (i === 1 ? "娱乐" : i === 19 ? "休闲" : "第二季主线") + "</span>";
+            grid.appendChild(sep);
+          }
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "level-cell";
+          btn.dataset.level = String(i);
+          const title = LEVEL_TITLES[i];
+          if (i === OPEN_LEVEL) {
+            btn.classList.add("endpoint");
+            btn.innerHTML = i + '<span class="badge">' + (title || "可玩") + "</span>";
+          } else {
+            btn.classList.add("locked");
+            btn.innerHTML = i + '<span class="badge">未开放</span>';
+          }
+          const online = document.createElement("span");
+          online.className = "online";
+          online.textContent = i === OPEN_LEVEL ? "已开放" : "敬请期待";
+          btn.appendChild(online);
+          btn.addEventListener("click", function () {
+            if (i === OPEN_LEVEL) {
+              location.href = "season2-lv1.html";
+            } else {
+              showTip("第 " + i + " 关还没做完，第二季正在制作中（目前只有第 1 关「蓝色跑酷」）");
+            }
+          });
+          grid.appendChild(btn);
+        }
+      }
+
+      document.getElementById("rate-btn").addEventListener("click", function () {
+        showTip("谢谢关注第二季！正式上线后可评价。");
+      });
+      document.getElementById("egg-btn").addEventListener("click", function () {
+        showTip("第二季彩蛋会在通关后出现。");
+      });
+      document.getElementById("friends-btn").addEventListener("click", function () {
+        showTip("第二季好友中心即将开放。");
+      });
+      document.getElementById("global-chat-btn").addEventListener("click", function () {
+        showTip("第二季全服聊天即将开放。");
+      });
+      document.getElementById("logout-btn").addEventListener("click", function () {
+        location.href = "index.html";
+      });
+
+      build();
+    })();
+  </script>
+</body>
+</html>

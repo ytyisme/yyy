@@ -387,8 +387,7 @@
   let banTimerId = 0;
   const TOTAL_LEVELS = 35;
   const MAX_PLAYABLE = 35;
-  // 33、34 剧情未做完：选关显示未开放
-  const LEVELS_NOT_OPEN = new Set([33, 34]);
+  const LEVELS_NOT_OPEN = new Set();
   let cameraX = 0;
   let worldMin = 0;
   let worldWidth = 3200;
@@ -426,6 +425,8 @@
   let maliangScene = null; // level 30 magic brush Ma Liang
   let ml31Scene = null; // level 31 draw shield vs bullets
   let pipe32Scene = null; // level 32 draw pipes to fill cup
+  let rider33Scene = null; // level 33 food delivery rider
+  let carrot34Scene = null; // level 34 defend carrot TD
   let pvpScene = null; // level 35 player PVP race
 
   // 场景读写（供 GameSceneReg 循环使用；直接 eval 本作用域 let）
@@ -1627,6 +1628,26 @@
         player.onGround = true;
         player.facing = 1;
       }
+    } else if (level === 33 && rider33Scene) {
+      // 送外卖：由场景接管骑手位置
+      moveActor(player, 0, false, null);
+      if (player) {
+        player.vx = 0;
+        player.vy = 0;
+        player.x = rider33Scene.rider.x;
+        player.y = rider33Scene.laneY;
+        player.onGround = true;
+      }
+    } else if (level === 34 && carrot34Scene) {
+      // 保卫萝卜：塔防，玩家不动
+      moveActor(player, 0, false, null);
+      if (player) {
+        player.vx = 0;
+        player.vy = 0;
+        player.x = 80;
+        player.y = carrot34Scene.groundY - player.h;
+        player.onGround = true;
+      }
     } else if (level === 35 && pvpScene && (pvpScene.phase === "match" || pvpScene.phase === "intro")) {
       // 匹配/开场阶段锁住
       moveActor(player, 0, false, null);
@@ -1986,6 +2007,18 @@
         `<br /><span style="color:#ffb347">第 30 关：神笔马良。捡起神笔，画出成真的桥，逃出山谷。</span>`;
     } else if (next === 31) {
       warn =
+        `<br /><span style="color:#ffb347">第 31 关：画盾挡弹。画出成真的盾，挡住飞来的子弹。</span>`;
+    } else if (next === 32) {
+      warn =
+        `<br /><span style="color:#ffb347">第 32 关：画水管。画出连通的水管，把水灌进杯子。</span>`;
+    } else if (next === 33) {
+      warn =
+        `<br /><span style="color:#ffb347">第 33 关：肥唧唧送外卖。黄胖子袋鼠骑电车变道躲车，跑满 5000 米送达；左下可用五角星买道具。</span>`;
+    } else if (next === 34) {
+      warn =
+        `<br /><span style="color:#ffb347">第 34 关：保卫萝卜。放箭塔/炮塔，守住 5 波怪。</span>`;
+    } else if (next === 35) {
+      warn =
         `<br /><span style="color:#ffb347">第 35 关：玩家PVP。至少 2 人匹配后红蓝 VS 开场，在 500 米障碍平路上抢先冲线。</span>`;
     }
 
@@ -2171,10 +2204,218 @@
     backfillGunUnlocks();
     if (starLabel) starLabel.textContent = String(stars);
     syncGunPad();
+    syncRateBtn();
+    syncEggBtn();
   }
 
   function saveCleared() {
     saveStr("yyy_cleared", maxCleared);
+  }
+
+  // ── 评价（通关任意 5 关后解锁，满分 5 星） ──
+  const RATE_UNLOCK_COUNT = 5;
+  const RATE_SCORE_KEY = "yyy_rate_score";
+  const CLEARED_SET_KEY = "yyy_cleared_set";
+  let ratePick = 0;
+
+  function clearedLevelCount() {
+    const arr = loadJson(CLEARED_SET_KEY, []);
+    return Array.isArray(arr) ? arr.length : 0;
+  }
+
+  function syncRateBtn() {
+    const btn = document.getElementById("rate-btn");
+    if (!btn) return;
+    const unlocked = clearedLevelCount() >= RATE_UNLOCK_COUNT || maxCleared >= RATE_UNLOCK_COUNT;
+    btn.classList.toggle("hidden", !unlocked);
+    const score = loadJson(RATE_SCORE_KEY, 0);
+    if (score >= 1 && score <= 5) {
+      btn.textContent = `⭐ 我的评价 ${score} 星`;
+    }
+  }
+
+  function openRatePanel() {
+    const panel = document.getElementById("rate-panel");
+    if (!panel) return;
+    const saved = loadJson(RATE_SCORE_KEY, 0);
+    const savedMsg = loadJson("yyy_rate_msg", "");
+    ratePick = Number(saved) >= 1 && Number(saved) <= 5 ? Number(saved) : 0;
+    const msg = document.getElementById("rate-msg");
+    if (msg) msg.value = typeof savedMsg === "string" ? savedMsg.slice(0, 200) : "";
+    renderRateStars();
+    panel.classList.remove("hidden");
+    panel.setAttribute("aria-hidden", "false");
+  }
+
+  function closeRatePanel() {
+    const panel = document.getElementById("rate-panel");
+    if (!panel) return;
+    panel.classList.add("hidden");
+    panel.setAttribute("aria-hidden", "true");
+  }
+
+  function rateThanks(n) {
+    if (n >= 5) return "满分！太感谢了 🎉";
+    if (n >= 4) return "谢谢支持";
+    if (n >= 1) return "谢谢你的评价，我们会改进的";
+    return "";
+  }
+
+  function renderRateStars() {
+    const tip = document.getElementById("rate-tip");
+    const starsEl = document.getElementById("rate-stars");
+    if (!starsEl) return;
+    for (const btn of starsEl.querySelectorAll(".rate-star")) {
+      const n = Number(btn.dataset.star);
+      btn.classList.toggle("on", n <= ratePick);
+    }
+    if (tip) {
+      if (ratePick >= 1) tip.textContent = rateThanks(ratePick);
+      else tip.textContent = "点亮星星，点满 5 颗就是满分";
+    }
+  }
+
+  function submitRate() {
+    if (ratePick < 1 || ratePick > 5) {
+      const tip = document.getElementById("rate-tip");
+      if (tip) tip.textContent = "请先点亮 1–5 颗星";
+      return;
+    }
+    const msgEl = document.getElementById("rate-msg");
+    const msg = msgEl ? String(msgEl.value || "").trim().slice(0, 200) : "";
+    saveJson(RATE_SCORE_KEY, ratePick);
+    saveJson("yyy_rate_msg", msg);
+    syncRateBtn();
+    const tip = document.getElementById("rate-tip");
+    if (tip) tip.textContent = rateThanks(ratePick);
+    playUiClick();
+    setTimeout(() => {
+      closeRatePanel();
+    }, 900);
+  }
+
+  // ── 通关彩蛋（1–34 全通，不含 35） ──
+  const EGG_END_LEVEL = 34; // 不包含 35
+  // 第二季：过渡期先用本站 season2.html，有外站后改成完整网址
+  const NEW_GAME_URL = "season2.html";
+  let eggTimer = 0;
+
+  function eggUnlocked() {
+    const arr = loadJson(CLEARED_SET_KEY, []);
+    const set = new Set(Array.isArray(arr) ? arr.map(Number) : []);
+    for (let i = 1; i <= EGG_END_LEVEL; i++) {
+      if (!set.has(i) && maxCleared < i) return false;
+    }
+    // 以 maxCleared 为准：打到第 34 关即视为 1–34 已通
+    return maxCleared >= EGG_END_LEVEL;
+  }
+
+  function syncEggBtn() {
+    const btn = document.getElementById("egg-btn");
+    if (!btn) return;
+    btn.classList.toggle("hidden", !eggUnlocked());
+  }
+
+  function buildEggAudience() {
+    const box = document.getElementById("egg-audience");
+    if (!box) return;
+    box.innerHTML = "";
+    // 全游戏 NPC 都来捧场
+    const faces = [
+      ["🧟", "僵尸"], ["🚗", "大运重卡"], ["🎸", "音乐家"], ["🍜", "抢饭同学"],
+      ["🚇", "地铁乘客"], ["🎯", "射击教练"], ["⚔️", "排队剑客"], ["🏫", "食堂阿姨"],
+      ["🎹", "键盘侠"], ["💘", "约会对象"], ["🦍", "DONKEY"], ["⭐", "五星店主"],
+      ["🧩", "消消乐"], ["🔥", "熔炉工"], ["✈️", "空乘"], ["🔧", "钢管大师"],
+      ["🦠", "科学家"], ["🚽", "厕所排队"], ["🖌️", "马良"], ["🚿", "水管工"],
+      ["🃏", "PVP对手"], ["🚀", "飞行员"], ["🥕", "萝卜"], ["🌪️", "风扇塔"],
+    ];
+    const colors = ["#6aa0c8", "#e8b84a", "#c45c26", "#7dffb0", "#d4a5ff", "#ff8a80", "#81d4fa", "#ffd24a"];
+    for (let i = 0; i < 12; i++) {
+      const [emoji, name] = faces[i % faces.length];
+      const el = document.createElement("div");
+      el.className = "egg-npc";
+      el.style.animationDelay = `${(i % 6) * 0.12}s`;
+      el.innerHTML = `
+        <div class="npc-hands">👏</div>
+        <div class="npc-body" style="--npc-color:${colors[i % colors.length]}">${emoji}</div>
+        <div class="npc-name">${name}</div>
+      `;
+      box.appendChild(el);
+    }
+  }
+
+  function buildEggConfetti() {
+    const box = document.getElementById("egg-confetti");
+    if (!box) return;
+    box.innerHTML = "";
+    const colors = ["#ffd24a", "#ff6b6b", "#4ecdc4", "#9b5de5", "#3ddc84", "#ff9f1c", "#4cc9f0", "#f72585"];
+    for (let i = 0; i < 48; i++) {
+      const bit = document.createElement("i");
+      bit.style.left = `${Math.random() * 100}%`;
+      bit.style.background = colors[i % colors.length];
+      bit.style.width = `${8 + Math.random() * 8}px`;
+      bit.style.height = `${12 + Math.random() * 16}px`;
+      bit.style.animationDuration = `${2.4 + Math.random() * 3.2}s`;
+      bit.style.animationDelay = `${Math.random() * 3}s`;
+      box.appendChild(bit);
+    }
+  }
+
+  function openEggStage() {
+    const stage = document.getElementById("egg-stage");
+    if (!stage) return;
+    buildEggAudience();
+    buildEggConfetti();
+    const after = document.getElementById("egg-after");
+    if (after) {
+      after.classList.add("hidden");
+      after.setAttribute("aria-hidden", "true");
+    }
+    const banner = stage.querySelector(".egg-banner");
+    if (banner) banner.textContent = "恭喜通关，感谢游玩";
+    const hero = document.getElementById("egg-hero");
+    if (hero) hero.textContent = "🦘";
+    const floor = stage.querySelector(".egg-stage-floor");
+    if (floor) floor.style.display = "";
+    const exit = document.getElementById("egg-exit");
+    if (exit) exit.classList.remove("hidden");
+    const link = document.getElementById("egg-next-link");
+    if (link) link.href = NEW_GAME_URL;
+    stage.classList.remove("hidden");
+    stage.setAttribute("aria-hidden", "false");
+    playUiClick();
+  }
+
+  function closeEggStage() {
+    const stage = document.getElementById("egg-stage");
+    if (!stage) return;
+    // 不直接关舞台：退出后展示「打开新游戏」按钮
+    const banner = stage.querySelector(".egg-banner");
+    if (banner) banner.textContent = "感谢游玩！";
+    const conf = document.getElementById("egg-confetti");
+    if (conf) conf.innerHTML = "";
+    const audience = document.getElementById("egg-audience");
+    if (audience) audience.innerHTML = "";
+    const floor = stage.querySelector(".egg-stage-floor");
+    if (floor) floor.style.display = "none";
+    const exit = document.getElementById("egg-exit");
+    if (exit) exit.classList.add("hidden");
+    const after = document.getElementById("egg-after");
+    if (after) {
+      after.classList.remove("hidden");
+      after.setAttribute("aria-hidden", "false");
+    }
+    const link = document.getElementById("egg-next-link");
+    if (link) link.href = NEW_GAME_URL;
+    playUiClick();
+  }
+
+  function hideEggStage() {
+    const stage = document.getElementById("egg-stage");
+    if (stage) {
+      stage.classList.add("hidden");
+      stage.setAttribute("aria-hidden", "true");
+    }
   }
 
   function markLevelCleared(n) {
@@ -2183,13 +2424,21 @@
       maxCleared = lv;
       saveCleared();
     }
+    if (lv >= 1) {
+      const arr = loadJson(CLEARED_SET_KEY, []);
+      const set = new Set(Array.isArray(arr) ? arr.map(Number) : []);
+      set.add(lv);
+      saveJson(CLEARED_SET_KEY, [...set]);
+    }
+    syncRateBtn();
+    syncEggBtn();
   }
 
   function isLevelUnlocked(n) {
     if (LEVELS_NOT_OPEN.has(n)) return false;
     if (n <= 1 || n === 11 || n === 12 || n === 22) return true;
-    // 33、34 未开放，35 在通关 32 后直接开放
-    if (n === 35) return maxCleared >= 32;
+    // 33–35 在通关 32 后开放
+    if (n >= 33) return maxCleared >= 32;
     return maxCleared >= n - 1;
   }
 
@@ -2999,6 +3248,8 @@
       30: "神笔马良",
       31: "画盾挡弹",
       32: "画水管",
+      33: "肥唧唧送外卖",
+      34: "保卫萝卜",
       35: "玩家PVP",
     };
     for (let i = 1; i <= TOTAL_LEVELS; i++) {
@@ -3129,6 +3380,8 @@
     watchLobbyCounts();
     buildLevelGrid();
     applyLevelCounts(levelPlayerCounts);
+    syncRateBtn();
+    syncEggBtn();
     levelSelect.classList.remove("hidden");
     levelSelect.setAttribute("aria-hidden", "false");
     syncPuzzleTools();
@@ -3207,9 +3460,7 @@
     playUiClick();
     if (n > MAX_PLAYABLE || LEVELS_NOT_OPEN.has(n)) {
       levelTip.textContent =
-        n === 33 || n === 34
-          ? `第 ${n} 关还没做完，暂未开放（可先玩第 35 关「玩家PVP」）`
-          : "后面作者还在做，敬请期待（第 35 关「玩家PVP」是目前终点）";
+        "后面作者还在做，敬请期待（第 35 关「玩家PVP」是目前终点）";
       levelTip.classList.remove("hidden");
       return;
     }
@@ -3581,6 +3832,9 @@
     startLevelCoop();
     if (level === 12) showSandboxMode();
     GameSceneReg.initLevel(level);
+    // init/leave 可能改过道具栏，这里再同步一次
+    syncItemBar();
+    syncGunPad();
     if (window.GameAudio) {
       GameAudio.unlock();
       GameAudio.syncAmbience({
@@ -3653,7 +3907,7 @@
   const S = GameUtil.liveScope(
     (n) => eval(n),
     (n, value) => eval(n + " = value"),
-    "gunState,gunHeld,currentGunStyle,GUN_STYLES,GUN_SPECS,unlockedGunIds,equipGunById,holsterGun,ammoText,tryReloadGun,resetGunAmmo,COOP_COLORS,DESIGN_H,DESIGN_W,GRAVITY,H,JUMP,LAVA_Y,MAX_PLAYABLE,MOVE,PORTRAIT_PROMPT_KEY,PORTRAIT_W,SHOP_CATALOG,TOTAL_LEVELS,W,ZOMBIE_COUNT,adOpen,announceChat,announceDeath,announceJoin,announceLeave,applyBrightness,applyCoopMap,applyLevelCounts,applyLevelOpts,applyVolume,armPickaxe,armSword,backpack,banLeft,banMsg,banScreen,banTimerId,beginPlaying,belly,breakWithPickaxe,bridgePieceW,bridgeY,brightness,brightnessSlider,brightnessValue,buildLevelGrid,buyItem,cameraForView,cameraX,canvas,canvasScale,chatBtn,chatClose,chatDock,chatInput,chatLog,chatLogEl,chatLogLevel,chatPanel,chatSend,chatUserCancel,chatUserDialog,chatUserFriend,chatUserMsg,chatUserReport,chatUserTarget,clamp,clearInput,clientToWorld,closeChat,closeLoginScreen,closeSettings,closeShop,colorForCoopId,comingSoon,confirmPlayerName,controlHintText,coopAcc,coopAnchorX,coopAnnounceAt,coopCount,coopFurthestX,coopHostId,cornerActions,craftCoopBtn,crate,craters,ctx,deathLine,die,eatAnim,endSign,enterLevel,escapeHtml,extendEndlessParkour,fakeButtons,fakeLava,findRoofAhead,friendCenter,friendCenterOpen,friendChatInput,friendChatLogEl,friendChatSend,friendChatTitle,friendInviteBtn,friendInviteLevel,friendListEl,friendReqCurrent,friendReqDialog,friendReqMsg,friendReqNo,friendReqQueue,friendReqYes,friendUnread,friends,friendsBtn,friendsClose,gameTitle,globalChat,globalChatBtn,globalChatClose,globalChatInput,globalChatLogEl,globalChatOpen,globalChatPanel,globalChatSend,globalChatUnread,goHome,handleCoopMessage,handleHomePeer,hideLevelSelect,hideOverlay,hidePortraitPrompt,hideSandboxMode,hideUnlockDialog,hitRemotePlayer,homeBtn,homeMode,homeNotices,homeNoticesEl,homePeerQuietUntil,homePeerReady,inboxBtn,inboxClear,inboxClose,inboxListEl,inboxOpen,inboxPanel,inboxReports,inboxUnread,inventory,inviteCurrent,inviteDialog,inviteMsg,inviteNo,inviteQueue,inviteYes,isCoopHost,isDevicePortrait,isLevelUnlocked,isMobileLike,isPortraitPlay,itemBar,joinNotices,joinNoticesEl,keys,killZombieWithSword,lastCoopPos,lastMapSendAt,lastTs,lavaDrainAt,lavaDrains,level,levelGrid,levelLabel,levelPlayerCounts,levelSelect,levelTip,levelUses,loadJson,loadProgress,loadSettings,loadStr,localChat,localChatUntil,localCoopId,loggedIn,loginError,loginIdcard,loginMode,loginMoonBtn,loginPaneAccount,loginPaneIdcard,loginPanePhone,loginPass,loginPhone,loginScreen,loginSms,loginSubmit,loginTabs,loginUser,logoutBtn,loop,maces,makeLevel,mapChance,mapRand,mapRngFn,markLevelCleared,maxCleared,maybeSendMap,maybeShowPortraitPrompt,minorNotice,minorOk,mockSmsCode,moonCoopBtn,moonEarthGrad,moonSkyGrad,moonVoidGrad,moveActor,myDisplayName,nameForm,nameInput,nearestHuntTarget,needsPlayerName,onViewportChange,openChat,openLoginScreen,openSettings,openShop,overlay,overlayHint,overlayMsg,overlayTitle,packMap,parseIdAge,particles,pendingFriend,pendingUnlockLevel,pickups,pitStart,pitWidth,placeBridgeButton,platforms,playCraftCoopNow,playMoonCoopNow,playUiClick,player,playerLabel,playerName,portraitAccept,portraitDecline,portraitDialog,portraitPromptDismissed,portraitPromptOpen,potion,preferTouchControls,pushHomeNotice,pushJoinNotice,pushZombie,puzzleMode,puzzleTools,rand,rectsOverlap,refreshShopUI,remainingFor,remoteCamX,remotePlayers,renderChatLog,renderHomeNotices,renderJoinNotices,reportCancel,reportDialog,reportMsg,resetLevelUses,resetPuzzleButtons,returnToHomeMenu,reverseGoal,rockets,sandboxCreative,sandboxModeEl,sandboxSurvival,saveCleared,saveInventory,saveJson,saveStars,saveStr,seededRng,selectLevel,selectedFriendId,sendChat,sendSmsCode,setLoginMode,settingsBtn,settingsClose,settingsOpen,settingsPanel,setupPuzzleDrag,setupTouchControls,shake,shopBtn,shopClose,shopOpen,shopPanel,shopScene,shopStarCount,shopTip,showLevelSelect,towerScene,subwayScene,rangeScene,battleScene,schoolScene,musicScene,dateScene,kongScene,starHouseScene,matchScene,furnaceScene,twinScene,planeScene,pipeScene,labScene,toiletScene,maliangScene,ml31Scene,pipe32Scene,pvpScene,showLoginError,showMinorNotice,showNamePrompt,showOverlay,showPhoneJoin,showPortraitPrompt,showSandboxMode,showUnlockDialog,skipBtn,skipPreviousAndEnter,smsBtn,smsCooldown,smsTimer,socialOpen,socialToastEl,socialToastTimer,solidAt,spawnBurst,spawnX,speedBoost,spikes,star,starLabel,stars,startBtn,startCraftWorld,startGame,startLevelCoop,state,statusLabel,stopLevelCoop,submitLogin,syncChatBtn,syncCoopStatus,syncHomeBtn,syncItemBar,syncPuzzleTools,syncTouchPad,syncViewport,time,toolMode,touch,touchPad,tryClickPlayerName,tryUseToolClick,unlockCancelBtn,unlockDialog,unlockMsg,unlockOnce,unlockSkipBtn,update,updateCoop,updateParticles,useBucketItem,useInventoryItem,usePotionItem,useSkipCard,volumePct,volumeSlider,volumeValue,watchLobbyCounts,winLevel,worldMin,worldWidth,zombies"
+    "gunState,gunHeld,currentGunStyle,GUN_STYLES,GUN_SPECS,unlockedGunIds,equipGunById,holsterGun,ammoText,tryReloadGun,resetGunAmmo,COOP_COLORS,DESIGN_H,DESIGN_W,GRAVITY,H,JUMP,LAVA_Y,MAX_PLAYABLE,MOVE,PORTRAIT_PROMPT_KEY,PORTRAIT_W,SHOP_CATALOG,TOTAL_LEVELS,W,ZOMBIE_COUNT,adOpen,announceChat,announceDeath,announceJoin,announceLeave,applyBrightness,applyCoopMap,applyLevelCounts,applyLevelOpts,applyVolume,armPickaxe,armSword,backpack,banLeft,banMsg,banScreen,banTimerId,beginPlaying,belly,breakWithPickaxe,bridgePieceW,bridgeY,brightness,brightnessSlider,brightnessValue,buildLevelGrid,buyItem,cameraForView,cameraX,canvas,canvasScale,chatBtn,chatClose,chatDock,chatInput,chatLog,chatLogEl,chatLogLevel,chatPanel,chatSend,chatUserCancel,chatUserDialog,chatUserFriend,chatUserMsg,chatUserReport,chatUserTarget,clamp,clearInput,clientToWorld,closeChat,closeLoginScreen,closeSettings,closeShop,colorForCoopId,comingSoon,confirmPlayerName,controlHintText,coopAcc,coopAnchorX,coopAnnounceAt,coopCount,coopFurthestX,coopHostId,cornerActions,craftCoopBtn,crate,craters,ctx,deathLine,die,eatAnim,endSign,enterLevel,escapeHtml,extendEndlessParkour,fakeButtons,fakeLava,findRoofAhead,friendCenter,friendCenterOpen,friendChatInput,friendChatLogEl,friendChatSend,friendChatTitle,friendInviteBtn,friendInviteLevel,friendListEl,friendReqCurrent,friendReqDialog,friendReqMsg,friendReqNo,friendReqQueue,friendReqYes,friendUnread,friends,friendsBtn,friendsClose,gameTitle,globalChat,globalChatBtn,globalChatClose,globalChatInput,globalChatLogEl,globalChatOpen,globalChatPanel,globalChatSend,globalChatUnread,goHome,handleCoopMessage,handleHomePeer,hideLevelSelect,hideOverlay,hidePortraitPrompt,hideSandboxMode,hideUnlockDialog,hitRemotePlayer,homeBtn,homeMode,homeNotices,homeNoticesEl,homePeerQuietUntil,homePeerReady,inboxBtn,inboxClear,inboxClose,inboxListEl,inboxOpen,inboxPanel,inboxReports,inboxUnread,inventory,inviteCurrent,inviteDialog,inviteMsg,inviteNo,inviteQueue,inviteYes,isCoopHost,isDevicePortrait,isLevelUnlocked,isMobileLike,isPortraitPlay,itemBar,joinNotices,joinNoticesEl,keys,killZombieWithSword,lastCoopPos,lastMapSendAt,lastTs,lavaDrainAt,lavaDrains,level,levelGrid,levelLabel,levelPlayerCounts,levelSelect,levelTip,levelUses,loadJson,loadProgress,loadSettings,loadStr,localChat,localChatUntil,localCoopId,loggedIn,loginError,loginIdcard,loginMode,loginMoonBtn,loginPaneAccount,loginPaneIdcard,loginPanePhone,loginPass,loginPhone,loginScreen,loginSms,loginSubmit,loginTabs,loginUser,logoutBtn,loop,maces,makeLevel,mapChance,mapRand,mapRngFn,markLevelCleared,maxCleared,maybeSendMap,maybeShowPortraitPrompt,minorNotice,minorOk,mockSmsCode,moonCoopBtn,moonEarthGrad,moonSkyGrad,moonVoidGrad,moveActor,myDisplayName,nameForm,nameInput,nearestHuntTarget,needsPlayerName,onViewportChange,openChat,openLoginScreen,openSettings,openShop,overlay,overlayHint,overlayMsg,overlayTitle,packMap,parseIdAge,particles,pendingFriend,pendingUnlockLevel,pickups,pitStart,pitWidth,placeBridgeButton,platforms,playCraftCoopNow,playMoonCoopNow,playUiClick,player,playerLabel,playerName,portraitAccept,portraitDecline,portraitDialog,portraitPromptDismissed,portraitPromptOpen,potion,preferTouchControls,pushHomeNotice,pushJoinNotice,pushZombie,puzzleMode,puzzleTools,rand,rectsOverlap,refreshShopUI,remainingFor,remoteCamX,remotePlayers,renderChatLog,renderHomeNotices,renderJoinNotices,reportCancel,reportDialog,reportMsg,resetLevelUses,resetPuzzleButtons,returnToHomeMenu,reverseGoal,rockets,sandboxCreative,sandboxModeEl,sandboxSurvival,saveCleared,saveInventory,saveJson,saveStars,saveStr,seededRng,selectLevel,selectedFriendId,sendChat,sendSmsCode,setLoginMode,settingsBtn,settingsClose,settingsOpen,settingsPanel,setupPuzzleDrag,setupTouchControls,shake,shopBtn,shopClose,shopOpen,shopPanel,shopScene,shopStarCount,shopTip,showLevelSelect,towerScene,subwayScene,rangeScene,battleScene,schoolScene,musicScene,dateScene,kongScene,starHouseScene,matchScene,furnaceScene,twinScene,planeScene,pipeScene,labScene,toiletScene,maliangScene,ml31Scene,pipe32Scene,rider33Scene,carrot34Scene,pvpScene,showLoginError,showMinorNotice,showNamePrompt,showOverlay,showPhoneJoin,showPortraitPrompt,showSandboxMode,showUnlockDialog,skipBtn,skipPreviousAndEnter,smsBtn,smsCooldown,smsTimer,socialOpen,socialToastEl,socialToastTimer,solidAt,spawnBurst,spawnX,speedBoost,spikes,star,starLabel,stars,startBtn,startCraftWorld,startGame,startLevelCoop,state,statusLabel,stopLevelCoop,submitLogin,syncChatBtn,syncCoopStatus,syncHomeBtn,syncItemBar,syncPuzzleTools,syncTouchPad,syncViewport,time,toolMode,touch,touchPad,tryClickPlayerName,tryUseToolClick,unlockCancelBtn,unlockDialog,unlockMsg,unlockOnce,unlockSkipBtn,update,updateCoop,updateParticles,useBucketItem,useInventoryItem,usePotionItem,useSkipCard,volumePct,volumeSlider,volumeValue,watchLobbyCounts,winLevel,worldMin,worldWidth,zombies"
   );
   window.installGameSocial(S);
   window.installGameDraw(S);
@@ -3895,6 +4149,63 @@
       btn.addEventListener("click", () => {
         playUiClick();
         buyItem(btn.dataset.buy);
+      });
+    }
+
+    // 评价：通关满 5 关后出现
+    const rateBtn = document.getElementById("rate-btn");
+    const ratePanel = document.getElementById("rate-panel");
+    const rateStars = document.getElementById("rate-stars");
+    const rateSubmit = document.getElementById("rate-submit");
+    const rateClose = document.getElementById("rate-close");
+    if (rateBtn) {
+      rateBtn.addEventListener("click", () => {
+        playUiClick();
+        openRatePanel();
+      });
+    }
+    const eggBtn = document.getElementById("egg-btn");
+    const eggExit = document.getElementById("egg-exit");
+    if (eggBtn) {
+      eggBtn.addEventListener("click", () => {
+        playUiClick();
+        openEggStage();
+      });
+    }
+    if (eggExit) {
+      eggExit.addEventListener("click", () => {
+        playUiClick();
+        closeEggStage();
+      });
+    }
+    const eggBack = document.getElementById("egg-back");
+    if (eggBack) {
+      eggBack.addEventListener("click", () => {
+        playUiClick();
+        hideEggStage();
+      });
+    }
+    if (rateClose) {
+      rateClose.addEventListener("click", () => {
+        playUiClick();
+        closeRatePanel();
+      });
+    }
+    if (rateSubmit) {
+      rateSubmit.addEventListener("click", () => submitRate());
+    }
+    if (rateStars) {
+      rateStars.addEventListener("click", (e) => {
+        const btn = e.target.closest ? e.target.closest(".rate-star") : null;
+        if (!btn) return;
+        playUiClick();
+        ratePick = Number(btn.dataset.star) || 0;
+        renderRateStars();
+      });
+    }
+    if (ratePanel) {
+      ratePanel.addEventListener("click", (e) => {
+        if (e.target === ratePanel) closeRatePanel();
       });
     }
     if (gunCodeList) {
