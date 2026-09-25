@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>第二季 · 第2关 · 找黄方块</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #0a1a3a;
+      font-family: "Noto Sans SC", -apple-system, "PingFang SC", sans-serif;
+      color: #e8f4ff;
+      overflow: hidden;
+      user-select: none;
+    }
+    .wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px;
+    }
+    .top {
+      width: min(960px, 96vw);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(16px, 3.5vw, 22px);
+      color: #7ec8ff;
+    }
+    .tag {
+      margin: 4px 0 0;
+      color: #8eb8e0;
+      font-size: 12px;
+    }
+    .back {
+      appearance: none;
+      border: 1px solid #4a90c8;
+      background: rgba(30, 70, 120, 0.55);
+      color: #cfeaff;
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .stage {
+      width: min(860px, 96vw);
+      border-radius: 16px;
+      border: 2px solid #3d7eb8;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(90, 160, 255, 0.25), transparent 55%),
+        linear-gradient(180deg, #123a72 0%, #0a1f45 100%);
+      padding: 28px 16px 36px;
+      position: relative;
+      overflow: hidden;
+      min-height: 380px;
+    }
+    .status {
+      text-align: center;
+      color: #ffd24a;
+      font-size: 15px;
+      font-weight: 700;
+      min-height: 1.5em;
+      margin-bottom: 8px;
+    }
+    .timer {
+      text-align: center;
+      color: #9fd6ff;
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+    .table {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: clamp(18px, 6vw, 48px);
+      min-height: 220px;
+      position: relative;
+      overflow: hidden;
+      padding: 12px 0;
+    }
+    .cup-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+    }
+    .cup-slot.pickable:hover .cup {
+      filter: brightness(1.1);
+      transform: translateY(-4px);
+    }
+    .cup {
+      width: clamp(88px, 18vw, 120px);
+      height: clamp(110px, 22vw, 150px);
+      border-radius: 12px 12px 28px 28px;
+      background: linear-gradient(180deg, #6eb6ff 0%, #2f7fd4 55%, #1a4f9c 100%);
+      border: 3px solid #9fd6ff;
+      box-shadow: 0 12px 28px rgba(0, 30, 80, 0.45);
+      position: relative;
+      transition: transform 0.25s ease, filter 0.2s ease;
+    }
+    .cup::before {
+      content: "";
+      position: absolute;
+      left: 10%;
+      right: 10%;
+      top: 10px;
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.25);
+    }
+    .cup.lift {
+      transform: translateY(-72px);
+    }
+    .cup.ok {
+      border-color: #7dffb0;
+      box-shadow: 0 0 24px rgba(125, 255, 176, 0.55);
+    }
+    .cup.bad {
+      border-color: #ff8a80;
+      box-shadow: 0 0 24px rgba(255, 120, 120, 0.45);
+    }
+    .block {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #ffe07a, #ffb347);
+      box-shadow: 0 0 0 3px #8a4a18, 0 8px 20px rgba(255, 180, 40, 0.5);
+      opacity: 0;
+      transform: scale(0.6);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .block.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .cup-label {
+      color: #a8d4ff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .hand {
+      font-size: 28px;
+      height: 36px;
+    }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 15, 40, 0.72);
+      z-index: 10;
+    }
+    .overlay.show { display: flex; }
+    .card {
+      text-align: center;
+      padding: 28px 24px;
+      border-radius: 18px;
+      background: rgba(15, 45, 90, 0.95);
+      border: 2px solid #4a90c8;
+      width: min(360px, 90vw);
+    }
+    .card h2 { margin: 0 0 10px; color: #9fd6ff; }
+    .card p { margin: 0 0 18px; color: #cfe8ff; line-height: 1.6; font-size: 14px; }
+    .card button {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      margin: 6px;
+    }
+    .btn-primary {
+      background: linear-gradient(180deg, #7ec8ff, #2f7fd4);
+      color: #062040;
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid #4a90c8;
+      color: #cfeaff;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>第二季 · 第 2 关 · 找黄方块</h1>
+        <p class="tag">三个杯子 · 藏黄方块 · 跟住它</p>
+      </div>
+      <a class="back" href="season2.html">← 第二季首页</a>
+    </div>
+
+    <div class="stage">
+      <div class="status" id="status">准备开始…</div>
+      <div class="timer" id="timer"></div>
+      <div class="table" id="table">
+        <div class="cup-slot" data-cup="0">
+          <div class="hand"></div>
+          <div class="block" id="block-0"></div>
+          <div class="cup" id="cup-0"></div>
+          <div class="cup-label">杯子 1</div>
+        </div>
+        <div class="cup-slot" data-cup="1">
+          <div class="hand"></div>
+          <div class="block" id="block-1"></div>
+          <div class="cup" id="cup-1"></div>
+          <div class="cup-label">杯子 2</div>
+        </div>
+        <div class="cup-slot" data-cup="2">
+          <div class="hand"></div>
+          <div class="block" id="block-2"></div>
+          <div class="cup" id="cup-2"></div>
+          <div class="cup-label">杯子 3</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="card">
+      <h2 id="ov-title">通关！</h2>
+      <p id="ov-msg">找到黄方块了</p>
+      <button class="btn-primary" type="button" id="ov-retry">再玩一次</button>
+      <button class="btn-ghost" type="button" id="ov-home">回第二季首页</button>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const statusEl = document.getElementById("status");
+      const timerEl = document.getElementById("timer");
+      const overlay = document.getElementById("overlay");
+      const ovTitle = document.getElementById("ov-title");
+      const ovMsg = document.getElementById("ov-msg");
+      const slots = [...document.querySelectorAll(".cup-slot")];
+      const cups = [0, 1, 2].map((i) => document.getElementById("cup-" + i));
+      const blocks = [0, 1, 2].map((i) => document.getElementById("block-" + i));
+
+      let secret = 0; // 黄方块在哪个杯子
+      let phase = "idle"; // idle | show | shuffle | pick | done
+      let shuffleLeft = 0;
+      let shuffleTimer = null;
+      let animTimer = null;
+      let pickable = false;
+
+      function setBlocks(showIndex) {
+        blocks.forEach((b, i) => {
+          b.classList.toggle("show", i === showIndex);
+        });
+      }
+
+      function setCupsLift(liftIndex) {
+        cups.forEach((c, i) => {
+          c.classList.toggle("lift", i === liftIndex);
+          c.classList.remove("ok", "bad");
+        });
+      }
+
+      function reset() {
+        phase = "show";
+        pickable = false;
+        secret = Math.floor(Math.random() * 3);
+        overlay.classList.remove("show");
+        cups.forEach((c) => {
+          c.classList.remove("lift", "ok", "bad");
+          c.style.transform = "";
+        });
+        setBlocks(-1);
+        statusEl.textContent = "看好了，黄方块放进…";
+        timerEl.textContent = "";
+        slots.forEach((s) => s.classList.remove("pickable"));
+
+        // 当面放进一个杯子
+        setTimeout(() => {
+          setBlocks(secret);
+          setCupsLift(secret);
+          statusEl.textContent = `黄方块在杯子 ${secret + 1} 里！记住它`;
+        }, 400);
+
+        setTimeout(() => {
+          setBlocks(-1);
+          setCupsLift(-1);
+          statusEl.textContent = "杯子要转了，盯住！";
+          startShuffle();
+        }, 1800);
+      }
+
+      function startShuffle() {
+        phase = "shuffle";
+        shuffleLeft = 15;
+        timerEl.textContent = `洗牌中… ${shuffleLeft} 秒`;
+        if (shuffleTimer) clearInterval(shuffleTimer);
+        shuffleTimer = setInterval(() => {
+          shuffleLeft -= 1;
+          timerEl.textContent = `洗牌中… ${shuffleLeft} 秒`;
+          if (shuffleLeft <= 0) {
+            clearInterval(shuffleTimer);
+            shuffleTimer = null;
+            endShuffle();
+          }
+        }, 1000);
+
+        // 真正滑着换位：看不清黄方块在哪
+        if (animTimer) clearInterval(animTimer);
+        animTimer = setInterval(() => {
+          if (phase !== "shuffle") return;
+          swapCupsAnimated();
+        }, 320);
+      }
+
+      function swapCupsAnimated() {
+        const table = document.getElementById("table");
+        const slotsNow = [...table.querySelectorAll(".cup-slot")];
+        if (slotsNow.length < 3) return;
+        const a = Math.floor(Math.random() * 3);
+        let b = Math.floor(Math.random() * 3);
+        if (b === a) b = (a + 1) % 3;
+
+        const elA = slotsNow[a];
+        const elB = slotsNow[b];
+        const rA = elA.getBoundingClientRect();
+        const rB = elB.getBoundingClientRect();
+        const dx = rB.left - rA.left;
+
+        // 秘密方块跟着杯子一起走
+        if (secret === a) secret = b;
+        else if (secret === b) secret = a;
+
+        // 先视觉滑过去
+        elA.style.transition = "transform 0.28s ease";
+        elB.style.transition = "transform 0.28s ease";
+        elA.style.transform = `translateX(${dx}px)`;
+        elB.style.transform = `translateX(${-dx}px)`;
+
+        setTimeout(() => {
+          elA.style.transition = "none";
+          elB.style.transition = "none";
+          elA.style.transform = "";
+          elB.style.transform = "";
+          // DOM 真交换
+          if (a < b) table.insertBefore(elB, elA);
+          else table.insertBefore(elA, elB);
+          // 强制回流后再开过渡
+          void table.offsetWidth;
+          elA.style.transition = "";
+          elB.style.transition = "";
+          syncCupIds();
+        }, 280);
+      }
+
+      function syncCupIds() {
+        const table = document.getElementById("table");
+        const nodes = [...table.querySelectorAll(".cup-slot")];
+        nodes.forEach((slot, i) => {
+          slot.dataset.cup = String(i);
+          const cup = slot.querySelector(".cup");
+          const block = slot.querySelector(".block");
+          const label = slot.querySelector(".cup-label");
+          if (cup) cup.id = "cup-" + i;
+          if (block) block.id = "block-" + i;
+          if (label) label.textContent = "杯子 " + (i + 1);
+        });
+        // 重新抓引用
+        for (let i = 0; i < 3; i++) {
+          cups[i] = document.getElementById("cup-" + i);
+          blocks[i] = document.getElementById("block-" + i);
+        }
+      }
+
+      function endShuffle() {
+        if (animTimer) {
+          clearInterval(animTimer);
+          animTimer = null;
+        }
+        phase = "pick";
+        pickable = true;
+        timerEl.textContent = "现在选一个杯子！";
+        statusEl.textContent = "黄方块在哪个杯子里？";
+        slots.forEach((s) => s.classList.add("pickable"));
+      }
+
+      function choose(index) {
+        if (!pickable || phase !== "pick") return;
+        pickable = false;
+        phase = "done";
+        slots.forEach((s) => s.classList.remove("pickable"));
+        setBlocks(secret);
+        setCupsLift(secret);
+        const cup = cups[secret];
+        if (index === secret) {
+          cup.classList.add("ok");
+          statusEl.textContent = "找到了！就是这个杯子！";
+          ovTitle.textContent = "第 2 关通关！";
+          ovMsg.textContent = "眼力不错，黄方块找到了。";
+          setTimeout(() => overlay.classList.add("show"), 500);
+        } else {
+          cups[index].classList.add("bad");
+          statusEl.textContent = `不对，黄方块在杯子 ${secret + 1}`;
+          ovTitle.textContent = "再试一次";
+          ovMsg.textContent = `黄方块在杯子 ${secret + 1}，看清楚再选。`;
+          setTimeout(() => overlay.classList.add("show"), 700);
+        }
+      }
+
+      slots.forEach((slot) => {
+        slot.addEventListener("click", () => choose(Number(slot.dataset.cup)));
+      });
+
+      document.getElementById("ov-retry").addEventListener("click", reset);
+      document.getElementById("ov-home").addEventListener("click", () => {
+        location.href = "season2.html";
+      });
+
+      reset();
+    })();
+  </script>
+</body>
+</html>

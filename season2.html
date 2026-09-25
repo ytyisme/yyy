@@ -234,7 +234,7 @@
     <div class="level-select">
       <div class="level-select-card">
         <h2>选择关卡</h2>
-        <p class="level-select-desc">共 35 关 · 第二季 · 目前仅开放第 1 关</p>
+        <p class="level-select-desc">共 35 关 · 第二季 · 已开放第 1–2 关</p>
         <p class="phone-join">第二季蓝色世界 · 更多关卡制作中</p>
 
         <div id="level-grid" class="level-grid"></div>
@@ -260,9 +260,14 @@
       const grid = document.getElementById("level-grid");
       const tip = document.getElementById("level-tip");
       const TOTAL = 35;
-      const OPEN_LEVEL = 1;
+      const OPEN_LEVELS = new Set([1, 2]);
       const LEVEL_TITLES = {
         1: "蓝色跑酷",
+        2: "找黄方块",
+      };
+      const LEVEL_HREF = {
+        1: "season2-lv1.html",
+        2: "season2-lv2.html",
       };
 
       function showTip(text) {
@@ -284,7 +289,7 @@
           btn.className = "level-cell";
           btn.dataset.level = String(i);
           const title = LEVEL_TITLES[i];
-          if (i === OPEN_LEVEL) {
+          if (OPEN_LEVELS.has(i)) {
             btn.classList.add("endpoint");
             btn.innerHTML = i + '<span class="badge">' + (title || "可玩") + "</span>";
           } else {
@@ -293,13 +298,13 @@
           }
           const online = document.createElement("span");
           online.className = "online";
-          online.textContent = i === OPEN_LEVEL ? "已开放" : "敬请期待";
+          online.textContent = OPEN_LEVELS.has(i) ? "已开放" : "敬请期待";
           btn.appendChild(online);
           btn.addEventListener("click", function () {
-            if (i === OPEN_LEVEL) {
-              location.href = "season2-lv1.html";
+            if (OPEN_LEVELS.has(i)) {
+              location.href = LEVEL_HREF[i] || "season2-lv1.html";
             } else {
-              showTip("第 " + i + " 关还没做完，第二季正在制作中（目前只有第 1 关「蓝色跑酷」）");
+              showTip("第 " + i + " 关还没做完，第二季正在制作中");
             }
           });
           grid.appendChild(btn);
