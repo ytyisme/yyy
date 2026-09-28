@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>向上跑酷</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: #0a1a3a; color: #e8f4ff; font-family: "Noto Sans SC", sans-serif; overflow: hidden; user-select: none; }
+    .wrap { min-height: 100%; display: flex; flex-direction: column; gap: 10px; padding: 12px; max-width: 900px; margin: 0 auto; }
+    .top { display: flex; justify-content: space-between; align-items: center; }
+    h1 { margin: 0; font-size: clamp(16px,3.5vw,22px); color: #ffd24a; }
+    .tag { margin: 4px 0 0; color: #8eb8e0; font-size: 12px; }
+    .back { appearance: none; border: 1px solid #4a90c8; background: rgba(30,70,120,.55); color: #cfeaff; padding: 8px 12px; border-radius: 10px; cursor: pointer; text-decoration: none; font-size: 13px; }
+    canvas { width: 100%; height: auto; aspect-ratio: 16/10; border-radius: 14px; border: 2px solid #3d7eb8; background: #123; display: block; }
+    .bar { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { padding: 8px 12px; border-radius: 999px; border: 1px solid #2f7fd4; background: rgba(15,45,90,.7); font-size: 13px; }
+    .chip strong { color: #ffd24a; }
+    .hint { color: #8eb8e0; font-size: 12px; }
+    .overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(5,15,40,.75); z-index: 10; }
+    .overlay.show { display: flex; }
+    .card { text-align: center; padding: 28px 24px; border-radius: 18px; background: rgba(15,45,90,.96); border: 2px solid #4a90c8; width: min(380px,92vw); }
+    .card h2 { margin: 0 0 10px; color: #9fd6ff; }
+    .card p { margin: 0 0 18px; color: #cfe8ff; line-height: 1.6; }
+    .card button { appearance: none; border: none; border-radius: 12px; padding: 12px 22px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; margin: 6px; background: linear-gradient(180deg,#7ec8ff,#2f7fd4); color: #062040; }
+    .card button.ghost { background: transparent; border: 1px solid #4a90c8; color: #cfeaff; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>向上跑酷 · 方塔</h1>
+        <p class="tag">果冻 / 棉花糖 / 黄油 / 奥利奥 / 巧克力冰 · 砖块平台 · 有存档点</p>
+      </div>
+      <a class="back" href="season2-paradise.html">← 回乐园</a>
+    </div>
+    <canvas id="game" width="800" height="500"></canvas>
+    <div class="bar">
+      <div class="chip">高度 <strong id="height">0</strong> m</div>
+      <div class="chip">存档 <strong id="cp">出生点</strong></div>
+      <div class="chip">平台类型 <strong id="kind">—</strong></div>
+    </div>
+    <p class="hint">←→/AD 移动 · 空格跳 · 每上一层都有存档点</p>
+  </div>
+  <div class="overlay" id="overlay">
+    <div class="card">
+      <h2 id="ov-title">通关！</h2>
+      <p id="ov-msg"></p>
+      <button id="ov-retry">再玩一次</button>
+      <button class="ghost" id="ov-home">回乐园</button>
+    </div>
+  </div>
+  <script src="audio.js"></script>
+  <script>
+    (() => {
+      function sfx(n){ try{ if(window.GameAudio){ GameAudio.unlock&&GameAudio.unlock(); GameAudio[n]&&GameAudio[n](); } }catch(e){} }
+      window.addEventListener("pointerdown", function o(){ try{ window.GameAudio&&GameAudio.unlock&&GameAudio.unlock(); }catch(e){}; window.removeEventListener("pointerdown", o); });
+
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const W = canvas.width, H = canvas.height;
+      const GRAV = 0.55, MOVE = 3.8, JUMP = 11.5;
+      const KINDS = [
+        { id: "jelly", name: "果冻", color: "#e91e63", bounce: 1.35 },
+        { id: "marsh", name: "棉花糖", color: "#fff5f7", bounce: 1.15 },
+        { id: "butter", name: "黄油", color: "#f4d35e", bounce: 1.0 },
+        { id: "oreo", name: "奥利奥", color: "#2c2c2c", bounce: 1.1 },
+        { id: "choco", name: "巧克力冰", color: "#6d4c41", bounce: 1.2 },
+      ];
+      let player, platforms, checkpoints, cameraY, keys, state, heightMax;
+      const TOWER_W = 220;
+
+      function reset() {
+        player = { x: W/2 - 14, y: 80, w: 28, h: 40, vx: 0, vy: 0, onGround: true };
+        platforms = [{ x: W/2 - TOWER_W/2, y: 140, w: TOWER_W, h: 22, kind: "brick", checkpoint: true }];
+        checkpoints = [{ x: W/2, y: 140 }];
+        // 向上生成砖块平台（带材质）
+        let y = 80;
+        for (let i = 0; i < 28; i++) {
+          y -= 55;
+          const side = i % 2 === 0 ? -1 : 1;
+          const x = W/2 + side * (60 + (i % 3) * 30) - 50;
+          const kind = KINDS[i % KINDS.length];
+          const cp = i % 3 === 2;
+          platforms.push({ x, y, w: 100, h: 18, kind: cp ? "brick" : kind.id, name: cp ? "砖块·存档" : kind.name, color: cp ? "#b71c1c" : kind.color, bounce: cp ? 1 : kind.bounce, checkpoint: cp });
+          if (cp) checkpoints.push({ x: x + 50, y });
+        }
+        // 塔顶
+        platforms.push({ x: W/2 - 80, y: y - 40, w: 160, h: 20, kind: "top", name: "塔顶", color: "#ffd24a", bounce: 1, checkpoint: true, isTop: true });
+        checkpoints.push({ x: W/2, y: y - 40 });
+        cameraY = 0;
+        state = "playing";
+        heightMax = 0;
+        document.getElementById("overlay").classList.remove("show");
+        document.getElementById("cp").textContent = "出生点";
+      }
+
+      keys = new Set();
+
+      function rects(a, b) {
+        return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+      }
+
+      function respawn() {
+        const cp = checkpoints[checkpoints.length - 1];
+        player.x = cp.x - 14;
+        player.y = cp.y - 50;
+        player.vx = 0;
+        player.vy = 0;
+        sfx("playClick");
+      }
+
+      function update() {
+        const left = keys.has("ArrowLeft") || keys.has("a") || keys.has("A");
+        const right = keys.has("ArrowRight") || keys.has("d") || keys.has("D");
+        const jump = keys.has(" ") || keys.has("ArrowUp") || keys.has("w") || keys.has("W");
+
+        player.vx = (right ? MOVE : 0) - (left ? MOVE : 0);
+        if (jump && player.onGround) {
+          player.vy = -JUMP;
+          player.onGround = false;
+          sfx("playJump");
+        }
+        player.vy += GRAV;
+        player.x += player.vx;
+        player.y += player.vy;
+        player.onGround = false;
+
+        for (const p of platforms) {
+          if (!rects(player, p)) continue;
+          if (player.vy > 0 && player.y + player.h - player.vy <= p.y + 6) {
+            player.y = p.y - player.h;
+            // 自己跳，不自动弹
+            player.vy = 0;
+            player.onGround = true;
+            // 踩出凹痕 + 解压音
+            if (!p.dents) p.dents = [];
+            const dentX = player.x + player.w / 2 - p.x;
+            if (p.dents.length < 8) p.dents.push({ x: dentX, w: 18 + Math.random() * 10 });
+            const sound =
+              p.kind === "jelly" ? "playJellySquish" :
+              p.kind === "marsh" ? "playChocoFlake" :
+              p.kind === "butter" ? "playKeyboardTap" :
+              p.kind === "oreo" ? "playOreoCrunch" :
+              p.kind === "choco" ? "playChocoCrack" : "playFootstep";
+            sfx(sound);
+            if (p.checkpoint) {
+              const last = checkpoints[checkpoints.length - 1];
+              if (!last || Math.abs(last.x - (p.x + p.w/2)) > 1) {
+                checkpoints.push({ x: p.x + p.w/2, y: p.y });
+                document.getElementById("cp").textContent = p.name || "存档点";
+                sfx("playStar");
+              }
+            }
+            if (p.isTop) {
+              state = "win";
+              document.getElementById("ov-title").textContent = "通关！";
+              document.getElementById("ov-msg").textContent = "爬到塔顶了，高度 " + Math.floor(heightMax) + "m";
+              document.getElementById("overlay").classList.add("show");
+              sfx("playWin");
+            }
+            document.getElementById("kind").textContent = p.name || "砖块";
+          }
+        }
+
+        // 掉落重生
+        if (player.y > 600) respawn();
+
+        // 相机跟高度
+        const targetY = player.y - H * 0.55;
+        cameraY += (targetY - cameraY) * 0.12;
+        heightMax = Math.max(heightMax, (80 - player.y) / 5);
+        document.getElementById("height").textContent = Math.floor(heightMax);
+      }
+
+      function draw() {
+        // 方塔背景
+        ctx.fillStyle = "#1a237e";
+        ctx.fillRect(0, 0, W, H);
+        // 塔壁
+        ctx.fillStyle = "#283593";
+        ctx.fillRect(W/2 - TOWER_W/2 - 20, -2000 + (0), TOWER_W + 40, 4000);
+        ctx.strokeStyle = "rgba(255,255,255,0.08)";
+        for (let i = 0; i < 40; i++) {
+          const yy = i * 80 - cameraY;
+          ctx.strokeRect(W/2 - TOWER_W/2 - 20, yy, TOWER_W + 40, 80);
+        }
+
+        ctx.save();
+        ctx.translate(0, -cameraY);
+
+        for (const p of platforms) {
+          if (p.y - cameraY < -80 || p.y - cameraY > H + 80) continue;
+          ctx.fillStyle = p.color || "#b71c1c";
+          ctx.fillRect(p.x, p.y, p.w, p.h);
+          // 凹痕
+          if (p.dents && p.dents.length) {
+            ctx.fillStyle = "rgba(0,0,0,0.28)";
+            for (const d of p.dents) {
+              ctx.beginPath();
+              ctx.ellipse(p.x + d.x, p.y + 8, d.w / 2, 7, 0, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+          // 砖缝
+          if (p.kind === "brick" || p.kind === "top") {
+            ctx.strokeStyle = "rgba(0,0,0,0.25)";
+            for (let bx = p.x; bx < p.x + p.w; bx += 20) {
+              ctx.strokeRect(bx, p.y, 20, p.h);
+            }
+          }
+          ctx.fillStyle = "#fff";
+          ctx.font = "10px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(p.name || "", p.x + p.w/2, p.y - 4);
+          if (p.checkpoint) {
+            ctx.fillStyle = "#ffd24a";
+            ctx.fillRect(p.x + p.w/2 - 2, p.y - 22, 4, 22);
+            ctx.beginPath();
+            ctx.arc(p.x + p.w/2, p.y - 22, 6, 0, Math.PI*2);
+            ctx.fill();
+          }
+        }
+
+        // 玩家
+        ctx.fillStyle = "#3ec6ff";
+        ctx.fillRect(player.x, player.y + 12, player.w, 16);
+        ctx.fillStyle = "#245a8a";
+        ctx.fillRect(player.x + 2, player.y + 26, 10, 14);
+        ctx.fillRect(player.x + 16, player.y + 26, 10, 14);
+        ctx.fillStyle = "#ffe0b8";
+        ctx.fillRect(player.x + 5, player.y, 18, 14);
+
+        ctx.restore();
+      }
+
+      function loop() {
+        if (state === "playing") update();
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      window.addEventListener("keydown", (e) => {
+        if (["ArrowLeft","ArrowRight","ArrowUp"," "].includes(e.key)) e.preventDefault();
+        keys.add(e.key);
+      });
+      window.addEventListener("keyup", (e) => keys.delete(e.key));
+      document.getElementById("ov-retry").addEventListener("click", reset);
+      document.getElementById("ov-home").addEventListener("click", () => location.href = "season2-paradise.html");
+
+      reset();
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

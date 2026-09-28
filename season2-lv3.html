@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>第二季 · 第3关 · 红绿急停</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #0a1a3a;
+      font-family: "Noto Sans SC", -apple-system, "PingFang SC", sans-serif;
+      color: #e8f4ff;
+      overflow: hidden;
+      user-select: none;
+    }
+    .wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 12px;
+    }
+    .top {
+      width: min(860px, 96vw);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(16px, 3.5vw, 22px);
+      color: #7ec8ff;
+    }
+    .tag {
+      margin: 4px 0 0;
+      color: #8eb8e0;
+      font-size: 12px;
+    }
+    .back {
+      appearance: none;
+      border: 1px solid #4a90c8;
+      background: rgba(30, 70, 120, 0.55);
+      color: #cfeaff;
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .stage {
+      width: min(720px, 96vw);
+      border-radius: 18px;
+      border: 2px solid #3d7eb8;
+      background:
+        radial-gradient(ellipse at 50% 20%, rgba(80, 150, 255, 0.2), transparent 55%),
+        linear-gradient(180deg, #123a72 0%, #0a1f45 100%);
+      padding: 28px 18px 36px;
+      text-align: center;
+    }
+    .status {
+      color: #ffd24a;
+      font-size: 16px;
+      font-weight: 700;
+      min-height: 1.5em;
+      margin-bottom: 10px;
+    }
+    .hint {
+      color: #8eb8e0;
+      font-size: 13px;
+      margin-bottom: 8px;
+      min-height: 1.4em;
+    }
+    .record {
+      color: #ffd24a;
+      font-family: "Press Start 2P", ui-monospace, monospace;
+      font-size: clamp(14px, 3.5vw, 18px);
+      margin-bottom: 14px;
+      letter-spacing: 0.04em;
+    }
+    .circle-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 18px 0 22px;
+    }
+    .circle {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: #e23b3b;
+      box-shadow: 0 0 0 10px rgba(226, 59, 59, 0.25), 0 16px 40px rgba(0, 0, 0, 0.35);
+      transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .circle.green {
+      background: #2ecc71;
+      box-shadow: 0 0 0 10px rgba(46, 204, 113, 0.3), 0 0 40px rgba(46, 204, 113, 0.55);
+      transform: scale(1.06);
+      cursor: pointer;
+    }
+    .timer-box {
+      display: none;
+      margin: 8px auto 0;
+      width: min(320px, 90%);
+      padding: 18px 12px;
+      border-radius: 16px;
+      border: 3px solid #ffd24a;
+      background: rgba(20, 12, 8, 0.92);
+      cursor: default;
+      box-shadow: 0 10px 30px rgba(255, 180, 40, 0.25);
+    }
+    .timer-box.show {
+      display: block;
+      animation: pop 0.18s ease;
+    }
+    .timer-box.stopped {
+      border-color: #7dffb0;
+      box-shadow: 0 10px 30px rgba(125, 255, 176, 0.25);
+    }
+    .timer-label {
+      color: #c47a30;
+      font-size: 12px;
+      margin-bottom: 6px;
+      letter-spacing: 0.08em;
+    }
+    .timer-text {
+      font-family: "Press Start 2P", ui-monospace, monospace;
+      font-size: clamp(28px, 7vw, 42px);
+      color: #ffd24a;
+    }
+    .timer-box.stopped .timer-text {
+      color: #7dffb0;
+    }
+    @keyframes pop {
+      from { transform: scale(0.92); opacity: 0.6; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 15, 40, 0.72);
+      z-index: 10;
+    }
+    .overlay.show { display: flex; }
+    .card {
+      text-align: center;
+      padding: 28px 24px;
+      border-radius: 18px;
+      background: rgba(15, 45, 90, 0.95);
+      border: 2px solid #4a90c8;
+      width: min(360px, 90vw);
+    }
+    .card h2 { margin: 0 0 10px; color: #9fd6ff; }
+    .card p { margin: 0 0 18px; color: #cfe8ff; line-height: 1.6; font-size: 14px; }
+    .card button {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      margin: 6px;
+    }
+    .btn-primary {
+      background: linear-gradient(180deg, #7ec8ff, #2f7fd4);
+      color: #062040;
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid #4a90c8;
+      color: #cfeaff;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>第二季 · 第 3 关 · 红绿急停</h1>
+        <p class="tag">盯住红圈 · 变绿就点绿圈停表</p>
+      </div>
+      <a class="back" href="season2.html">← 第二季首页</a>
+    </div>
+
+    <div class="stage">
+      <div class="status" id="status">红圈准备中…</div>
+      <div class="hint" id="hint">红圈随时会变绿，一变绿就立刻点绿色圆圈</div>
+      <div class="record" id="record">最高纪录：00.00.01</div>
+      <div class="circle-wrap">
+        <div class="circle" id="circle">红</div>
+      </div>
+      <div class="timer-box" id="timer-box">
+        <div class="timer-label">计时中 · 点绿圈停止</div>
+        <div class="timer-text" id="timer-text">00.00.00</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="card">
+      <h2 id="ov-title">通关！</h2>
+      <p id="ov-msg">反应够快</p>
+      <button class="btn-primary" type="button" id="ov-retry">再玩一次</button>
+      <button class="btn-ghost" type="button" id="ov-home">回第二季首页</button>
+    </div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script>
+    (() => {
+
+      // 音效
+      function sfx(name) {
+        try {
+          if (!window.GameAudio) return;
+          if (GameAudio.unlock) GameAudio.unlock();
+          if (GameAudio[name]) GameAudio[name]();
+        } catch (e) {
+          console.error("sfx fail", name, e);
+        }
+      }
+      window.addEventListener("pointerdown", function once() {
+        try {
+          if (window.GameAudio && GameAudio.unlock) GameAudio.unlock();
+        } catch (e) {}
+        window.removeEventListener("pointerdown", once);
+      });
+      const statusEl = document.getElementById("status");
+      const hintEl = document.getElementById("hint");
+      const circle = document.getElementById("circle");
+      const recordEl = document.getElementById("record");
+      const timerBox = document.getElementById("timer-box");
+      const timerText = document.getElementById("timer-text");
+      const overlay = document.getElementById("overlay");
+      const ovTitle = document.getElementById("ov-title");
+      const ovMsg = document.getElementById("ov-msg");
+
+      let phase = "idle"; // idle | wait | green | counting | stopped | win
+      let greenAt = 0;
+      let startAt = 0;
+      let raf = 0;
+      let waitTimer = 0;
+      let afterTimer = 0;
+      let stoppedMs = 0;
+      // 最高纪录：越小越快，默认 00.00.01
+      const RECORD_KEY = "s2_lv3_best";
+      let bestMs = 1;
+
+      function loadBest() {
+        try {
+          const v = Number(localStorage.getItem(RECORD_KEY));
+          if (v > 0) bestMs = v;
+        } catch (e) {}
+        renderRecord();
+      }
+      function saveBest(ms) {
+        bestMs = ms;
+        try {
+          localStorage.setItem(RECORD_KEY, String(ms));
+        } catch (e) {}
+        renderRecord();
+      }
+      function renderRecord() {
+        if (recordEl) recordEl.textContent = "最高纪录：" + fmt(bestMs);
+      }
+
+      function fmt(ms) {
+        const total = Math.max(0, ms);
+        const cs = Math.floor((total % 1000) / 10);
+        const s = Math.floor(total / 1000) % 60;
+        const m = Math.floor(total / 60000);
+        const pad = (n) => String(n).padStart(2, "0");
+        return `${pad(m)}.${pad(s)}.${pad(cs)}`;
+      }
+
+      function clearTimers() {
+        if (waitTimer) clearTimeout(waitTimer);
+        if (afterTimer) clearInterval(afterTimer);
+        if (raf) cancelAnimationFrame(raf);
+        waitTimer = 0;
+        afterTimer = 0;
+        raf = 0;
+      }
+
+      function tick() {
+        if (phase !== "counting") return;
+        const ms = performance.now() - startAt;
+        timerText.textContent = fmt(ms);
+        raf = requestAnimationFrame(tick);
+      }
+
+      function goGreen() {
+        if (phase !== "wait") return;
+        phase = "green";
+        greenAt = performance.now();
+        circle.classList.add("green");
+        sfx('playStar');
+        circle.textContent = "绿";
+        statusEl.textContent = "变绿了！快点绿圈停表！";
+        hintEl.textContent = "立刻点击绿色圆圈，计时器就会停";
+
+        // 计时器立刻出现并开始跑
+        timerBox.classList.add("show");
+        timerBox.classList.remove("stopped");
+        phase = "counting";
+        startAt = performance.now();
+        timerText.textContent = "00.00.00";
+        tick();
+      }
+
+      function stopTimer() {
+        if (phase !== "counting") return;
+        phase = "stopped";
+        if (raf) cancelAnimationFrame(raf);
+        raf = 0;
+        stoppedMs = performance.now() - startAt;
+        timerText.textContent = fmt(stoppedMs);
+        timerBox.classList.add("stopped");
+        sfx('playClick');
+        if (stoppedMs < bestMs) {
+          saveBest(Math.round(stoppedMs));
+          statusEl.textContent = "新纪录！等待 10 秒自动过关…";
+          hintEl.textContent = `新最高纪录 ${fmt(stoppedMs)} · 10 秒后过关`;
+        } else {
+          statusEl.textContent = "停表！等待 10 秒自动过关…";
+          hintEl.textContent = `你用了 ${fmt(stoppedMs)}，10 秒后过关`;
+        }
+
+        let left = 10;
+        afterTimer = setInterval(() => {
+          left -= 1;
+          hintEl.textContent = `停表成功 · ${left} 秒后自动过关`;
+          if (left <= 0) {
+            clearInterval(afterTimer);
+            afterTimer = 0;
+            phase = "win";
+            ovTitle.textContent = "第 3 关通关！";
+            ovMsg.textContent = `急停用时 ${fmt(stoppedMs)}，红绿灯大师！`;
+            overlay.classList.add("show");
+            statusEl.textContent = "通关！";
+            sfx('playWin');
+          }
+        }, 1000);
+      }
+
+      function reset() {
+        clearTimers();
+        phase = "wait";
+        overlay.classList.remove("show");
+        timerBox.classList.remove("show", "stopped");
+        timerText.textContent = "00.00.00";
+        circle.classList.remove("green");
+        circle.textContent = "红";
+        statusEl.textContent = "盯住红圈…";
+        hintEl.textContent = "别乱点！等它变绿";
+
+        // 随机 2.5–7 秒后变绿，趁你不注意
+        const delay = 2500 + Math.random() * 4500;
+        waitTimer = setTimeout(goGreen, delay);
+      }
+
+      // 点绿色圆圈停表
+      circle.addEventListener("click", () => {
+        if (circle.classList.contains("green") || phase === "counting") {
+          stopTimer();
+        }
+      });
+      // 空格也可以停表
+      window.addEventListener("keydown", (e) => {
+        if (e.code === "Space" || e.key === " ") {
+          e.preventDefault();
+          stopTimer();
+        }
+        if (e.key === "r" || e.key === "R") reset();
+      });
+
+      document.getElementById("ov-retry").addEventListener("click", reset);
+      document.getElementById("ov-home").addEventListener("click", () => {
+        location.href = "season2.html";
+      });
+
+      loadBest();
+      reset();
+    })();
+  </script>
+</body>
+</html>

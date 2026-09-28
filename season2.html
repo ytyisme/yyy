@@ -188,6 +188,40 @@
       text-decoration: none;
       text-align: center;
     }
+    /* 乐园：主页大按钮 */
+    .paradise-btn {
+      appearance: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      margin: 16px 0 4px;
+      padding: 22px 16px;
+      border: none;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #9dffc8 0%, #2f9e78 55%, #1e6a50 100%);
+      color: #062820;
+      font-family: "Noto Sans SC", sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 0 0 3px #1e6a50, 0 8px 0 #175540, 0 16px 30px rgba(46, 158, 120, 0.35);
+      letter-spacing: 0.08em;
+    }
+    .paradise-btn span {
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0.85;
+      letter-spacing: 0;
+    }
+    .paradise-btn:hover {
+      filter: brightness(1.06);
+    }
+    .paradise-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 0 0 3px #1e6a50, 0 3px 0 #175540;
+    }
     /* 与第一季同类按钮位置一致，只是改成蓝色系 */
     .rate-btn {
       background: linear-gradient(180deg, #9fd6ff, #4a90c8);
@@ -222,20 +256,346 @@
       flex: 1;
       text-align: center;
     }
+
+    /* 好友 / 全服聊天弹层 */
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 15, 40, 0.72);
+      padding: 12px;
+    }
+    .modal.hidden { display: none !important; }
+    .modal-card {
+      width: min(560px, 96vw);
+      max-height: min(80vh, 640px);
+      overflow: auto;
+      background: rgba(10, 28, 58, 0.98);
+      border: 2px solid #2f7fd4;
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .modal-card h3 {
+      margin: 0 0 6px;
+      color: #7ec8ff;
+      font-size: 18px;
+    }
+    .modal-desc {
+      margin: 0 0 12px;
+      color: #8eb8e0;
+      font-size: 12px;
+    }
+    .friend-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 10px;
+      min-height: 220px;
+    }
+    .friend-list {
+      border: 1px solid #2f7fd4;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 8px;
+      max-height: 280px;
+      overflow: auto;
+    }
+    .friend-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 6px;
+      border-radius: 8px;
+      color: #cfeaff;
+      font-size: 13px;
+    }
+    .friend-item:hover { background: rgba(80, 160, 255, 0.12); }
+    .friend-item button {
+      appearance: none;
+      border: 1px solid #4a90c8;
+      background: rgba(30, 80, 140, 0.5);
+      color: #cfeaff;
+      border-radius: 8px;
+      font-size: 11px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .friend-chat {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #2f7fd4;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.25);
+      min-height: 240px;
+    }
+    .chat-title {
+      padding: 8px 10px;
+      color: #9fd6ff;
+      font-size: 13px;
+      font-weight: 700;
+      border-bottom: 1px solid rgba(80, 160, 255, 0.25);
+    }
+    .chat-log {
+      flex: 1;
+      overflow: auto;
+      padding: 10px;
+      min-height: 160px;
+      max-height: 280px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .chat-line {
+      margin: 0 0 6px;
+      color: #d7ecff;
+      word-break: break-word;
+    }
+    .chat-line .who {
+      color: #7dffc8;
+      font-weight: 700;
+    }
+    .chat-line.me .who { color: #ffd24a; }
+    .chat-empty {
+      color: #6a9cc8;
+      text-align: center;
+      margin-top: 24px;
+    }
+    .gchat-name {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: #7dffc8;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0;
+      font-family: inherit;
+      font-size: inherit;
+    }
+    .chat-row {
+      display: flex;
+      gap: 8px;
+      padding: 8px;
+      border-top: 1px solid rgba(80, 160, 255, 0.25);
+    }
+    .chat-row input,
+    .chat-row textarea {
+      flex: 1;
+      border: 1px solid #2f7fd4;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      color: #e8f4ff;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 8px 10px;
+      resize: vertical;
+    }
+    .chat-row button,
+    .modal-close {
+      appearance: none;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #7ec8ff, #2f7fd4);
+      color: #062040;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    .modal-close {
+      width: 100%;
+      margin-top: 12px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid #2f7fd4;
+      color: #a8d4ff;
+    }
+    .login-card {
+      width: min(360px, 90%);
+      padding: 28px 24px;
+      background: rgba(10, 28, 58, 0.96);
+      border: 2px solid #2f7fd4;
+      border-radius: 12px;
+      display: grid;
+      gap: 10px;
+    }
+    .login-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 20%, rgba(80, 160, 255, 0.18), transparent 55%),
+        rgba(6, 18, 40, 0.94);
+      backdrop-filter: blur(3px);
+    }
+    .login-screen.hidden { display: none !important; }
+    .login-card h2 {
+      margin: 0;
+      text-align: center;
+      color: #7ec8ff;
+      font-size: 20px;
+    }
+    .login-desc {
+      text-align: center;
+      color: #8eb8e0;
+      font-size: 13px;
+      margin: 0 0 6px;
+    }
+    .login-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .login-tab {
+      appearance: none;
+      border: 1px solid #2f7fd4;
+      background: rgba(0, 0, 0, 0.3);
+      color: #8eb8e0;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 8px 4px;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+    .login-tab.active {
+      color: #062040;
+      background: linear-gradient(180deg, #9fd6ff, #4a90c8);
+      border-color: #1e5fa8;
+      font-weight: 700;
+    }
+    .login-pane {
+      display: grid;
+      gap: 8px;
+    }
+    .login-pane.hidden { display: none; }
+    .login-card label {
+      font-size: 12px;
+      color: #8eb8e0;
+    }
+    .login-card input {
+      appearance: none;
+      border: 2px solid #2f7fd4;
+      background: rgba(0, 0, 0, 0.4);
+      color: #e8f4ff;
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 12px;
+      outline: none;
+      width: 100%;
+      border-radius: 8px;
+    }
+    .login-card input:focus {
+      border-color: #7ec8ff;
+    }
+    .sms-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+    #sms-btn {
+      appearance: none;
+      border: 1px solid #2f7fd4;
+      background: #1a4a8c;
+      color: #9fd6ff;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 0 10px;
+      cursor: pointer;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+    #sms-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .login-error {
+      color: #ff8a80;
+      font-size: 12px;
+      min-height: 16px;
+      margin: 0;
+    }
+    .login-error.hidden { display: none; }
+    #login-submit {
+      appearance: none;
+      border: none;
+      cursor: pointer;
+      margin-top: 6px;
+      font-family: "Press Start 2P", "Noto Sans SC", sans-serif;
+      font-size: 12px;
+      padding: 14px 18px;
+      color: #062040;
+      background: linear-gradient(180deg, #9fd6ff, #2f7fd4);
+      box-shadow: 0 0 0 2px #1e5fa8, 0 6px 0 #174a86;
+      border-radius: 10px;
+    }
+    #login-submit:hover { filter: brightness(1.05); }
+    #login-submit:active {
+      transform: translateY(3px);
+      box-shadow: 0 0 0 2px #1e5fa8, 0 2px 0 #174a86;
+    }
+    @media (max-width: 560px) {
+      .friend-layout { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <div class="shell">
+    <!-- 登录：与第一季同款（蓝色 · 无二维码 · 无第11关）；从第一季点过来则跳过 -->
+    <div id="s2-login" class="login-screen" aria-hidden="false">
+      <div class="login-card">
+        <h2>岩浆跑酷·全关联机2 · 登录</h2>
+        <p class="login-desc">请先登录后开始游戏 · 第二季</p>
+
+        <div class="login-tabs" role="tablist">
+          <button type="button" class="login-tab active" data-mode="account">账号密码</button>
+          <button type="button" class="login-tab" data-mode="phone">手机验证码</button>
+          <button type="button" class="login-tab" data-mode="idcard">身份证</button>
+        </div>
+
+        <div id="login-pane-account" class="login-pane">
+          <label for="login-user">账号</label>
+          <input id="login-user" type="text" autocomplete="username" placeholder="输入账号" />
+          <label for="login-pass">密码</label>
+          <input id="login-pass" type="password" autocomplete="current-password" placeholder="输入密码" />
+        </div>
+
+        <div id="login-pane-phone" class="login-pane hidden">
+          <label for="login-phone">手机号</label>
+          <input id="login-phone" type="tel" maxlength="11" placeholder="输入 11 位手机号" />
+          <label for="login-sms">验证码</label>
+          <div class="sms-row">
+            <input id="login-sms" type="text" maxlength="6" placeholder="输入验证码" />
+            <button id="sms-btn" type="button">获取验证码</button>
+          </div>
+        </div>
+
+        <div id="login-pane-idcard" class="login-pane hidden">
+          <label for="login-idcard">身份证号码</label>
+          <input id="login-idcard" type="text" maxlength="18" placeholder="输入 18 位身份证号" />
+        </div>
+
+        <p id="login-error" class="login-error hidden">请输入账号和密码</p>
+        <button id="login-submit" type="button">登录</button>
+        <button type="button" class="modal-close" id="s2-login-s1">回第一季</button>
+      </div>
+    </div>
+
     <header class="top">
       <h1>岩浆跑酷·全关联机2</h1>
       <p class="tag">第二季 · 选择关卡 · 颜色全新 · 蓝色世界</p>
+      <p class="tag" id="s2-welcome" style="color:#7dffc8">未登录</p>
     </header>
 
     <div class="level-select">
       <div class="level-select-card">
         <h2>选择关卡</h2>
-        <p class="level-select-desc">共 35 关 · 第二季 · 已开放第 1–2 关</p>
-        <p class="phone-join">第二季蓝色世界 · 更多关卡制作中</p>
+        <p class="level-select-desc">共 35 关 · 第二季 · 已开放第 1–7 关</p>
+        <p class="phone-join">第二季已正式上线 · 蓝色世界等你来玩</p>
 
         <div id="level-grid" class="level-grid"></div>
 
@@ -243,6 +603,11 @@
 
         <button id="rate-btn" class="side-btn rate-btn" type="button">⭐ 评价游戏</button>
         <button id="egg-btn" class="side-btn egg-btn" type="button">🎁 神秘彩蛋</button>
+        <button id="paradise-btn" class="paradise-btn" type="button">
+          🏞️ 乐园
+          <span>绿色草坪 · 烧烤摊 / 奶茶店 / 便利店</span>
+          <span>可联机 · 没有岩浆没有僵尸</span>
+        </button>
         <button id="friends-btn" class="side-btn friends-btn" type="button">好友中心</button>
         <button id="global-chat-btn" class="side-btn ghost-btn" type="button">全游戏聊天</button>
         <button id="logout-btn" class="side-btn ghost-btn" type="button">退出登录</button>
@@ -253,21 +618,222 @@
         </div>
       </div>
     </div>
+
+    <!-- 好友中心 -->
+    <div id="friend-center" class="modal hidden" aria-hidden="true">
+      <div class="modal-card">
+        <h3>好友中心</h3>
+        <p class="modal-desc">点在线玩家名字可以加好友 · 对方同意后可私聊</p>
+        <div class="friend-layout">
+          <div class="friend-list" id="friend-list"></div>
+          <div class="friend-chat">
+            <div class="chat-title" id="friend-chat-title">选择一个好友</div>
+            <div class="chat-log" id="friend-chat-log"></div>
+            <div class="chat-row">
+              <input id="friend-chat-input" type="text" placeholder="发消息…" maxlength="120" />
+              <button type="button" id="friend-chat-send">发送</button>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="modal-close" id="friend-close">关闭</button>
+      </div>
+    </div>
+
+    <!-- 全游戏聊天 -->
+    <div id="global-chat-panel" class="modal hidden" aria-hidden="true">
+      <div class="modal-card">
+        <h3>全游戏聊天</h3>
+        <p class="modal-desc">所有在线玩家都能看到 · 点名字可加好友</p>
+        <div class="chat-log" id="global-chat-log"></div>
+        <div class="chat-row">
+          <textarea id="global-chat-input" rows="3" placeholder="说点什么… Ctrl+Enter 发送" maxlength="200"></textarea>
+          <button type="button" id="global-chat-send">发送</button>
+        </div>
+        <button type="button" class="modal-close" id="global-chat-close">关闭</button>
+      </div>
+    </div>
   </div>
 
+  <script src="audio.js"></script>
+  <script src="coop.js"></script>
   <script>
     (function () {
+
+      // 音效
+      function sfx(name) {
+        try {
+          if (!window.GameAudio) return;
+          if (GameAudio.unlock) GameAudio.unlock();
+          if (GameAudio[name]) GameAudio[name]();
+        } catch (e) {
+          console.error("sfx fail", name, e);
+        }
+      }
+      window.addEventListener("pointerdown", function once() {
+        try {
+          if (window.GameAudio && GameAudio.unlock) GameAudio.unlock();
+        } catch (e) {}
+        window.removeEventListener("pointerdown", once);
+      });
       const grid = document.getElementById("level-grid");
       const tip = document.getElementById("level-tip");
+
+      // ── 登录：从第一季（?from=s1）点过来则不需要 ──
+      const S2_NAME_KEY = "s2_player";
+      function qs(name) {
+        try {
+          return new URLSearchParams(location.search).get(name);
+        } catch {
+          return null;
+        }
+      }
+      function getPlayer() {
+        try {
+          return localStorage.getItem(S2_NAME_KEY) || "";
+        } catch {
+          return "";
+        }
+      }
+      function setPlayer(name) {
+        try {
+          localStorage.setItem(S2_NAME_KEY, name);
+        } catch (e) {}
+      }
+      function showLogin() {
+        const p = document.getElementById("s2-login");
+        if (p) {
+          p.classList.remove("hidden");
+          p.setAttribute("aria-hidden", "false");
+        }
+        const w = document.getElementById("s2-welcome");
+        if (w) w.textContent = "请先登录";
+      }
+      function hideLogin() {
+        const p = document.getElementById("s2-login");
+        if (p) {
+          p.classList.add("hidden");
+          p.setAttribute("aria-hidden", "true");
+        }
+        const w = document.getElementById("s2-welcome");
+        if (w) w.textContent = "你好，" + (getPlayer() || "玩家");
+      }
+
+      const fromS1 = qs("from") === "s1";
+      if (fromS1 || getPlayer()) {
+        if (fromS1 && !getPlayer()) setPlayer("第一季旅客");
+        hideLogin();
+      } else {
+        showLogin();
+      }
+
+      // 登录方式切换（与第一季一致）
+      let loginMode = "account";
+      function setLoginMode(mode) {
+        loginMode = mode;
+        document.querySelectorAll(".login-tab").forEach((tab) => {
+          tab.classList.toggle("active", tab.dataset.mode === mode);
+        });
+        const map = {
+          account: "login-pane-account",
+          phone: "login-pane-phone",
+          idcard: "login-pane-idcard",
+        };
+        Object.keys(map).forEach((k) => {
+          const el = document.getElementById(map[k]);
+          if (el) el.classList.toggle("hidden", k !== mode);
+        });
+        const err = document.getElementById("login-error");
+        if (err) err.classList.add("hidden");
+      }
+      document.querySelectorAll(".login-tab").forEach((tab) => {
+        tab.addEventListener("click", () => setLoginMode(tab.dataset.mode));
+      });
+
+      function showLoginError(text) {
+        const err = document.getElementById("login-error");
+        if (!err) return;
+        err.textContent = text;
+        err.classList.remove("hidden");
+      }
+
+      function doLogin() {
+        let name = "";
+        if (loginMode === "account") {
+          const u = document.getElementById("login-user");
+          const p = document.getElementById("login-pass");
+          if (!u.value.trim() || !p.value) {
+            showLoginError("请输入账号和密码");
+            return;
+          }
+          name = u.value.trim().slice(0, 12);
+        } else if (loginMode === "phone") {
+          const phone = document.getElementById("login-phone");
+          const sms = document.getElementById("login-sms");
+          if (!/^\d{11}$/.test(phone.value.trim())) {
+            showLoginError("请输入 11 位手机号");
+            return;
+          }
+          if (!sms.value.trim()) {
+            showLoginError("请输入验证码");
+            return;
+          }
+          name = "用户" + phone.value.trim().slice(-4);
+        } else {
+          const id = document.getElementById("login-idcard");
+          if (id.value.trim().length < 6) {
+            showLoginError("请输入身份证号");
+            return;
+          }
+          name = "旅客" + id.value.trim().slice(-4);
+        }
+        setPlayer(name);
+        hideLogin();
+        sfx('playWin');
+      }
+
+      const loginSubmit = document.getElementById("login-submit");
+      if (loginSubmit) loginSubmit.addEventListener("click", doLogin);
+      const smsBtn = document.getElementById("sms-btn");
+      if (smsBtn) {
+        smsBtn.addEventListener("click", () => {
+          smsBtn.disabled = true;
+          let left = 30;
+          smsBtn.textContent = left + "s";
+          const t = setInterval(() => {
+            left -= 1;
+            smsBtn.textContent = left + "s";
+            if (left <= 0) {
+              clearInterval(t);
+              smsBtn.disabled = false;
+              smsBtn.textContent = "获取验证码";
+            }
+          }, 1000);
+          showLoginError("验证码已发送（演示：随便填 6 位）");
+        });
+      }
+      document.getElementById("s2-login-s1").addEventListener("click", function () {
+        location.href = "index.html";
+      });
+
       const TOTAL = 35;
-      const OPEN_LEVELS = new Set([1, 2]);
+      const OPEN_LEVELS = new Set([1, 2, 3, 4, 5, 6, 7]);
       const LEVEL_TITLES = {
         1: "蓝色跑酷",
         2: "找黄方块",
+        3: "红绿急停",
+        4: "123木头人",
+        5: "末日生存",
+        6: "保护野生狗奶",
+        7: "安全常识",
       };
       const LEVEL_HREF = {
         1: "season2-lv1.html",
         2: "season2-lv2.html",
+        3: "season2-lv3.html",
+        4: "season2-lv4.html",
+        5: "season2-lv5.html",
+        6: "season2-lv6.html",
+        7: "season2-lv7.html",
       };
 
       function showTip(text) {
@@ -304,30 +870,323 @@
             if (OPEN_LEVELS.has(i)) {
               location.href = LEVEL_HREF[i] || "season2-lv1.html";
             } else {
-              showTip("第 " + i + " 关还没做完，第二季正在制作中");
+              showTip("第 " + i + " 关还在制作，第二季已上线 1–3 关");
             }
           });
           grid.appendChild(btn);
         }
       }
 
+      // ── 好友 / 全服聊天 ──
+      const myId = "s2-" + Math.random().toString(36).slice(2, 10);
+      const myName = "蓝玩家" + myId.slice(-3);
+      let friends = {};
+      try {
+        friends = JSON.parse(localStorage.getItem("s2_friends") || "{}") || {};
+      } catch {
+        friends = {};
+      }
+      let gchat = [];
+      try {
+        gchat = JSON.parse(localStorage.getItem("s2_gchat") || "[]") || [];
+      } catch {
+        gchat = [];
+      }
+      let dm = {};
+      let activeFriend = "";
+      let gchatOpen = false;
+      let friendOpen = false;
+      let gchatUnread = 0;
+
+      function saveFriends() {
+        try {
+          localStorage.setItem("s2_friends", JSON.stringify(friends));
+        } catch (e) {}
+      }
+      function saveGchat() {
+        try {
+          localStorage.setItem("s2_gchat", JSON.stringify(gchat.slice(-80)));
+        } catch (e) {}
+      }
+      function sendSocial(msg) {
+        if (window.LevelCoop && LevelCoop.sendSocial) LevelCoop.sendSocial(msg);
+      }
+      function esc(s) {
+        return String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function renderGlobalChat() {
+        const el = document.getElementById("global-chat-log");
+        if (!el) return;
+        if (!gchat.length) {
+          el.innerHTML = '<p class="chat-empty">还没有全服消息</p>';
+          return;
+        }
+        el.innerHTML = gchat
+          .map((m) => {
+            const me = m.id === myId;
+            const name = me ? "我" : m.name || "玩家";
+            return (
+              '<p class="chat-line' +
+              (me ? " me" : "") +
+              '"><button type="button" class="gchat-name" data-id="' +
+              esc(m.id) +
+              '" data-name="' +
+              esc(m.name) +
+              '">' +
+              esc(name) +
+              "</button>：" +
+              esc(m.text) +
+              "</p>"
+            );
+          })
+          .join("");
+        el.scrollTop = el.scrollHeight;
+      }
+
+      function renderFriends() {
+        const el = document.getElementById("friend-list");
+        if (!el) return;
+        const keys = Object.keys(friends);
+        if (!keys.length) {
+          el.innerHTML = '<p class="chat-empty">还没有好友</p>';
+          return;
+        }
+        el.innerHTML = keys
+          .map((id) => {
+            const f = friends[id] || {};
+            return (
+              '<div class="friend-item"><span>' +
+              esc(f.name || id) +
+              '</span><button type="button" data-open-friend="' +
+              esc(id) +
+              '">私聊</button></div>'
+            );
+          })
+          .join("");
+      }
+
+      function renderFriendChat() {
+        const log = document.getElementById("friend-chat-log");
+        const title = document.getElementById("friend-chat-title");
+        if (!log) return;
+        if (!activeFriend) {
+          if (title) title.textContent = "选择一个好友";
+          log.innerHTML = '<p class="chat-empty">选择左侧好友开始聊天</p>';
+          return;
+        }
+        const f = friends[activeFriend] || {};
+        if (title) title.textContent = "与 " + (f.name || activeFriend) + " 聊天";
+        const arr = dm[activeFriend] || [];
+        log.innerHTML = arr.length
+          ? arr
+              .map((m) => {
+                const me = m.from === myId;
+                return (
+                  '<p class="chat-line' +
+                  (me ? " me" : "") +
+                  '"><span class="who">' +
+                  (me ? "我" : esc(f.name || "好友")) +
+                  "</span>：" +
+                  esc(m.text) +
+                  "</p>"
+                );
+              })
+              .join("")
+          : '<p class="chat-empty">还没有消息</p>';
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function openFriendCenter() {
+        friendOpen = true;
+        sfx('playClick');
+        renderFriends();
+        renderFriendChat();
+        const p = document.getElementById("friend-center");
+        if (p) {
+          p.classList.remove("hidden");
+          p.setAttribute("aria-hidden", "false");
+        }
+      }
+      function closeFriendCenter() {
+        friendOpen = false;
+        const p = document.getElementById("friend-center");
+        if (p) {
+          p.classList.add("hidden");
+          p.setAttribute("aria-hidden", "true");
+        }
+      }
+      function openGlobalChat() {
+        gchatOpen = true;
+        gchatUnread = 0;
+        renderGlobalChat();
+        const p = document.getElementById("global-chat-panel");
+        if (p) {
+          p.classList.remove("hidden");
+          p.setAttribute("aria-hidden", "false");
+        }
+        const btn = document.getElementById("global-chat-btn");
+        if (btn) btn.textContent = "全游戏聊天";
+      }
+      function closeGlobalChat() {
+        gchatOpen = false;
+        const p = document.getElementById("global-chat-panel");
+        if (p) {
+          p.classList.add("hidden");
+          p.setAttribute("aria-hidden", "true");
+        }
+      }
+
+      function addGchat(m) {
+        gchat.push(m);
+        if (gchat.length > 80) gchat = gchat.slice(-80);
+        saveGchat();
+        if (gchatOpen) renderGlobalChat();
+        else {
+          gchatUnread += 1;
+          const btn = document.getElementById("global-chat-btn");
+          if (btn) btn.textContent = "全游戏聊天（" + gchatUnread + "）";
+        }
+      }
+
+      function handleSocial(msg) {
+        if (!msg) return;
+        if (msg.type === "gchat") {
+          addGchat({ id: msg.id, name: msg.name, text: msg.text });
+          return;
+        }
+        if (msg.type === "friendreq") {
+          friends[msg.id] = { name: msg.name || "玩家", status: "pending" };
+          saveFriends();
+          renderFriends();
+          showTip((msg.name || "玩家") + " 申请加你为好友，已入列表");
+          return;
+        }
+        if (msg.type === "friendok") {
+          friends[msg.id] = { name: msg.name || "玩家", status: "ok" };
+          saveFriends();
+          renderFriends();
+          showTip((msg.name || "玩家") + " 已通过好友申请");
+          return;
+        }
+        if (msg.type === "friendno") {
+          delete friends[msg.id];
+          saveFriends();
+          renderFriends();
+          return;
+        }
+        if (msg.type === "dm" && msg.to === myId) {
+          const id = msg.from || msg.id;
+          if (!dm[id]) dm[id] = [];
+          dm[id].push({ from: id, text: msg.text });
+          if (!friends[id]) friends[id] = { name: msg.name || "玩家", status: "ok" };
+          saveFriends();
+          if (friendOpen && activeFriend === id) renderFriendChat();
+          else showTip("收到 " + (msg.name || "好友") + " 的私聊");
+        }
+      }
+
+      function sendGlobalChat() {
+        const input = document.getElementById("global-chat-input");
+        if (!input) return;
+        const text = String(input.value || "").trim().slice(0, 200);
+        if (!text) return;
+        sendSocial({ type: "gchat", id: myId, name: myName, text });
+        addGchat({ id: myId, name: myName, text });
+        input.value = "";
+      }
+
+      function sendFriendChat() {
+        const input = document.getElementById("friend-chat-input");
+        if (!input || !activeFriend) return;
+        const text = String(input.value || "").trim().slice(0, 120);
+        if (!text) return;
+        sendSocial({ type: "dm", to: activeFriend, from: myId, name: myName, text });
+        if (!dm[activeFriend]) dm[activeFriend] = [];
+        dm[activeFriend].push({ from: myId, text });
+        input.value = "";
+        renderFriendChat();
+      }
+
+      function addFriendByName(id, name) {
+        if (!id || id === myId) return;
+        if (friends[id]) {
+          showTip("已经是好友了");
+          return;
+        }
+        friends[id] = { name: name || id, status: "pending" };
+        saveFriends();
+        sendSocial({ type: "friendreq", to: id, id: myId, name: myName });
+        showTip("已向 " + (name || id) + " 发送好友申请");
+        renderFriends();
+      }
+
+      // 绑定 UI
       document.getElementById("rate-btn").addEventListener("click", function () {
-        showTip("谢谢关注第二季！正式上线后可评价。");
+        showTip("第二季已正式上线！感谢游玩，欢迎评价。");
       });
       document.getElementById("egg-btn").addEventListener("click", function () {
         showTip("第二季彩蛋会在通关后出现。");
       });
-      document.getElementById("friends-btn").addEventListener("click", function () {
-        showTip("第二季好友中心即将开放。");
+      document.getElementById("paradise-btn").addEventListener("click", function () {
+        sfx("playClick");
+        location.href = "season2-paradise.html";
       });
-      document.getElementById("global-chat-btn").addEventListener("click", function () {
-        showTip("第二季全服聊天即将开放。");
-      });
+      document.getElementById("friends-btn").addEventListener("click", openFriendCenter);
+      document.getElementById("global-chat-btn").addEventListener("click", openGlobalChat);
+      document.getElementById("friend-close").addEventListener("click", closeFriendCenter);
+      document.getElementById("global-chat-close").addEventListener("click", closeGlobalChat);
+      document.getElementById("global-chat-send").addEventListener("click", sendGlobalChat);
+      document.getElementById("friend-chat-send").addEventListener("click", sendFriendChat);
       document.getElementById("logout-btn").addEventListener("click", function () {
-        location.href = "index.html";
+        try {
+          localStorage.removeItem(S2_NAME_KEY);
+        } catch (e) {}
+        showLogin();
       });
 
+      document.getElementById("global-chat-input").addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          sendGlobalChat();
+        }
+      });
+      document.getElementById("friend-chat-input").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          sendFriendChat();
+        }
+      });
+      document.getElementById("global-chat-log").addEventListener("click", (e) => {
+        const btn = e.target.closest(".gchat-name");
+        if (!btn) return;
+        addFriendByName(btn.dataset.id, btn.dataset.name);
+      });
+      document.getElementById("friend-list").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-open-friend]");
+        if (!btn) return;
+        activeFriend = btn.dataset.openFriend;
+        renderFriendChat();
+      });
+
+      // 接入联机在线状态，才能收发好友/聊天
+      if (window.LevelCoop) {
+        LevelCoop.watch(myId, {
+          name: myName,
+          onSocial: handleSocial,
+          onPeer: () => {},
+          onPresence: () => {},
+          onStatus: () => {},
+        });
+      }
+
       build();
+      renderGlobalChat();
+      renderFriends();
     })();
   </script>
 </body>

@@ -19,10 +19,17 @@
       if (!AC) return null;
       ctx = new AC();
       master = ctx.createGain();
-      master.gain.value = 0.35;
+      master.gain.value = 0.85;
       master.connect(ctx.destination);
     }
-    if (ctx.state === "suspended") ctx.resume();
+    if (ctx.state === "suspended") {
+      try {
+        const p = ctx.resume();
+        if (p && p.catch) p.catch(() => {});
+      } catch (e) {
+        /* ignore */
+      }
+    }
     unlocked = true;
     return ctx;
   }
@@ -42,16 +49,26 @@
 
   function tone(type, freq, duration, peak = 0.15, slideTo = null) {
     if (!ensure()) return;
-    const o = ctx.createOscillator();
-    const g = envGain(duration, peak);
-    o.type = type;
-    o.frequency.setValueAtTime(freq, now());
-    if (slideTo != null) {
-      o.frequency.exponentialRampToValueAtTime(Math.max(20, slideTo), now() + duration);
+    const fire = () => {
+      const o = ctx.createOscillator();
+      const g = envGain(duration, peak);
+      o.type = type;
+      o.frequency.setValueAtTime(freq, now());
+      if (slideTo != null) {
+        o.frequency.exponentialRampToValueAtTime(Math.max(20, slideTo), now() + duration);
+      }
+      o.connect(g);
+      o.start(now());
+      o.stop(now() + duration + 0.02);
+    };
+    if (ctx.state === "running") {
+      fire();
+    } else {
+      // 等 resume 后再响，避免被浏览器静音
+      Promise.resolve(ctx.resume())
+        .then(fire)
+        .catch(fire);
     }
-    o.connect(g);
-    o.start(now());
-    o.stop(now() + duration + 0.02);
   }
 
   function noiseBurst(duration, peak = 0.12, filterFreq = 800, type = "bandpass") {
@@ -1295,13 +1312,23 @@
     }, 980);
   }
 
+  let lastDingAt = 0;
   function playSubwayDing() {
     if (!ensure()) return;
-    tone("sine", 880, 0.18, 0.12);
-    setTimeout(() => {
-      if (!ctx) return;
-      tone("sine", 1175, 0.22, 0.1);
-    }, 140);
+    // 限流：太多球同时撞墙时不要打爆音频
+    const t = now();
+    if (t - lastDingAt < 0.07) return;
+    lastDingAt = t;
+    if (master) {
+      try {
+        master.gain.setValueAtTime(1, t);
+      } catch (e) {
+        master.gain.value = 1;
+      }
+    }
+    // 一声响亮「丁」
+    tone("sine", 1480, 0.12, 1);
+    tone("triangle", 1976, 0.16, 0.95);
   }
 
   let subwayUtter = null;

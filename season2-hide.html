@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>颜色躲猫猫</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; height: 100%;
+      background: #0a1a3a; color: #e8f4ff;
+      font-family: "Noto Sans SC", sans-serif;
+      overflow: hidden; user-select: none;
+    }
+    .wrap { min-height: 100%; display: flex; flex-direction: column; gap: 10px; padding: 12px; max-width: 960px; margin: 0 auto; }
+    .top { display: flex; justify-content: space-between; align-items: center; }
+    h1 { margin: 0; font-size: clamp(16px, 3.5vw, 22px); color: #7dffb0; }
+    .tag { margin: 4px 0 0; color: #8eb8e0; font-size: 12px; }
+    .back { appearance: none; border: 1px solid #4a90c8; background: rgba(30,70,120,.55); color: #cfeaff; padding: 8px 12px; border-radius: 10px; cursor: pointer; text-decoration: none; font-size: 13px; }
+    canvas { width: 100%; height: auto; aspect-ratio: 16/9; border-radius: 14px; border: 2px solid #3d7eb8; background: #7cb342; display: block; }
+    .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .chip { padding: 8px 12px; border-radius: 999px; border: 1px solid #2f7fd4; background: rgba(15,45,90,.7); font-size: 13px; }
+    .chip strong { color: #ffd24a; }
+    .btn { appearance: none; border: none; border-radius: 10px; padding: 10px 14px; font-weight: 700; font-family: inherit; cursor: pointer; background: linear-gradient(180deg,#9fd6ff,#2f7fd4); color: #062040; }
+    .btn.alt { background: linear-gradient(180deg,#ffe07a,#ffb347); color: #5a2200; }
+    .paint { display: flex; gap: 6px; flex-wrap: wrap; }
+    .swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; }
+    .swatch.on { outline: 2px solid #ffd24a; }
+    .hint { color: #8eb8e0; font-size: 12px; }
+    .overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(5,15,40,.75); z-index: 10; }
+    .overlay.show { display: flex; }
+    .card { text-align: center; padding: 28px 24px; border-radius: 18px; background: rgba(15,45,90,.96); border: 2px solid #4a90c8; width: min(380px,92vw); }
+    .card h2 { margin: 0 0 10px; color: #9fd6ff; }
+    .card p { margin: 0 0 18px; color: #cfe8ff; line-height: 1.6; font-size: 14px; }
+    .card button { appearance: none; border: none; border-radius: 12px; padding: 12px 22px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; margin: 6px; background: linear-gradient(180deg,#7ec8ff,#2f7fd4); color: #062040; }
+    .card button.ghost { background: transparent; border: 1px solid #4a90c8; color: #cfeaff; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>颜色躲猫猫 · 农场</h1>
+        <p class="tag">白色小人 · 给自己上色 · 必须 2 人 · 躲 3 分钟 / 抓 8 分钟</p>
+      </div>
+      <a class="back" href="season2-paradise.html">← 回乐园</a>
+    </div>
+    <canvas id="game" width="960" height="540"></canvas>
+    <div class="bar">
+      <div class="chip">人数 <strong id="count">1</strong> / 2</div>
+      <div class="chip">阶段 <strong id="phase">准备</strong></div>
+      <div class="chip">时间 <strong id="timer">--</strong></div>
+      <button class="btn" id="start-btn">开始（满 2 人）</button>
+      <button class="btn alt" id="paint-btn">🎨 给自己上色</button>
+    </div>
+    <div class="paint" id="swatches"></div>
+    <p class="hint">←→/AD 移动 · 躲在农场颜色里 · 抓人者靠近即可抓到</p>
+  </div>
+  <div class="overlay" id="overlay">
+    <div class="card">
+      <h2 id="ov-title">游戏结束</h2>
+      <p id="ov-msg"></p>
+      <button id="ov-retry">再来一局</button>
+      <button class="ghost" id="ov-home">回乐园</button>
+    </div>
+  </div>
+  <script src="audio.js"></script>
+  <script src="coop.js"></script>
+  <script>
+    (() => {
+      function sfx(n){ try{ if(window.GameAudio){ GameAudio.unlock&&GameAudio.unlock(); GameAudio[n]&&GameAudio[n](); } }catch(e){} }
+      window.addEventListener("pointerdown", function o(){ try{ window.GameAudio&&GameAudio.unlock&&GameAudio.unlock(); }catch(e){}; window.removeEventListener("pointerdown", o); });
+
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const W = canvas.width, H = canvas.height;
+      const GROUND = 420;
+      const COLORS = ["#e74c3c","#3498db","#f1c40f","#9b59b6","#1abc9c","#e67e22","#ffffff","#2c3e50"];
+      let paintColor = "#ffffff";
+      let phase = "idle"; // idle | hide | catch | done
+      let phaseT = 0;
+      let remotes = new Map();
+      let myId = "p" + Math.random().toString(36).slice(2, 10);
+      let myRole = "hide"; // hide | catch（人少时当躲藏者，第二人是抓捕）
+      let player = { x: 120, y: GROUND - 40, w: 28, h: 40, vx: 0, facing: 1, alive: true };
+      let keys = new Set();
+      let coopAcc = 0;
+      const COOP_LEVEL = 103;
+
+      // 农场色块（可用来躲）
+      const farms = [
+        { x: 80, y: GROUND, w: 140, h: 40, c: "#8B4513" },
+        { x: 280, y: GROUND, w: 120, h: 40, c: "#228B22" },
+        { x: 460, y: GROUND, w: 160, h: 40, c: "#f1c40f" },
+        { x: 700, y: GROUND, w: 140, h: 40, c: "#3498db" },
+        { x: 160, y: GROUND - 80, w: 100, h: 18, c: "#e74c3c" },
+        { x: 400, y: GROUND - 100, w: 100, h: 18, c: "#9b59b6" },
+        { x: 650, y: GROUND - 70, w: 110, h: 18, c: "#1abc9c" },
+      ];
+
+      function fmt(s) {
+        s = Math.max(0, Math.floor(s));
+        return String(Math.floor(s/60)).padStart(2,"0") + ":" + String(s%60).padStart(2,"0");
+      }
+
+      function reset() {
+        phase = "idle";
+        player = { x: 120, y: GROUND - 40, w: 28, h: 40, vx: 0, facing: 1, alive: true };
+        document.getElementById("overlay").classList.remove("show");
+        document.getElementById("phase").textContent = "准备";
+        document.getElementById("timer").textContent = "--";
+        syncCount();
+      }
+
+      function syncCount() {
+        document.getElementById("count").textContent = remotes.size + 1;
+      }
+
+      function startGame() {
+        if (remotes.size < 1) {
+          document.getElementById("phase").textContent = "需要 2 人";
+          return;
+        }
+        phase = "hide";
+        phaseT = 180; // 3 分钟躲藏
+        sfx("playClick");
+      }
+
+      function winHide() {
+        phase = "done";
+        document.getElementById("ov-title").textContent = "躲藏方胜利！";
+        document.getElementById("ov-msg").textContent = "8 分钟内没被抓住。";
+        document.getElementById("overlay").classList.add("show");
+        sfx("playWin");
+      }
+      function winCatch() {
+        phase = "done";
+        document.getElementById("ov-title").textContent = "抓捕方胜利！";
+        document.getElementById("ov-msg").textContent = "颜色被识破了。";
+        document.getElementById("overlay").classList.add("show");
+        sfx("playDeath");
+      }
+
+      function update(dt) {
+        const left = keys.has("ArrowLeft") || keys.has("a") || keys.has("A");
+        const right = keys.has("ArrowRight") || keys.has("d") || keys.has("D");
+        player.vx = (right ? 3.2 : 0) - (left ? 3.2 : 0);
+        if (player.vx) player.facing = player.vx > 0 ? 1 : -1;
+        player.x += player.vx;
+        player.x = Math.max(20, Math.min(W - 50, player.x));
+        player.y = GROUND - 40;
+
+        if (phase === "hide" || phase === "catch") {
+          phaseT -= dt;
+          if (phase === "hide" && phaseT <= 0) {
+            phase = "catch";
+            phaseT = 480; // 8 分钟
+            sfx("playSubwayDing");
+          } else if (phase === "catch" && phaseT <= 0) {
+            winHide();
+          }
+          // 抓捕方靠近躲藏者
+          for (const rp of remotes.values()) {
+            if (rp.role === "catch" && player.alive && Math.abs(rp.x - player.x) < 30 && Math.abs(rp.y - player.y) < 50) {
+              player.alive = false;
+              winCatch();
+            }
+          }
+        }
+
+        document.getElementById("phase").textContent =
+          phase === "idle" ? "准备" : phase === "hide" ? "躲藏中" : phase === "catch" ? "抓捕中" : "结束";
+        document.getElementById("timer").textContent = phase === "idle" ? "--" : fmt(phaseT);
+
+        // 联机状态
+        coopAcc += dt;
+        if (coopAcc > 0.15 && window.LevelCoop && LevelCoop.isJoined()) {
+          coopAcc = 0;
+          LevelCoop.send({
+            type: "state", lv: COOP_LEVEL,
+            x: player.x|0, y: player.y|0,
+            facing: player.facing, name: "玩家",
+            paint: paintColor, role: myRole, alive: player.alive,
+          });
+        }
+      }
+
+      function draw() {
+        // 农场天空
+        const sky = ctx.createLinearGradient(0,0,0,H);
+        sky.addColorStop(0, "#87ceeb");
+        sky.addColorStop(1, "#c8e6c9");
+        ctx.fillStyle = sky;
+        ctx.fillRect(0,0,W,H);
+        // 草地
+        ctx.fillStyle = "#7cb342";
+        ctx.fillRect(0, GROUND, W, H-GROUND);
+        // 谷仓
+        ctx.fillStyle = "#c0392b";
+        ctx.fillRect(40, GROUND-120, 120, 120);
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(80, GROUND-60, 40, 60);
+        // 色块农场
+        for (const f of farms) {
+          ctx.fillStyle = f.c;
+          ctx.fillRect(f.x, f.y - (f.h < 30 ? f.h : 0), f.w, f.h < 30 ? f.h : 40);
+          if (f.h < 30) {
+            ctx.fillStyle = "rgba(0,0,0,0.15)";
+            ctx.fillRect(f.x, f.y, f.w, f.h);
+          }
+        }
+        // 远程玩家（带自己的涂色）
+        for (const rp of remotes.values()) {
+          const x = rp.x, y = rp.y;
+          // 全身染色
+          ctx.fillStyle = rp.paint || "#fff";
+          ctx.fillRect(x, y + 12, 28, 16);
+          ctx.fillRect(x + 2, y + 26, 10, 14);
+          ctx.fillRect(x + 16, y + 26, 10, 14);
+          ctx.beginPath();
+          ctx.arc(x + 14, y + 8, 11, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#2a2118";
+          ctx.fillRect(x + 10, y + 6, 3, 3);
+          ctx.fillRect(x + 17, y + 6, 3, 3);
+          if (rp.role === "catch") {
+            ctx.fillStyle = "#c62828";
+            ctx.fillRect(x-2, y+30, 32, 6);
+          }
+          ctx.fillStyle = "#fff";
+          ctx.font = "11px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(rp.name || "玩家", x+14, y-8);
+          ctx.textAlign = "left";
+        }
+        // 自己（白色小人 · 全身可染色）
+        if (player.alive) {
+          ctx.fillStyle = paintColor;
+          ctx.fillRect(player.x, player.y + 12, player.w, 16);
+          ctx.fillRect(player.x + 2, player.y + 26, 10, 14);
+          ctx.fillRect(player.x + 16, player.y + 26, 10, 14);
+          ctx.beginPath();
+          ctx.arc(player.x + 14, player.y + 8, 11, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#2a2118";
+          ctx.fillRect(player.x + 10, player.y + 6, 3, 3);
+          ctx.fillRect(player.x + 17, player.y + 6, 3, 3);
+          if (myRole === "catch") {
+            ctx.fillStyle = "#c62828";
+            ctx.fillRect(player.x - 2, player.y + 30, 32, 6);
+          }
+        }
+      }
+
+      function loop(ts) {
+        if (!loop.last) loop.last = ts;
+        const dt = Math.min(0.05, (ts-loop.last)/1000);
+        loop.last = ts;
+        update(dt);
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      // 调色板
+      const sw = document.getElementById("swatches");
+      COLORS.forEach((c) => {
+        const el = document.createElement("div");
+        el.className = "swatch" + (c === paintColor ? " on" : "");
+        el.style.background = c;
+        el.addEventListener("click", () => {
+          paintColor = c;
+          sw.querySelectorAll(".swatch").forEach((x) => x.classList.remove("on"));
+          el.classList.add("on");
+          sfx("playClick");
+        });
+        sw.appendChild(el);
+      });
+      document.getElementById("paint-btn").addEventListener("click", () => {
+        paintColor = COLORS[(Math.random()*COLORS.length)|0];
+        sw.querySelectorAll(".swatch").forEach((x, i) => x.classList.toggle("on", COLORS[i] === paintColor));
+        sfx("playClick");
+      });
+      document.getElementById("start-btn").addEventListener("click", startGame);
+      document.getElementById("ov-retry").addEventListener("click", reset);
+      document.getElementById("ov-home").addEventListener("click", () => location.href = "season2-paradise.html");
+
+      window.addEventListener("keydown", (e) => {
+        if (["ArrowLeft","ArrowRight"].includes(e.key)) e.preventDefault();
+        keys.add(e.key);
+      });
+      window.addEventListener("keyup", (e) => keys.delete(e.key));
+
+      // 联机（2 人）
+      function handleCoopMsg(msg) {
+        if (!msg || msg.lv !== COOP_LEVEL) return;
+        const id = msg.id || "peer";
+        if (id === myId) return;
+        if (msg.type === "bye") { remotes.delete(id); syncCount(); return; }
+        if (msg.type === "hello" || msg.type === "state") {
+          const prev = remotes.get(id) || { id };
+          prev.name = msg.name || prev.name || "玩家";
+          if (msg.type === "state") {
+            prev.x = msg.x; prev.y = msg.y; prev.facing = msg.facing;
+            prev.paint = msg.paint; prev.role = msg.role; prev.alive = msg.alive;
+            prev.last = performance.now();
+          }
+          remotes.set(id, prev);
+          syncCount();
+          // 第二人加入后，后进的人当抓捕
+          if (remotes.size >= 1 && myRole === "hide") {
+            // 保持：先来躲，后来抓
+          }
+        }
+      }
+      if (window.LevelCoop) {
+        LevelCoop.join(myId, {
+          level: COOP_LEVEL,
+          name: "玩家",
+          onMessage: handleCoopMsg,
+          onCount: (n) => { syncCount(); },
+        });
+      }
+
+      reset();
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

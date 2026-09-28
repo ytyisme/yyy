@@ -239,9 +239,27 @@
     </div>
   </div>
 
+  <script src="audio.js"></script>
   <script src="coop.js"></script>
   <script>
     (() => {
+
+      // 音效
+      function sfx(name) {
+        try {
+          if (!window.GameAudio) return;
+          if (GameAudio.unlock) GameAudio.unlock();
+          if (GameAudio[name]) GameAudio[name]();
+        } catch (e) {
+          console.error("sfx fail", name, e);
+        }
+      }
+      window.addEventListener("pointerdown", function once() {
+        try {
+          if (window.GameAudio && GameAudio.unlock) GameAudio.unlock();
+        } catch (e) {}
+        window.removeEventListener("pointerdown", once);
+      });
       const canvas = document.getElementById("game");
       const ctx = canvas.getContext("2d");
       const statusEl = document.getElementById("status");
@@ -351,6 +369,7 @@
         else if (player.vx < 0) player.facing = -1;
         if (jump && player.onGround) {
           player.vy = -JUMP;
+          sfx('playJump');
           player.onGround = false;
           spawnBurst(player.x + player.w / 2, player.y + player.h, THEME.snow, 6);
         }
@@ -415,6 +434,7 @@
       }
 
       function winLevel() {
+        sfx('playWin');
         if (state === "win") return;
         state = "win";
         spawnBurst(player.x, player.y, THEME.flag, 28);
@@ -425,6 +445,7 @@
       }
 
       function die(msg) {
+        sfx('playDeath');
         state = "dead";
         spawnBurst(player.x + player.w / 2, player.y + player.h / 2, "#8ed0ff", 18);
         ovTitle.textContent = "再来一次";

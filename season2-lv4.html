@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>第二季 · 第4关 · 123木头人</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #0a1a3a;
+      font-family: "Noto Sans SC", -apple-system, "PingFang SC", sans-serif;
+      color: #e8f4ff;
+      overflow: hidden;
+      user-select: none;
+    }
+    .wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px;
+    }
+    .top {
+      width: min(900px, 96vw);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(16px, 3.5vw, 22px);
+      color: #7ec8ff;
+    }
+    .tag {
+      margin: 4px 0 0;
+      color: #8eb8e0;
+      font-size: 12px;
+    }
+    .back {
+      appearance: none;
+      border: 1px solid #4a90c8;
+      background: rgba(30, 70, 120, 0.55);
+      color: #cfeaff;
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .stage {
+      width: min(900px, 96vw);
+      border-radius: 16px;
+      border: 2px solid #3d7eb8;
+      background: linear-gradient(180deg, #154078 0%, #0b2348 70%, #1a5c3a 70.2%, #2d8a55 100%);
+      padding: 18px 14px 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .status {
+      text-align: center;
+      color: #ffd24a;
+      font-size: clamp(16px, 4vw, 22px);
+      font-weight: 700;
+      min-height: 1.4em;
+    }
+    .status.safe { color: #7dffb0; }
+    .status.danger { color: #ff8a80; }
+
+    .track {
+      position: relative;
+      height: 160px;
+      margin: 18px 0 10px;
+    }
+    .doll {
+      position: absolute;
+      right: 8px;
+      top: 18px;
+      width: 86px;
+      height: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .doll-head {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: #ffd6a8;
+      border: 3px solid #e8a86a;
+      position: relative;
+    }
+    .doll-head::before,
+    .doll-head::after {
+      content: "";
+      position: absolute;
+      top: 20px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #2a2118;
+    }
+    .doll-head::before { left: 12px; }
+    .doll-head::after { right: 12px; }
+    .doll-body {
+      width: 58px;
+      height: 58px;
+      border-radius: 12px 12px 18px 18px;
+      background: linear-gradient(180deg, #ff8a5c, #e85a3a);
+    }
+    .doll.turn .doll-head {
+      transform: scaleX(-1);
+      background: #8d6e63;
+    }
+    .doll.turn .doll-body {
+      background: linear-gradient(180deg, #8d6e63, #5d4037);
+    }
+    .doll-label {
+      font-size: 12px;
+      color: #ffd24a;
+      font-weight: 700;
+    }
+
+    .runner {
+      position: absolute;
+      left: 8px;
+      bottom: 24px;
+      width: 36px;
+      height: 48px;
+      transition: left 0.08s linear;
+    }
+    .runner .body {
+      width: 36px;
+      height: 32px;
+      border-radius: 10px;
+      background: #3ec6ff;
+    }
+    .runner .head {
+      width: 22px;
+      height: 22px;
+      margin: 0 auto -4px;
+      border-radius: 50%;
+      background: #ffe0b8;
+      border: 2px solid #e8b888;
+    }
+
+    .bar-wrap {
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.35);
+      overflow: hidden;
+      border: 1px solid rgba(120, 200, 255, 0.35);
+    }
+    .bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #7ec8ff, #7dffb0);
+      border-radius: 999px;
+      transition: width 0.08s linear;
+    }
+    .bar-text {
+      text-align: center;
+      color: #8eb8e0;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 14px;
+    }
+    .move-btn {
+      appearance: none;
+      min-width: 180px;
+      min-height: 64px;
+      border-radius: 16px;
+      border: 2px solid #4a90c8;
+      background: rgba(30, 80, 140, 0.65);
+      color: #e8f4ff;
+      font-size: 20px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      touch-action: none;
+    }
+    .move-btn:active,
+    .move-btn.hold {
+      background: rgba(70, 140, 220, 0.85);
+      transform: translateY(2px);
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 15, 40, 0.72);
+      z-index: 10;
+    }
+    .overlay.show { display: flex; }
+    .card {
+      text-align: center;
+      padding: 28px 24px;
+      border-radius: 18px;
+      background: rgba(15, 45, 90, 0.95);
+      border: 2px solid #4a90c8;
+      width: min(360px, 90vw);
+    }
+    .card h2 { margin: 0 0 10px; color: #9fd6ff; }
+    .card p { margin: 0 0 18px; color: #cfe8ff; line-height: 1.6; font-size: 14px; }
+    .card button {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      margin: 6px;
+    }
+    .btn-primary {
+      background: linear-gradient(180deg, #7ec8ff, #2f7fd4);
+      color: #062040;
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid #4a90c8;
+      color: #cfeaff;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>第二季 · 第 4 关 · 123木头人</h1>
+        <p class="tag">背对时冲 · 回头必须停住</p>
+      </div>
+      <a class="back" href="season2.html">← 第二季首页</a>
+    </div>
+
+    <div class="stage">
+      <div class="status" id="status">准备…</div>
+      <div class="track">
+        <div class="doll" id="doll">
+          <div class="doll-head"></div>
+          <div class="doll-body"></div>
+          <div class="doll-label" id="doll-label">背对你</div>
+        </div>
+        <div class="runner" id="runner">
+          <div class="head"></div>
+          <div class="body"></div>
+        </div>
+      </div>
+      <div class="bar-wrap"><div class="bar" id="bar"></div></div>
+      <div class="bar-text" id="bar-text">进度 0% · 到达右侧过关</div>
+      <div class="controls">
+        <button type="button" class="move-btn" id="move-btn">按住前进</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="card">
+      <h2 id="ov-title">通关！</h2>
+      <p id="ov-msg">木头人，不许动！</p>
+      <button class="btn-primary" type="button" id="ov-retry">再玩一次</button>
+      <button class="btn-ghost" type="button" id="ov-home">回第二季首页</button>
+    </div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script>
+    (() => {
+
+      // 音效
+      function sfx(name) {
+        try {
+          if (!window.GameAudio) return;
+          if (GameAudio.unlock) GameAudio.unlock();
+          if (GameAudio[name]) GameAudio[name]();
+        } catch (e) {
+          console.error("sfx fail", name, e);
+        }
+      }
+      window.addEventListener("pointerdown", function once() {
+        try {
+          if (window.GameAudio && GameAudio.unlock) GameAudio.unlock();
+        } catch (e) {}
+        window.removeEventListener("pointerdown", once);
+      });
+      const statusEl = document.getElementById("status");
+      const doll = document.getElementById("doll");
+      const dollLabel = document.getElementById("doll-label");
+      const runner = document.getElementById("runner");
+      const bar = document.getElementById("bar");
+      const barText = document.getElementById("bar-text");
+      const moveBtn = document.getElementById("move-btn");
+      const overlay = document.getElementById("overlay");
+      const ovTitle = document.getElementById("ov-title");
+      const ovMsg = document.getElementById("ov-msg");
+
+      let progress = 0; // 0-100
+      let facingBack = true; // true=可以动
+      let holding = false;
+      let phase = "idle"; // idle | play | win | lose
+      let lookTimer = 0;
+      let raf = 0;
+      let lastTs = 0;
+
+      function setStatus(text, cls) {
+        statusEl.textContent = text;
+        statusEl.className = "status" + (cls ? " " + cls : "");
+      }
+
+      function setDoll(back) {
+        facingBack = back;
+        doll.classList.toggle("turn", !back);
+        dollLabel.textContent = back ? "背对你" : "盯着你！";
+        if (back) {
+          setStatus("绿灯！快冲！", "safe");
+        } else {
+          setStatus("木头人！不许动！", "danger");
+        }
+      }
+
+      function updateUI() {
+        bar.style.width = progress + "%";
+        barText.textContent = "进度 " + Math.floor(progress) + "% · 到达右侧过关";
+        const track = runner.parentElement;
+        const w = track.clientWidth - 80;
+        runner.style.left = 8 + (progress / 100) * Math.max(0, w) + "px";
+      }
+
+      function win() {
+        sfx('playWin');
+        phase = "win";
+        holding = false;
+        clearTimeout(lookTimer);
+        setStatus("通关！", "safe");
+        ovTitle.textContent = "第 4 关通关！";
+        ovMsg.textContent = "你成功走到了木头人面前。";
+        overlay.classList.add("show");
+      }
+
+      function lose() {
+        sfx('playDeath');
+        phase = "lose";
+        holding = false;
+        clearTimeout(lookTimer);
+        setStatus("被抓到在动！", "danger");
+        ovTitle.textContent = "再试一次";
+        ovMsg.textContent = "木头人回头时你还在动，别心急。";
+        overlay.classList.add("show");
+      }
+
+      function scheduleLook() {
+        clearTimeout(lookTimer);
+        // 背对 1.2–2.8 秒后回头
+        const wait = 1200 + Math.random() * 1600;
+        lookTimer = setTimeout(() => {
+          if (phase !== "play") return;
+          setDoll(false);
+        sfx('playClick');
+          // 盯 0.8–1.8 秒，若正在前进则输
+          const watch = 800 + Math.random() * 1000;
+          lookTimer = setTimeout(() => {
+            if (phase !== "play") return;
+            if (holding) {
+              lose();
+              return;
+            }
+            setDoll(true);
+            scheduleLook();
+          }, watch);
+        }, wait);
+      }
+
+      function loop(ts) {
+        if (!lastTs) lastTs = ts;
+        const dt = Math.min(0.05, (ts - lastTs) / 1000);
+        lastTs = ts;
+        if (phase === "play" && holding) {
+          if (!facingBack) {
+            // 盯着还动 → 输
+            lose();
+          } else {
+            progress += 22 * dt; // 约 4.5 秒冲完
+            if (progress >= 100) {
+              progress = 100;
+              updateUI();
+              win();
+              return;
+            }
+            updateUI();
+          }
+        }
+        raf = requestAnimationFrame(loop);
+      }
+
+      function startHold() {
+        if (phase !== "play") return;
+        holding = true;
+        moveBtn.classList.add("hold");
+        if (!facingBack) lose();
+      }
+      function endHold() {
+        holding = false;
+        moveBtn.classList.remove("hold");
+      }
+
+      moveBtn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        startHold();
+      });
+      moveBtn.addEventListener("pointerup", endHold);
+      moveBtn.addEventListener("pointercancel", endHold);
+      moveBtn.addEventListener("pointerleave", endHold);
+
+      window.addEventListener("keydown", (e) => {
+        if (e.code === "Space" || e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+          e.preventDefault();
+          startHold();
+        }
+        if (e.key === "r" || e.key === "R") reset();
+      });
+      window.addEventListener("keyup", (e) => {
+        if (e.code === "Space" || e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+          endHold();
+        }
+      });
+
+      function reset() {
+        clearTimeout(lookTimer);
+        progress = 0;
+        holding = false;
+        phase = "play";
+        overlay.classList.remove("show");
+        moveBtn.classList.remove("hold");
+        setDoll(true);
+        setStatus("背对你时按住前进", "safe");
+        updateUI();
+        scheduleLook();
+        if (!raf) raf = requestAnimationFrame(loop);
+      }
+
+      document.getElementById("ov-retry").addEventListener("click", reset);
+      document.getElementById("ov-home").addEventListener("click", () => {
+        location.href = "season2.html";
+      });
+
+      reset();
+      raf = requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

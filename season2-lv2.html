@@ -241,8 +241,26 @@
     </div>
   </div>
 
+  <script src="audio.js"></script>
   <script>
     (() => {
+
+      // 音效
+      function sfx(name) {
+        try {
+          if (!window.GameAudio) return;
+          if (GameAudio.unlock) GameAudio.unlock();
+          if (GameAudio[name]) GameAudio[name]();
+        } catch (e) {
+          console.error("sfx fail", name, e);
+        }
+      }
+      window.addEventListener("pointerdown", function once() {
+        try {
+          if (window.GameAudio && GameAudio.unlock) GameAudio.unlock();
+        } catch (e) {}
+        window.removeEventListener("pointerdown", once);
+      });
       const statusEl = document.getElementById("status");
       const timerEl = document.getElementById("timer");
       const overlay = document.getElementById("overlay");
@@ -321,7 +339,7 @@
         animTimer = setInterval(() => {
           if (phase !== "shuffle") return;
           swapCupsAnimated();
-        }, 320);
+        }, 620);
       }
 
       function swapCupsAnimated() {
@@ -343,8 +361,8 @@
         else if (secret === b) secret = a;
 
         // 先视觉滑过去
-        elA.style.transition = "transform 0.28s ease";
-        elB.style.transition = "transform 0.28s ease";
+        elA.style.transition = "transform 0.5s ease";
+        elB.style.transition = "transform 0.5s ease";
         elA.style.transform = `translateX(${dx}px)`;
         elB.style.transform = `translateX(${-dx}px)`;
 
@@ -354,6 +372,7 @@
           elA.style.transform = "";
           elB.style.transform = "";
           // DOM 真交换
+          sfx('playFootstep');
           if (a < b) table.insertBefore(elB, elA);
           else table.insertBefore(elA, elB);
           // 强制回流后再开过渡
@@ -361,7 +380,7 @@
           elA.style.transition = "";
           elB.style.transition = "";
           syncCupIds();
-        }, 280);
+        }, 500);
       }
 
       function syncCupIds() {
@@ -406,12 +425,14 @@
         if (index === secret) {
           cup.classList.add("ok");
           statusEl.textContent = "找到了！就是这个杯子！";
+          sfx('playStar');
           ovTitle.textContent = "第 2 关通关！";
           ovMsg.textContent = "眼力不错，黄方块找到了。";
           setTimeout(() => overlay.classList.add("show"), 500);
         } else {
           cups[index].classList.add("bad");
           statusEl.textContent = `不对，黄方块在杯子 ${secret + 1}`;
+          sfx('playDeath');
           ovTitle.textContent = "再试一次";
           ovMsg.textContent = `黄方块在杯子 ${secret + 1}，看清楚再选。`;
           setTimeout(() => overlay.classList.add("show"), 700);

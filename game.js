@@ -2296,8 +2296,8 @@
 
   // ── 通关彩蛋（1–34 全通，不含 35） ──
   const EGG_END_LEVEL = 34; // 不包含 35
-  // 第二季：过渡期先用本站 season2.html，有外站后改成完整网址
-  const NEW_GAME_URL = "season2.html";
+  // 第二季：从第一季跳转免登录
+  const NEW_GAME_URL = "season2.html?from=s1";
   let eggTimer = 0;
 
   function eggUnlocked() {

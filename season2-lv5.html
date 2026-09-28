@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>第二季 · 第5关 · 末日生存</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #0a1a3a;
+      font-family: "Noto Sans SC", -apple-system, "PingFang SC", sans-serif;
+      color: #e8f4ff;
+    }
+    .wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(16px, 3.5vw, 22px);
+      color: #7ec8ff;
+    }
+    .tag {
+      margin: 4px 0 0;
+      color: #8eb8e0;
+      font-size: 12px;
+    }
+    .back {
+      appearance: none;
+      border: 1px solid #4a90c8;
+      background: rgba(30, 70, 120, 0.55);
+      color: #cfeaff;
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid #2f7fd4;
+      background: rgba(15, 45, 90, 0.7);
+      color: #cfeaff;
+      font-size: 13px;
+    }
+    .chip strong { color: #ffd24a; }
+    .layout {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 760px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+    .panel {
+      border: 2px solid #2f7fd4;
+      border-radius: 14px;
+      background: rgba(10, 28, 58, 0.92);
+      padding: 12px;
+    }
+    .panel h3 {
+      margin: 0 0 8px;
+      color: #7ec8ff;
+      font-size: 15px;
+    }
+    .doom {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      min-height: 220px;
+      border: 1px solid #a33;
+      background: #1a0808;
+    }
+    .doom canvas {
+      display: block;
+      width: 100%;
+      height: 220px;
+    }
+    .doom-label {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      z-index: 2;
+      color: #ffd24a;
+      font-size: 13px;
+      font-weight: 700;
+      background: rgba(0,0,0,0.4);
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
+
+    .goods {
+      display: grid;
+      gap: 8px;
+    }
+    .good {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #2f7fd4;
+      background: rgba(0,0,0,0.2);
+    }
+    .good .name { font-weight: 700; color: #e8f4ff; font-size: 14px; }
+    .good .desc { color: #8eb8e0; font-size: 11px; margin-top: 2px; }
+    .buy {
+      appearance: none;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      background: linear-gradient(180deg, #9fd6ff, #2f7fd4);
+      color: #062040;
+      white-space: nowrap;
+    }
+    .buy:disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+
+    .npc-list {
+      display: grid;
+      gap: 8px;
+    }
+    .npc {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #2f7fd4;
+      background: rgba(0,0,0,0.2);
+    }
+    .npc .say {
+      color: #7dffc8;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .warn-btn {
+      appearance: none;
+      border: 1px solid #ffb347;
+      background: rgba(255, 179, 71, 0.15);
+      color: #ffd24a;
+      border-radius: 10px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .build-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .tool {
+      appearance: none;
+      border: 1px solid #2f7fd4;
+      background: rgba(0,0,0,0.25);
+      color: #cfeaff;
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+    }
+    .tool.active {
+      border-color: #7ec8ff;
+      background: rgba(80, 160, 255, 0.25);
+      color: #fff;
+      font-weight: 700;
+    }
+    .layers {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .grid-wrap {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+    }
+    .cell {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      border: 1px dashed rgba(120, 180, 255, 0.35);
+      background: rgba(255,255,255,0.04);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      min-height: 36px;
+    }
+    .cell.wall { background: #3a8fd4; border-style: solid; border-color: #9fd6ff; }
+    .cell.door { background: #c47a30; border-style: solid; border-color: #ffd24a; }
+    .cell.roof { background: #6b3fa0; border-style: solid; border-color: #d4a5ff; }
+    .cell.food { background: #2ecc71; border-style: solid; border-color: #7dffb0; }
+    .cell.water { background: #1abc9c; border-style: solid; border-color: #7dffc8; }
+
+    .log {
+      min-height: 64px;
+      max-height: 140px;
+      overflow: auto;
+      font-size: 12px;
+      color: #a8d4ff;
+      line-height: 1.6;
+      background: rgba(0,0,0,0.2);
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 15, 40, 0.75);
+      z-index: 20;
+    }
+    .overlay.show { display: flex; }
+    .card {
+      text-align: center;
+      padding: 28px 24px;
+      border-radius: 18px;
+      background: rgba(15, 45, 90, 0.96);
+      border: 2px solid #4a90c8;
+      width: min(380px, 92vw);
+    }
+    .card h2 { margin: 0 0 10px; color: #9fd6ff; }
+    .card p { margin: 0 0 18px; color: #cfe8ff; line-height: 1.6; font-size: 14px; }
+    .card button {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      margin: 6px;
+    }
+    .btn-primary {
+      background: linear-gradient(180deg, #7ec8ff, #2f7fd4);
+      color: #062040;
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid #4a90c8;
+      color: #cfeaff;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>第二季 · 第 5 关 · 末日生存</h1>
+        <p class="tag">还有 3 天 · 储备物资 · 自己建房 · 好心提醒</p>
+      </div>
+      <a class="back" href="season2.html">← 第二季首页</a>
+    </div>
+
+    <div class="bar">
+      <div class="chip">金钱 <strong>♾️</strong></div>
+      <div class="chip">倒计时 <strong id="days">3 天</strong></div>
+      <div class="chip">食物 <strong id="inv-food">0</strong></div>
+      <div class="chip">水 <strong id="inv-water">0</strong></div>
+      <div class="chip">墙 <strong id="inv-wall">0</strong></div>
+      <div class="chip">门 <strong id="inv-door">0</strong></div>
+      <div class="chip">屋顶 <strong id="inv-roof">0</strong></div>
+    </div>
+
+    <div class="layout">
+      <div class="panel">
+        <h3>三天后的末日景象</h3>
+        <div class="doom">
+          <div class="doom-label">预警：72 小时后 · 城市将陷入火海</div>
+          <canvas id="doom-city" width="640" height="220"></canvas>
+        </div>
+        <h3 style="margin-top:12px">购买物资（钱无限）</h3>
+        <div class="goods" id="goods">
+          <div class="good">
+            <div>
+              <div class="name">🍞 食物</div>
+              <div class="desc">末日干粮，越多越稳</div>
+            </div>
+            <button class="buy" data-buy="food">购买 1 份</button>
+          </div>
+          <div class="good">
+            <div>
+              <div class="name">💧 水</div>
+              <div class="desc">最干净的饮用水</div>
+            </div>
+            <button class="buy" data-buy="water">购买 1 瓶</button>
+          </div>
+          <div class="good">
+            <div>
+              <div class="name">🧱 最坚固的墙</div>
+              <div class="desc">末日级防爆墙</div>
+            </div>
+            <button class="buy" data-buy="wall">购买 1 块</button>
+          </div>
+          <div class="good">
+            <div>
+              <div class="name">🚪 最坚固的门</div>
+              <div class="desc">防撞防爆大门</div>
+            </div>
+            <button class="buy" data-buy="door">购买 1 扇</button>
+          </div>
+          <div class="good">
+            <div>
+              <div class="name">🏠 最坚固的屋顶</div>
+              <div class="desc">挡火挡塌的顶</div>
+            </div>
+            <button class="buy" data-buy="roof">购买 1 片</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>提醒邻居（点击会被嫌弃…）</h3>
+        <div class="npc-list" id="npcs"></div>
+
+        <h3 style="margin-top:12px">在城市里建房子（点上方城市画面放置）</h3>
+        <div class="layers">
+          <button class="tool active" data-layer="sky">建在天上</button>
+          <button class="tool" data-layer="ground">建在地上</button>
+          <button class="tool" data-layer="under">建在地下</button>
+        </div>
+        <div class="build-tools">
+          <button class="tool active" data-piece="wall">放墙</button>
+          <button class="tool" data-piece="door">放门</button>
+          <button class="tool" data-piece="roof">放屋顶</button>
+          <button class="tool" data-piece="food">放食物</button>
+          <button class="tool" data-piece="water">放水</button>
+          <button class="tool" data-piece="erase">擦除</button>
+          <button class="tool" data-piece="check" id="check-btn">检查能否过关</button>
+        </div>
+        <p class="tag" id="build-hint">在上方「末日城市」画面上点击，就能在城市里盖房子</p>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="card">
+      <h2 id="ov-title">通关！</h2>
+      <p id="ov-msg">末日生存准备完成</p>
+      <button class="btn-primary" type="button" id="ov-retry">再玩一次</button>
+      <button class="btn-ghost" type="button" id="ov-home">回第二季首页</button>
+    </div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script>
+    (() => {
+
+      // 音效
+      function sfx(name) {
+        try {
+          if (!window.GameAudio) return;
+          if (GameAudio.unlock) GameAudio.unlock();
+          if (GameAudio[name]) GameAudio[name]();
+        } catch (e) {
+          console.error("sfx fail", name, e);
+        }
+      }
+      window.addEventListener("pointerdown", function once() {
+        try {
+          if (window.GameAudio && GameAudio.unlock) GameAudio.unlock();
+        } catch (e) {}
+        window.removeEventListener("pointerdown", once);
+      });
+      const inv = { food: 0, water: 0, wall: 0, door: 0, roof: 0 };
+      let layer = "sky";
+      let piece = "wall";
+      // 城市地图上的建筑：{x,y,layer,piece}
+      const builds = [];
+      const logEl = document.getElementById("log");
+      const overlay = document.getElementById("overlay");
+      const ovTitle = document.getElementById("ov-title");
+      const ovMsg = document.getElementById("ov-msg");
+      let lavaT = -1; // >=0 时表示播放岩浆
+
+      const NPC_SAYS = [
+        "你有病吧",
+        "你是不是发烧了",
+        "你是不是刚从神经病院出来",
+        "谢谢你小伙子提醒我",
+      ];
+      const NPC_NAMES = ["王大爷", "李阿姨", "张同学", "刘大妈", "陈师傅", "赵老师"];
+
+      function log(msg) {
+        const p = document.createElement("div");
+        p.textContent = msg;
+        logEl.appendChild(p);
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function syncInv() {
+        document.getElementById("inv-food").textContent = inv.food;
+        document.getElementById("inv-water").textContent = inv.water;
+        document.getElementById("inv-wall").textContent = inv.wall;
+        document.getElementById("inv-door").textContent = inv.door;
+        document.getElementById("inv-roof").textContent = inv.roof;
+      }
+
+      function renderNpcs() {
+        const box = document.getElementById("npcs");
+        box.innerHTML = NPC_NAMES.map((n, i) => {
+          return (
+            '<div class="npc"><div><div class="name">' +
+            n +
+            '</div><div class="say" data-say="' +
+            i +
+            '"></div></div><button class="warn-btn" data-warn="' +
+            i +
+            '">提醒末日</button></div>'
+          );
+        }).join("");
+      }
+
+
+      function placeAt(wx, wy) {
+        if (piece === "check") return;
+        // 吸附到 24px 网格
+        const x = Math.round(wx / 24) * 24;
+        const y = Math.round(wy / 24) * 24;
+        const exist = builds.find((b) => b.x === x && b.y === y && b.layer === layer);
+        if (piece === "erase") {
+          const i = builds.findIndex((b) => b.x === x && b.y === y && b.layer === layer);
+          if (i >= 0) {
+            const t = builds[i].piece;
+            builds.splice(i, 1);
+            inv[t] += 1;
+            syncInv();
+            log("擦除了一个" + t);
+          }
+          return;
+        }
+        if (exist) {
+          log("这里已经有东西了");
+          return;
+        }
+        const need = piece;
+        if (inv[need] <= 0) {
+          log("没有库存的" + need + "，先去购买");
+          return;
+        }
+        inv[need] -= 1;
+        builds.push({ x, y, layer, piece: need });
+        syncInv();
+        log(
+          "在城市里放下了" +
+            need +
+            "（" +
+            (layer === "sky" ? "天上" : layer === "ground" ? "地上" : "地下") +
+            "）"
+        );
+      }
+
+      function checkWin() {
+        let walls = 0, doors = 0, roofs = 0, food = inv.food, water = inv.water;
+        for (const b of builds) {
+          if (b.piece === "wall") walls++;
+          if (b.piece === "door") doors++;
+          if (b.piece === "roof") roofs++;
+          if (b.piece === "food") food++;
+          if (b.piece === "water") water++;
+        }
+        walls += inv.wall;
+        doors += inv.door;
+        roofs += inv.roof;
+
+        const ok = food > 0 && water > 0 && walls >= 4 && doors >= 1 && roofs >= 2;
+
+        if (ok) {
+          // 岩浆淹没城市特效
+          lavaT = 0;
+          sfx('playRocket');
+          ovTitle.textContent = "第 5 关通关！";
+          ovMsg.textContent = "房子建在城市里了。看，末日岩浆淹没了街道……";
+          setTimeout(() => overlay.classList.add("show"), 2200);
+          log("检查通过！岩浆开始淹没城市…");
+        } else {
+          const miss = [];
+          if (food <= 0) miss.push("食物");
+          if (water <= 0) miss.push("水");
+          if (walls < 4) miss.push("墙≥4");
+          if (doors < 1) miss.push("门≥1");
+          if (roofs < 2) miss.push("屋顶≥2");
+          log("还缺：" + miss.join("、"));
+        }
+      }
+
+      document.getElementById("goods").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-buy]");
+        if (!btn) return;
+        const key = btn.dataset.buy;
+        inv[key] += 1;
+        sfx('playClick');
+        syncInv();
+        log("买到了「" + key + "」，钱是无限的 ♾️");
+      });
+
+      document.getElementById("npcs").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-warn]");
+        if (!btn) return;
+        const i = Number(btn.dataset.warn);
+        const say = NPC_SAYS[Math.floor(Math.random() * NPC_SAYS.length)];
+        const el = document.querySelector('[data-say="' + i + '"]');
+        if (el) el.textContent = "“" + say + "”";
+        log("你提醒了 " + NPC_NAMES[i] + "，对方说：" + say);
+      });
+
+      document.querySelectorAll("[data-layer]").forEach((el) => {
+        el.addEventListener("click", () => {
+          layer = el.dataset.layer;
+          document.querySelectorAll("[data-layer]").forEach((x) => x.classList.remove("active"));
+          el.classList.add("active");
+          log("切换到：" + (layer === "sky" ? "天上" : layer === "ground" ? "地上" : "地下") + "（点城市画面放置）");
+        });
+      });
+
+      document.querySelectorAll("[data-piece]").forEach((el) => {
+        el.addEventListener("click", () => {
+          if (el.dataset.piece === "check") {
+            checkWin();
+            return;
+          }
+          piece = el.dataset.piece;
+          document.querySelectorAll("[data-piece]").forEach((x) => {
+            if (x.dataset.piece !== "check") x.classList.remove("active");
+          });
+          el.classList.add("active");
+        });
+      });
+
+      // 点城市画面建房
+      const cityCanvas = document.getElementById("doom-city");
+      cityCanvas.addEventListener("click", (e) => {
+        const rect = cityCanvas.getBoundingClientRect();
+        const wx = ((e.clientX - rect.left) / rect.width) * cityCanvas.width;
+        const wy = ((e.clientY - rect.top) / rect.height) * cityCanvas.height;
+        placeAt(wx, wy);
+      });
+
+      document.getElementById("ov-retry").addEventListener("click", () => location.reload());
+      document.getElementById("ov-home").addEventListener("click", () => {
+        location.href = "season2.html";
+      });
+
+      // 倒计时展示
+      let left = 3 * 24 * 60 * 60;
+      setInterval(() => {
+        left -= 60; // 每秒过 1 分钟
+        const d = Math.floor(left / 86400);
+        const h = Math.floor((left % 86400) / 3600);
+        const m = Math.floor((left % 3600) / 60);
+        document.getElementById("days").textContent = d + " 天 " + h + " 时 " + m + " 分";
+      }, 1000);
+
+      renderNpcs();
+      syncInv();
+      log("开始准备末日：先买物资，再点上方城市画面盖房子");
+      log("可切换 天上 / 地上 / 地下 来建");
+
+      // ── 末日城市绘制 ──
+      (function drawDoomCity() {
+        const canvas = document.getElementById("doom-city");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        const W = canvas.width;
+        const H = canvas.height;
+
+        function building(x, w, h, color, windowColor) {
+          ctx.fillStyle = color;
+          ctx.fillRect(x, H - h, w, h);
+          // 窗户
+          const cols = Math.max(1, Math.floor(w / 14));
+          const rows = Math.max(1, Math.floor(h / 18));
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              const wx = x + 6 + c * 14;
+              const wy = H - h + 10 + r * 18;
+              if (wx + 8 > x + w - 4) continue;
+              ctx.fillStyle = windowColor;
+              ctx.globalAlpha = 0.35 + ((r + c) % 3) * 0.2;
+              ctx.fillRect(wx, wy, 8, 10);
+            }
+          }
+          ctx.globalAlpha = 1;
+          // 楼顶
+          ctx.fillStyle = "#1a0c08";
+          ctx.fillRect(x, H - h, w, 6);
+        }
+
+        function flame(x, y, s, t) {
+          const wobble = Math.sin(t + x) * 3;
+          const g = ctx.createLinearGradient(x, y, x, y - 42 * s);
+          g.addColorStop(0, "rgba(255, 80, 20, 0.95)");
+          g.addColorStop(0.45, "rgba(255, 150, 40, 0.85)");
+          g.addColorStop(1, "rgba(255, 220, 80, 0)");
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.moveTo(x - 10 * s, y);
+          ctx.quadraticCurveTo(x - 14 * s + wobble, y - 22 * s, x + wobble, y - 42 * s);
+          ctx.quadraticCurveTo(x + 14 * s + wobble, y - 22 * s, x + 10 * s, y);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        function smoke(x, y, s, t) {
+          ctx.fillStyle = "rgba(40, 30, 28, 0.35)";
+          for (let i = 0; i < 5; i++) {
+            const ox = Math.sin(t + i + x) * 12 + i * 8;
+            const oy = y - i * 16;
+            ctx.beginPath();
+            ctx.ellipse(x + ox, oy, (14 + i * 4) * s, (10 + i * 3) * s, 0, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        let t = 0;
+        function frame() {
+          t += 0.04;
+          // 天空：火红末日
+          const sky = ctx.createLinearGradient(0, 0, 0, H);
+          sky.addColorStop(0, "#1a0508");
+          sky.addColorStop(0.45, "#6b1a0a");
+          sky.addColorStop(1, "#3a1008");
+          ctx.fillStyle = sky;
+          ctx.fillRect(0, 0, W, H);
+
+          // 太阳/血月
+          const sunG = ctx.createRadialGradient(W * 0.72, 48, 8, W * 0.72, 48, 70);
+          sunG.addColorStop(0, "rgba(255, 140, 60, 0.95)");
+          sunG.addColorStop(0.35, "rgba(255, 90, 30, 0.55)");
+          sunG.addColorStop(1, "rgba(255, 60, 20, 0)");
+          ctx.fillStyle = sunG;
+          ctx.beginPath();
+          ctx.arc(W * 0.72, 48, 70, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#ff8a3d";
+          ctx.beginPath();
+          ctx.arc(W * 0.72, 48, 28, 0, Math.PI * 2);
+          ctx.fill();
+
+          // 远处烟柱
+          smoke(120, 120, 1.1, t);
+          smoke(320, 100, 1.3, t + 2);
+          smoke(500, 115, 1, t + 4);
+
+          // 城市建筑群
+          building(-10, 70, 110, "#2a1812", "#ffb070");
+          building(55, 50, 150, "#1c1210", "#ff9a4a");
+          building(115, 80, 95, "#322018", "#ffd27a");
+          building(205, 45, 175, "#241612", "#ff8a5c");
+          building(255, 95, 130, "#2e1a14", "#ffc27a");
+          building(360, 55, 165, "#1a1010", "#ff9a5c");
+          building(425, 100, 120, "#2a1812", "#ffd27a");
+          building(535, 48, 155, "#221412", "#ff8a5c");
+          building(590, 60, 105, "#2e1a14", "#ffb070");
+
+          // 街道
+          ctx.fillStyle = "#120808";
+          ctx.fillRect(0, H - 18, W, 18);
+          ctx.fillStyle = "rgba(255, 140, 60, 0.25)";
+          for (let i = 0; i < 12; i++) {
+            ctx.fillRect(i * 56 + 10, H - 12, 28, 3);
+          }
+
+          // 火焰
+          flame(80, H - 18, 1.1, t);
+          flame(220, H - 18, 1.35, t + 1);
+          flame(390, H - 18, 1, t + 2);
+          flame(520, H - 18, 1.25, t + 3);
+          flame(610, H - 18, 0.9, t + 4);
+
+          // 建筑上的火
+          flame(75, H - 100, 0.75, t + 0.5);
+          flame(280, H - 125, 0.85, t + 1.5);
+          flame(460, H - 110, 0.7, t + 2.5);
+
+          // 玩家在城市里建的房子
+          for (const b of builds) {
+            const icon =
+              b.piece === "wall" ? "🧱" : b.piece === "door" ? "🚪" : b.piece === "roof" ? "🏠" : b.piece === "food" ? "🍞" : "💧";
+            ctx.fillStyle =
+              b.piece === "wall"
+                ? "#3a8fd4"
+                : b.piece === "door"
+                  ? "#c47a30"
+                  : b.piece === "roof"
+                    ? "#6b3fa0"
+                    : b.piece === "food"
+                      ? "#2ecc71"
+                      : "#1abc9c";
+            ctx.fillRect(b.x - 11, b.y - 11, 22, 22);
+            ctx.strokeStyle = "rgba(255,255,255,0.35)";
+            ctx.strokeRect(b.x - 11, b.y - 11, 22, 22);
+            ctx.font = "14px sans-serif";
+            ctx.fillText(icon, b.x - 8, b.y + 5);
+            if (b.layer === "sky") {
+              ctx.fillStyle = "rgba(125, 255, 176, 0.25)";
+              ctx.fillRect(b.x - 12, b.y - 12, 24, 4);
+            } else if (b.layer === "under") {
+              ctx.fillStyle = "rgba(125, 200, 255, 0.25)";
+              ctx.fillRect(b.x - 12, b.y + 8, 24, 4);
+            }
+          }
+
+          // 岩浆淹没城市特效
+          if (lavaT >= 0) {
+            lavaT += 0.012;
+            const level = Math.min(H + 20, lavaT * H * 1.15);
+            const lg = ctx.createLinearGradient(0, H - level, 0, H);
+            lg.addColorStop(0, "rgba(255, 200, 60, 0.75)");
+            lg.addColorStop(0.35, "rgba(255, 100, 20, 0.88)");
+            lg.addColorStop(1, "rgba(120, 20, 10, 0.95)");
+            ctx.fillStyle = lg;
+            ctx.fillRect(0, H - level, W, level + 20);
+            // 岩浆波纹
+            ctx.strokeStyle = "rgba(255, 230, 120, 0.55)";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (let x = 0; x <= W; x += 12) {
+              const y = H - level + Math.sin(x * 0.04 + t * 3) * 6;
+              if (x === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            // 泡泡
+            for (let i = 0; i < 10; i++) {
+              const bx = (i * 67 + t * 40) % W;
+              const by = H - level + 10 + Math.sin(t + i) * 8;
+              ctx.fillStyle = "rgba(255, 220, 100, 0.45)";
+              ctx.beginPath();
+              ctx.arc(bx, by, 4 + (i % 3), 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          requestAnimationFrame(frame);
+        }
+        frame();
+      })();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>第二季 · 第6关 · 保护野生狗奶</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #0a1a3a;
+      font-family: "Noto Sans SC", -apple-system, "PingFang SC", sans-serif;
+      color: #e8f4ff;
+      user-select: none;
+    }
+    .wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(16px, 3.5vw, 22px);
+      color: #7ec8ff;
+    }
+    .tag {
+      margin: 4px 0 0;
+      color: #8eb8e0;
+      font-size: 12px;
+    }
+    .back {
+      appearance: none;
+      border: 1px solid #4a90c8;
+      background: rgba(30, 70, 120, 0.55);
+      color: #cfeaff;
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid #2f7fd4;
+      background: rgba(15, 45, 90, 0.7);
+      font-size: 13px;
+    }
+    .chip strong { color: #ffd24a; }
+    .stage {
+      border: 2px solid #3d7eb8;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #123a72 0%, #0d2a55 100%);
+      padding: 12px;
+    }
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 10px;
+      background: #164078;
+    }
+    .shop {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .good {
+      border: 1px solid #2f7fd4;
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(0,0,0,0.22);
+    }
+    .good .name { font-weight: 700; font-size: 14px; }
+    .good .desc { color: #8eb8e0; font-size: 11px; margin: 4px 0 8px; }
+    .buy {
+      appearance: none;
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      padding: 8px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      background: linear-gradient(180deg, #9fd6ff, #2f7fd4);
+      color: #062040;
+    }
+    .buy:disabled { opacity: 0.55; cursor: default; }
+    .buy.alt {
+      background: linear-gradient(180deg, #ffe07a, #ffb347);
+      color: #5a2200;
+    }
+    .log {
+      min-height: 52px;
+      max-height: 110px;
+      overflow: auto;
+      font-size: 12px;
+      color: #a8d4ff;
+      line-height: 1.6;
+      background: rgba(0,0,0,0.2);
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-top: 10px;
+    }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 15, 40, 0.75);
+      z-index: 20;
+    }
+    .overlay.show { display: flex; }
+    .card {
+      text-align: center;
+      padding: 28px 24px;
+      border-radius: 18px;
+      background: rgba(15, 45, 90, 0.96);
+      border: 2px solid #4a90c8;
+      width: min(380px, 92vw);
+    }
+    .card h2 { margin: 0 0 10px; color: #9fd6ff; }
+    .card p { margin: 0 0 18px; color: #cfe8ff; line-height: 1.6; font-size: 14px; }
+    .card button {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      margin: 6px;
+    }
+    .btn-primary {
+      background: linear-gradient(180deg, #7ec8ff, #2f7fd4);
+      color: #062040;
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid #4a90c8;
+      color: #cfeaff;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>第二季 · 第 6 关 · 保护野生狗奶</h1>
+        <p class="tag">敌人要来抢狗奶 · 放武器和士兵守住</p>
+      </div>
+      <a class="back" href="season2.html">← 第二季首页</a>
+    </div>
+
+    <div class="bar">
+      <div class="chip">金币 <strong id="coins">♾️</strong></div>
+      <div class="chip">五角星 <strong id="stars">0</strong></div>
+      <div class="chip">狗奶 <strong id="milk">10</strong> / 10</div>
+      <div class="chip">波次 <strong id="wave">0</strong> / 5</div>
+      <div class="chip">敌人 <strong id="enemy-count">0</strong></div>
+    </div>
+
+    <div class="stage">
+      <canvas id="game" width="880" height="360"></canvas>
+      <div class="shop">
+        <div class="good">
+          <div class="name">🔫 步枪塔</div>
+          <div class="desc">单体快射 · 免费</div>
+          <button class="buy" data-buy="rifle">购买并放置</button>
+        </div>
+        <div class="good">
+          <div class="name">💣 炮塔</div>
+          <div class="desc">高伤害慢射 · 免费</div>
+          <button class="buy" data-buy="cannon">购买并放置</button>
+        </div>
+        <div class="good">
+          <div class="name">🪖 士兵</div>
+          <div class="desc">会走动射击 · 免费</div>
+          <button class="buy" data-buy="soldier">购买并放置</button>
+        </div>
+        <div class="good">
+          <div class="name">♾️ 金币</div>
+          <div class="desc">本关金币无限</div>
+          <button class="buy alt" id="trade-star">已无限</button>
+        </div>
+        <div class="good">
+          <div class="name">🚀 开始波次</div>
+          <div class="desc">敌人从左边冲过来</div>
+          <button class="buy alt" id="start-wave">开始刷怪</button>
+        </div>
+      </div>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="card">
+      <h2 id="ov-title">通关！</h2>
+      <p id="ov-msg">野生狗奶守住了</p>
+      <button class="btn-primary" type="button" id="ov-retry">再玩一次</button>
+      <button class="btn-ghost" type="button" id="ov-home">回第二季首页</button>
+    </div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script>
+    (() => {
+
+      // 音效
+      function sfx(name) {
+        try {
+          if (!window.GameAudio) return;
+          if (GameAudio.unlock) GameAudio.unlock();
+          if (GameAudio[name]) GameAudio[name]();
+        } catch (e) {
+          console.error("sfx fail", name, e);
+        }
+      }
+      window.addEventListener("pointerdown", function once() {
+        try {
+          if (window.GameAudio && GameAudio.unlock) GameAudio.unlock();
+        } catch (e) {}
+        window.removeEventListener("pointerdown", once);
+      });
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const W = canvas.width;
+      const H = canvas.height;
+
+      const logEl = document.getElementById("log");
+      const overlay = document.getElementById("overlay");
+      const ovTitle = document.getElementById("ov-title");
+      const ovMsg = document.getElementById("ov-msg");
+
+      // 金币无限 ♾️
+      let coins = Infinity;
+      let stars = 0;
+      try {
+        stars = Number(localStorage.getItem("s2_stars") || 0) || 0;
+      } catch (e) {}
+      let milk = 10;
+      const MILK_MAX = 10;
+      let wave = 0;
+      const MAX_WAVE = 5;
+      let phase = "ready"; // ready | wave | win | lose
+      let placing = null; // rifle cannon soldier
+
+      const milkPos = { x: 800, y: 250 };
+      const slots = [
+        { x: 180, y: 120 }, { x: 320, y: 220 }, { x: 460, y: 120 },
+        { x: 600, y: 220 }, { x: 250, y: 300 }, { x: 520, y: 300 },
+        { x: 700, y: 120 }, { x: 120, y: 200 },
+      ];
+      const towers = []; // {kind,x,y,cd}
+      const soldiers = []; // {x,y,cd}
+      const enemies = [];
+      const shots = [];
+      let spawnLeft = 0;
+      let spawnT = 0;
+
+      const TOWER = {
+        rifle: { cost: 80, range: 140, rate: 0.45, dmg: 2, name: "步枪塔" },
+        cannon: { cost: 150, range: 120, rate: 1.1, dmg: 6, name: "炮塔" },
+      };
+
+      function log(msg) {
+        const p = document.createElement("div");
+        p.textContent = msg;
+        logEl.appendChild(p);
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function syncBar() {
+        document.getElementById("coins").textContent = "♾️";
+        document.getElementById("stars").textContent = stars;
+        document.getElementById("milk").textContent = milk;
+        document.getElementById("wave").textContent = wave;
+        document.getElementById("enemy-count").textContent = enemies.length;
+      }
+
+      function startWave() {
+        if (phase === "wave" || phase === "win" || phase === "lose") return;
+        wave += 1;
+        phase = "wave";
+        spawnLeft = 5 + wave * 3;
+        spawnT = 0;
+        log("第 " + wave + " 波敌人来了！保护野生狗奶！");
+        sfx('playZombieBark');
+        syncBar();
+      }
+
+      function spawnEnemy() {
+        const hp = 4 + wave * 3;
+        enemies.push({
+          x: -30,
+          y: 140 + Math.random() * 180,
+          hp,
+          maxHp: hp,
+          speed: 28 + wave * 4 + Math.random() * 10,
+          r: 14,
+        });
+      }
+
+      function place(kind) {
+        const cost =
+          kind === "soldier" ? 120 : TOWER[kind] ? TOWER[kind].cost : 0;
+        // 金币无限，直接放置
+        let pos = null;
+        for (const s of slots) {
+          const busy =
+            towers.some((t) => Math.hypot(t.x - s.x, t.y - s.y) < 20) ||
+            soldiers.some((t) => Math.hypot(t.x - s.x, t.y - s.y) < 20);
+          if (!busy) {
+            pos = s;
+            break;
+          }
+        }
+        if (!pos) {
+          log("没有空位了");
+          return;
+        }
+        // 金币无限，不扣费
+        if (kind === "soldier") {
+          soldiers.push({ x: pos.x, y: pos.y, cd: 0 });
+          log("放下士兵，开始守护狗奶");
+        } else {
+          towers.push({ kind, x: pos.x, y: pos.y, cd: 0 });
+          log("放下" + TOWER[kind].name);
+        sfx('playClick');
+        }
+        syncBar();
+      }
+
+      function tradeStar() {
+        // 金币已无限，换星只作提示
+        log("金币已经是无限 ♾️ 了，不用换");
+        syncBar();
+      }
+
+      function update(dt) {
+        if (phase !== "wave") return;
+        // 出怪
+        if (spawnLeft > 0) {
+          spawnT -= dt;
+          if (spawnT <= 0) {
+            spawnEnemy();
+            spawnLeft -= 1;
+            spawnT = 0.75;
+          }
+        }
+        // 怪冲向狗奶
+        for (let i = enemies.length - 1; i >= 0; i--) {
+          const e = enemies[i];
+          e.x += e.speed * dt;
+          const d = Math.hypot(e.x - milkPos.x, e.y - milkPos.y);
+          if (d < 36) {
+            enemies.splice(i, 1);
+            milk -= 1;
+            log("敌人碰到狗奶！剩余 " + milk);
+            if (milk <= 0) {
+              phase = "lose";
+              ovTitle.textContent = "再试一次";
+              ovMsg.textContent = "野生狗奶被抢光了…";
+              overlay.classList.add("show");
+              return;
+            }
+          }
+        }
+        // 塔
+        for (const t of towers) {
+          t.cd -= dt;
+          if (t.cd > 0) continue;
+          const spec = TOWER[t.kind];
+          let best = null;
+          let bestD = spec.range;
+          for (const e of enemies) {
+            const d = Math.hypot(e.x - t.x, e.y - t.y);
+            if (d < bestD) {
+              bestD = d;
+              best = e;
+            }
+          }
+          if (best) {
+            t.cd = spec.rate;
+            shots.push({ x: t.x, y: t.y, tx: best.x, ty: best.y, life: 0.12 });
+            sfx('playGunShot');
+            best.hp -= spec.dmg;
+            if (best.hp <= 0) {
+              coins += 20;
+              const ix = enemies.indexOf(best);
+              if (ix >= 0) enemies.splice(ix, 1);
+            }
+          }
+        }
+        // 士兵走动射击
+        for (const s of soldiers) {
+          s.cd -= dt;
+          // 向敌人方向微微移动
+          let nearest = null;
+          let nd = 1e9;
+          for (const e of enemies) {
+            const d = Math.hypot(e.x - s.x, e.y - s.y);
+            if (d < nd) {
+              nd = d;
+              nearest = e;
+            }
+          }
+          if (nearest && nd > 40) {
+            s.x += ((nearest.x - s.x) / nd) * 36 * dt;
+            s.y += ((nearest.y - s.y) / nd) * 36 * dt;
+          }
+          if (nearest && s.cd <= 0 && nd < 160) {
+            s.cd = 0.55;
+            shots.push({ x: s.x, y: s.y - 10, tx: nearest.x, ty: nearest.y, life: 0.12 });
+            nearest.hp -= 2;
+            if (nearest.hp <= 0) {
+              coins += 15;
+              const ix = enemies.indexOf(nearest);
+              if (ix >= 0) enemies.splice(ix, 1);
+            }
+          }
+        }
+        for (let i = shots.length - 1; i >= 0; i--) {
+          shots[i].life -= dt;
+          if (shots[i].life <= 0) shots.splice(i, 1);
+        }
+        // 波次结束
+        if (spawnLeft <= 0 && enemies.length === 0) {
+          if (wave >= MAX_WAVE) {
+            phase = "win";
+            stars += 1;
+            try {
+              localStorage.setItem("s2_stars", String(stars));
+            } catch (e) {}
+            ovTitle.textContent = "第 6 关通关！";
+            sfx('playWin');
+            ovMsg.textContent = "野生狗奶守住了！获得 1 颗五角星。";
+            overlay.classList.add("show");
+            log("全部波次完成，狗奶安全！");
+          } else {
+            phase = "ready";
+            coins += 50;
+            log("本波结束，奖励 50 金币");
+          }
+        }
+        syncBar();
+      }
+
+      function draw() {
+        // 背景
+        const g = ctx.createLinearGradient(0, 0, 0, H);
+        g.addColorStop(0, "#164078");
+        g.addColorStop(1, "#0d2a55");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+
+        // 草地
+        ctx.fillStyle = "#1f6b45";
+        ctx.fillRect(0, H - 70, W, 70);
+        ctx.fillStyle = "#2d8a55";
+        ctx.fillRect(0, H - 70, W, 12);
+
+        // 路径
+        ctx.strokeStyle = "#5a4030";
+        ctx.lineWidth = 42;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(-20, 200);
+        ctx.lineTo(220, 180);
+        ctx.lineTo(420, 240);
+        ctx.lineTo(620, 160);
+        ctx.lineTo(milkPos.x, milkPos.y);
+        ctx.stroke();
+
+        // 空位
+        for (const s of slots) {
+          ctx.strokeStyle = "rgba(125, 200, 255, 0.35)";
+          ctx.setLineDash([5, 4]);
+          ctx.strokeRect(s.x - 16, s.y - 16, 32, 32);
+          ctx.setLineDash([]);
+        }
+
+        // 野生狗奶（粤西特供纸盒包装）
+        ctx.save();
+        ctx.translate(milkPos.x, milkPos.y);
+
+        // 纸盒
+        const cw = 72;
+        const ch = 96;
+        ctx.fillStyle = "#f5f0e8";
+        ctx.fillRect(-cw / 2, -ch / 2, cw, ch);
+        // 顶部封口
+        ctx.fillStyle = "#e8e0d4";
+        ctx.fillRect(-cw / 2, -ch / 2, cw, 10);
+
+        // 顶部红字「粤西特供」
+        ctx.fillStyle = "#c62828";
+        ctx.font = "700 11px 'Noto Sans SC', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("粤西特供", 0, -ch / 2 + 28);
+
+        // 蓝色弧形横幅 + 白字「野生狗奶」
+        ctx.fillStyle = "#2f5fc4";
+        ctx.beginPath();
+        ctx.moveTo(-cw / 2 + 2, -8);
+        ctx.quadraticCurveTo(0, -28, cw / 2 - 2, -8);
+        ctx.lineTo(cw / 2 - 2, 18);
+        ctx.quadraticCurveTo(0, 32, -cw / 2 + 2, 18);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.font = "700 13px 'Noto Sans SC', sans-serif";
+        ctx.fillText("野生狗奶", 0, 10);
+
+        // 小字
+        ctx.fillStyle = "#1a3a7a";
+        ctx.font = "8px 'Noto Sans SC', sans-serif";
+        ctx.fillText("野生狗奶 | 永久保质期", 0, 28);
+
+        // 100% 圆标
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.arc(-cw / 2 + 16, 40, 14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#2f5fc4";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = "#2f5fc4";
+        ctx.font = "700 8px sans-serif";
+        ctx.fillText("100%", -cw / 2 + 16, 38);
+        ctx.font = "7px sans-serif";
+        ctx.fillText("野生", -cw / 2 + 16, 47);
+
+        // 草地 + 德牧狗
+        ctx.fillStyle = "#6b9e3a";
+        ctx.fillRect(-cw / 2 + 6, 48, cw - 12, 18);
+        ctx.fillStyle = "#c4a35a";
+        ctx.beginPath();
+        ctx.ellipse(10, 52, 16, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // 狗头
+        ctx.beginPath();
+        ctx.arc(2, 44, 8, 0, Math.PI * 2);
+        ctx.fill();
+        // 耳朵
+        ctx.beginPath();
+        ctx.moveTo(-4, 38);
+        ctx.lineTo(-8, 28);
+        ctx.lineTo(0, 36);
+        ctx.closePath();
+        ctx.moveTo(6, 38);
+        ctx.lineTo(12, 28);
+        ctx.lineTo(10, 38);
+        ctx.closePath();
+        ctx.fill();
+        // 奶溅
+        ctx.fillStyle = "rgba(255,255,255,0.9)";
+        ctx.beginPath();
+        ctx.moveTo(cw / 2 - 8, 30);
+        ctx.quadraticCurveTo(cw / 2 + 8, 50, cw / 2 - 6, 70);
+        ctx.quadraticCurveTo(cw / 2 - 16, 50, cw / 2 - 8, 30);
+        ctx.fill();
+
+        // 底部文字
+        ctx.fillStyle = "#1a3a7a";
+        ctx.font = "700 9px 'Noto Sans SC', sans-serif";
+        ctx.fillText("100%野生狗奶", 0, 82);
+        ctx.font = "7px sans-serif";
+        ctx.fillText("净含量: 250毫升", 0, 92);
+
+        // 血条
+        ctx.fillStyle = "rgba(0,0,0,0.4)";
+        ctx.fillRect(-36, -ch / 2 - 14, 72, 8);
+        ctx.fillStyle = "#7dffb0";
+        ctx.fillRect(-36, -ch / 2 - 14, 72 * (milk / MILK_MAX), 8);
+        ctx.restore();
+
+        // 塔
+        for (const t of towers) {
+          ctx.fillStyle = t.kind === "cannon" ? "#607d8b" : "#8d6e63";
+          ctx.fillRect(t.x - 14, t.y - 14, 28, 28);
+          ctx.fillStyle = "#263238";
+          ctx.beginPath();
+          ctx.arc(t.x, t.y, 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.font = "14px sans-serif";
+          ctx.fillText(t.kind === "cannon" ? "💣" : "🔫", t.x - 8, t.y + 5);
+        }
+        // 士兵
+        for (const s of soldiers) {
+          ctx.fillStyle = "#3ec6ff";
+          ctx.fillRect(s.x - 10, s.y - 8, 20, 22);
+          ctx.fillStyle = "#ffe0b8";
+          ctx.beginPath();
+          ctx.arc(s.x, s.y - 16, 10, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.font = "12px sans-serif";
+          ctx.fillText("🪖", s.x - 8, s.y - 18);
+        }
+        // 敌人
+        for (const e of enemies) {
+          ctx.fillStyle = "#c62828";
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#fff";
+          ctx.beginPath();
+          ctx.arc(e.x - 5, e.y - 3, 3, 0, Math.PI * 2);
+          ctx.arc(e.x + 5, e.y - 3, 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "rgba(0,0,0,0.4)";
+          ctx.fillRect(e.x - 16, e.y - 24, 32, 5);
+          ctx.fillStyle = "#ff8a80";
+          ctx.fillRect(e.x - 16, e.y - 24, 32 * (e.hp / e.maxHp), 5);
+        }
+        // 子弹
+        ctx.strokeStyle = "#ffe566";
+        ctx.lineWidth = 3;
+        for (const s of shots) {
+          ctx.beginPath();
+          ctx.moveTo(s.x, s.y);
+          ctx.lineTo(s.tx, s.ty);
+          ctx.stroke();
+        }
+
+        // 状态
+        ctx.fillStyle = "rgba(0,0,0,0.35)";
+        ctx.fillRect(12, 12, 220, 28);
+        ctx.fillStyle = "#ffd24a";
+        ctx.font = "700 13px sans-serif";
+        ctx.fillText(phase === "wave" ? "防守中…" : "准备放武器，然后开始刷怪", 22, 31);
+      }
+
+      let last = 0;
+      function loop(ts) {
+        const dt = Math.min(0.05, (ts - last) / 1000 || 0.016);
+        last = ts;
+        update(dt);
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      document.getElementById("goods-placeholder") && 0;
+      document.querySelector(".shop").addEventListener("click", (e) => {
+        const buy = e.target.closest("[data-buy]");
+        if (buy) {
+          place(buy.dataset.buy);
+          return;
+        }
+        if (e.target.id === "trade-star") tradeStar();
+        if (e.target.id === "start-wave") startWave();
+      });
+
+      document.getElementById("ov-retry").addEventListener("click", () => location.reload());
+      document.getElementById("ov-home").addEventListener("click", () => {
+        location.href = "season2.html";
+      });
+
+      // 通关其它关可加星的简易入口：本关胜利已 +1
+      syncBar();
+      log("保护野生狗奶！先放武器，1★ 可换 100 金币");
+
+      // ── 第6关主题曲（本地文件 audio/music/lv6-theme.mp3） ──
+      (function themeSong() {
+        const audio = new Audio();
+        audio.loop = true;
+        audio.volume = 0.55;
+        const candidates = [
+          "audio/music/lv6-theme.mp3",
+          "audio/music/lv6-theme.m4a",
+          "audio/music/lv6-theme.wav",
+          "audio/music/lv6-theme.ogg",
+        ];
+        let i = 0;
+        function tryNext() {
+          if (i >= candidates.length) {
+            log("主题曲文件未找到：请把音乐放到 audio/music/lv6-theme.mp3");
+            return;
+          }
+          audio.src = candidates[i++];
+          audio.play().catch(() => {});
+        }
+        audio.addEventListener("error", tryNext);
+        // 用户点击后启动
+        window.addEventListener("pointerdown", function once() {
+          try {
+            if (window.GameAudio && GameAudio.unlock) GameAudio.unlock();
+          } catch (e) {}
+          audio.play().catch(() => {});
+          window.removeEventListener("pointerdown", once);
+        });
+        tryNext();
+      })();
+
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>第二季 · 乐园</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #0a1a3a;
+      font-family: "Noto Sans SC", -apple-system, "PingFang SC", sans-serif;
+      color: #e8f4ff;
+      overflow: hidden;
+      user-select: none;
+    }
+    .wrap {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+    }
+    .top {
+      width: min(960px, 96vw);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(16px, 3.5vw, 22px);
+      color: #7dffb0;
+    }
+    .tag {
+      margin: 4px 0 0;
+      color: #8eb8e0;
+      font-size: 12px;
+    }
+    .back {
+      appearance: none;
+      border: 1px solid #4a90c8;
+      background: rgba(30, 70, 120, 0.55);
+      color: #cfeaff;
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    canvas {
+      width: min(960px, 96vw);
+      height: auto;
+      aspect-ratio: 16 / 9;
+      border-radius: 14px;
+      border: 2px solid #3d7eb8;
+      background: #87ceeb;
+      display: block;
+    }
+    .hud {
+      width: min(960px, 96vw);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      color: #a8d4ff;
+      font-size: 13px;
+    }
+    .keys kbd {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid #4a90c8;
+      border-radius: 6px;
+      padding: 2px 7px;
+      margin: 0 2px;
+      font-size: 12px;
+    }
+    .touch-pad {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      z-index: 8;
+      display: none;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 12px 14px max(14px, env(safe-area-inset-bottom));
+      pointer-events: none;
+    }
+    .touch-move, .touch-actions {
+      display: flex;
+      gap: 12px;
+      pointer-events: auto;
+    }
+    .touch-btn {
+      appearance: none;
+      width: 72px;
+      height: 72px;
+      border-radius: 16px;
+      border: 2px solid rgba(80, 150, 220, 0.9);
+      background: rgba(15, 45, 90, 0.72);
+      color: #9fd6ff;
+      font-size: 16px;
+      font-family: inherit;
+    }
+    .touch-jump {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      font-size: 18px;
+      background: rgba(40, 100, 170, 0.78);
+    }
+    @media (pointer: coarse) {
+      .touch-pad { display: flex; }
+      .keys { display: none; }
+      .wrap { padding-bottom: 120px; }
+    }
+    .apology-wrap {
+      position: fixed;
+      left: 50%;
+      bottom: 110px;
+      transform: translateX(-50%);
+      z-index: 20;
+      width: min(360px, 92vw);
+    }
+    .apology-wrap.hidden { display: none !important; }
+    .apology-wrap input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 2px solid #ffb347;
+      background: rgba(20, 12, 8, 0.95);
+      color: #ffe9c8;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>第二季 · 乐园</h1>
+        <p class="tag">绿色草坪 · 只能路过 · 没有岩浆没有僵尸 · 可联机</p>
+      </div>
+      <a class="back" href="season2.html">← 第二季首页</a>
+    </div>
+    <canvas id="game" width="960" height="540"></canvas>
+    <div class="hud">
+      <div class="keys">
+        <kbd>←</kbd><kbd>→</kbd> / <kbd>A</kbd><kbd>D</kbd> 走
+        <kbd>空格</kbd> 跳 · <kbd>S</kbd> 坐长椅
+      </div>
+      <div id="status">乐园 · 散散步吧</div>
+    </div>
+    <div id="apology-wrap" class="apology-wrap hidden">
+      <input id="apology-input" type="text" placeholder="输入 对不起 或 duobuqi" maxlength="30" />
+    </div>
+    <div class="touch-pad">
+      <div class="touch-move">
+        <button type="button" class="touch-btn" data-dir="left">◀</button>
+        <button type="button" class="touch-btn" data-dir="right">▶</button>
+      </div>
+      <div class="touch-actions">
+        <button type="button" class="touch-btn touch-jump" data-action="jump">跳</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script src="coop.js"></script>
+  <script>
+    (() => {
+      function sfx(name) {
+        try {
+          if (!window.GameAudio) return;
+          if (GameAudio.unlock) GameAudio.unlock();
+          if (GameAudio[name]) GameAudio[name]();
+        } catch (e) {}
+      }
+      window.addEventListener("pointerdown", function once() {
+        try {
+          if (window.GameAudio && GameAudio.unlock) GameAudio.unlock();
+        } catch (e) {}
+        window.removeEventListener("pointerdown", once);
+      });
+
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const statusEl = document.getElementById("status");
+      const W = canvas.width;
+      const H = canvas.height;
+      const GRAV = 0.55;
+      const MOVE = 3.6;
+      const JUMP = 10.5;
+      const WORLD_W = 3600;
+      const GROUND_Y = 430;
+
+      let player, platforms, cameraX, keys, touch, time;
+      const remotes = new Map();
+      const COOP_LEVEL = 102;
+      let myId = "p" + Math.random().toString(36).slice(2, 10);
+      let coopAcc = 0;
+      let coopCount = 1;
+      let lastSend = { x: 0, y: 0 };
+
+      // 店铺（只能路过，不能买）
+      const shops = [
+        { x: 520, kind: "bbq", name: "烧烤摊" },
+        { x: 1400, kind: "tea", name: "奶茶店" },
+        { x: 2300, kind: "store", name: "便利店" },
+        { x: 3100, kind: "bbq", name: "烧烤摊" },
+      ];
+      // 烧烤摊旁的篝火烤串（离老板远一点）
+      const fires = [
+        { x: 520 + 160, y: GROUND_Y - 8, hotT: 0 },
+        { x: 3100 + 160, y: GROUND_Y - 8, hotT: 0 },
+      ];
+      const portals = [
+        { x: 180, y: GROUND_Y - 120, w: 110, h: 120, title: "颜色躲猫猫", sub: "农场 · 2人", href: "season2-hide.html", c: "#e74c3c" },
+        { x: 320, y: GROUND_Y - 120, w: 110, h: 120, title: "向上跑酷", sub: "方塔 · 砖块", href: "season2-up.html", c: "#26c6da" },
+        { x: 460, y: GROUND_Y - 120, w: 110, h: 120, title: "未开放", sub: "敬请期待", href: "", c: "#78909c" },
+      ];
+      // 长椅
+      const benches = [
+        { x: 300, y: GROUND_Y - 28 },
+        { x: 1100, y: GROUND_Y - 28 },
+        { x: 1900, y: GROUND_Y - 28 },
+        { x: 2800, y: GROUND_Y - 28 },
+        { x: 3400, y: GROUND_Y - 28 },
+      ];
+      // 店旁 NPC
+      const NPC_SAYS = ["你要买点什么", "欢迎光临", "你要来点什么"];
+      const npcs = shops.map((s, i) => ({
+        x: s.x + 50,
+        y: GROUND_Y - 40,
+        name: ["老板", "店员", "导购", "老板娘"][i % 4],
+        say: "",
+        sayT: 0,
+      }));
+      let sitting = false;
+      let sitBench = null;
+      let sitToggle = false;
+      let typeBuf = "";
+
+      function reset() {
+        player = {
+          x: 100,
+          y: GROUND_Y - 40,
+          w: 28,
+          h: 40,
+          vx: 0,
+          vy: 0,
+          onGround: true,
+          facing: 1,
+          say: "",
+          sayT: 0,
+        };
+        platforms = [
+          { x: 0, y: GROUND_Y, w: WORLD_W, h: 80 },
+          // 一点小坡/踏板，仍无岩浆
+          { x: 900, y: 380, w: 120, h: 18 },
+          { x: 1750, y: 370, w: 100, h: 18 },
+          { x: 2600, y: 390, w: 140, h: 18 },
+        ];
+        cameraX = 0;
+        time = 0;
+        statusEl.textContent = "乐园 · 散散步吧（只能路过小店）";
+      }
+
+      keys = new Set();
+      touch = { left: false, right: false, jump: false };
+
+      function rects(a, b) {
+        return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+      }
+
+      function update(dt) {
+        time += dt;
+        const left = keys.has("ArrowLeft") || keys.has("a") || keys.has("A") || touch.left;
+        const right = keys.has("ArrowRight") || keys.has("d") || keys.has("D") || touch.right;
+        const jump = keys.has(" ") || keys.has("ArrowUp") || keys.has("w") || keys.has("W") || touch.jump;
+        const sitKey = keys.has("s") || keys.has("S") || keys.has("ArrowDown") || keys.has("Down");
+
+        // 再按一次 S 起来 / 靠近长椅按 S 坐下
+        if (sitToggle) {
+          sitToggle = false;
+          if (sitting) {
+            sitting = false;
+            sitBench = null;
+            statusEl.textContent = "站起来继续逛";
+            sfx("playClick");
+          } else {
+            for (const b of benches) {
+              if (Math.abs(player.x + player.w / 2 - b.x) < 50) {
+                sitting = true;
+                sitBench = b;
+                player.x = b.x - player.w / 2;
+                player.y = b.y - player.h + 10;
+                player.vx = 0;
+                player.vy = 0;
+                statusEl.textContent = "坐在长椅上休息…（再按 S 起来）";
+                sfx("playClick");
+                break;
+              }
+            }
+          }
+        }
+        // 移动也会站起来
+        if (sitting && (left || right || jump)) {
+          sitting = false;
+          sitBench = null;
+          statusEl.textContent = "继续逛乐园";
+        }
+        if (sitting) {
+          player.vx = 0;
+          player.vy = 0;
+          player.onGround = true;
+        } else {
+          player.vx = (right ? MOVE : 0) - (left ? MOVE : 0);
+          if (player.vx > 0) player.facing = 1;
+          else if (player.vx < 0) player.facing = -1;
+          if (jump && player.onGround) {
+            player.vy = -JUMP;
+            player.onGround = false;
+            sfx("playJump");
+          }
+          player.vy += GRAV;
+          if (player.vy > 16) player.vy = 16;
+          player.x += player.vx;
+          player.x = Math.max(10, Math.min(WORLD_W - 40, player.x));
+          for (const p of platforms) {
+            if (rects(player, p)) {
+              if (player.vx > 0) player.x = p.x - player.w;
+              else if (player.vx < 0) player.x = p.x + p.w;
+              player.vx = 0;
+            }
+          }
+          player.y += player.vy;
+          player.onGround = false;
+          for (const p of platforms) {
+            if (rects(player, p)) {
+              if (player.vy > 0) {
+                player.y = p.y - player.h;
+                player.vy = 0;
+                player.onGround = true;
+              } else if (player.vy < 0) {
+                player.y = p.y + p.h;
+                player.vy = 0;
+              }
+            }
+          }
+        }
+
+        // 踩篝火烤串
+        for (const f of fires) {
+          f.hotT -= dt;
+          if (
+            Math.abs(player.x + player.w / 2 - f.x) < 36 &&
+            player.y + player.h > f.y - 18
+          ) {
+            if (f.hotT <= 0) {
+              f.hotT = 3;
+              statusEl.textContent = "哎呀！好烫！";
+              player.say = "哎呀！好烫！";
+              player.sayT = 2;
+              sfx("playClick");
+              // 老板冲过来骂
+              for (const n of npcs) {
+                if (Math.abs(n.x - f.x) < 200) {
+                  n.say = "踩我烤串干嘛";
+                  n.sayT = 3.5;
+                  n.angry = true;
+                  n.x += (f.x > n.x ? 20 : -20);
+                }
+              }
+              statusEl.textContent = "老板生气了！直接输入 duobuqi 或 对不起（手机点老板）";
+            }
+          }
+        }
+        if (player.sayT > 0) {
+          player.sayT -= dt;
+          if (player.sayT <= 0) player.say = "";
+        }
+
+        // 路过店铺
+        for (const s of shops) {
+          if (Math.abs(player.x + player.w / 2 - s.x) < 120) {
+            statusEl.textContent = `路过「${s.name}」· 只能看看，不能买`;
+          }
+        }
+        // 靠近长椅提示
+        for (const b of benches) {
+          if (!sitting && Math.abs(player.x + player.w / 2 - b.x) < 50) {
+            statusEl.textContent = "这里有长椅 · 按 S 坐下休息";
+          }
+        }
+
+        // NPC 说话（靠近店就问候）
+        for (const n of npcs) {
+          n.sayT -= dt;
+          const near = Math.abs(player.x - n.x) < 180;
+          if (near && n.sayT <= 0) {
+            n.say = NPC_SAYS[(Math.random() * NPC_SAYS.length) | 0];
+            n.sayT = 2.8;
+          }
+          if (!near) {
+            n.say = "";
+            n.sayT = 0;
+          }
+        }
+
+        cameraX = Math.max(0, Math.min(player.x - W * 0.35, WORLD_W - W));
+        updateCoop(dt);
+      }
+
+      function drawShop(s) {
+        const x = s.x;
+        const y = GROUND_Y;
+        ctx.save();
+        if (s.kind === "bbq") {
+          // 烧烤摊
+          ctx.fillStyle = "#8b4513";
+          ctx.fillRect(x - 50, y - 90, 100, 90);
+          ctx.fillStyle = "#c0392b";
+          ctx.fillRect(x - 60, y - 110, 120, 22);
+          ctx.fillStyle = "#fff";
+          ctx.font = "700 13px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("烧烤摊", x, y - 94);
+          // 烤炉烟
+          ctx.fillStyle = "rgba(255,255,255,0.35)";
+          for (let i = 0; i < 3; i++) {
+            ctx.beginPath();
+            ctx.arc(x + Math.sin(time + i) * 8, y - 120 - i * 12, 10 + i * 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        } else if (s.kind === "tea") {
+          // 奶茶店
+          ctx.fillStyle = "#2980b9";
+          ctx.fillRect(x - 55, y - 100, 110, 100);
+          ctx.fillStyle = "#f5cba7";
+          ctx.fillRect(x - 55, y - 100, 110, 28);
+          ctx.fillStyle = "#5d4037";
+          ctx.font = "700 13px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("奶茶店", x, y - 81);
+          ctx.fillStyle = "#fff";
+          ctx.beginPath();
+          ctx.arc(x, y - 40, 16, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#c0392b";
+          ctx.fillRect(x - 4, y - 62, 8, 18);
+        } else {
+          // 便利店
+          ctx.fillStyle = "#27ae60";
+          ctx.fillRect(x - 70, y - 110, 140, 110);
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(x - 70, y - 110, 140, 32);
+          ctx.fillStyle = "#1e8449";
+          ctx.font = "700 14px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("便利店", x, y - 88);
+          ctx.fillStyle = "#f1c40f";
+          ctx.fillRect(x - 20, y - 50, 40, 50);
+        }
+        ctx.restore();
+      }
+
+      function drawPlayer(p, color) {
+        const x = p.x - cameraX;
+        const y = p.y;
+        ctx.fillStyle = "#245a8a";
+        ctx.fillRect(x + 2, y + 26, 10, 14);
+        ctx.fillRect(x + 16, y + 26, 10, 14);
+        ctx.fillStyle = color || "#3ec6ff";
+        ctx.fillRect(x, y + 12, p.w, 16);
+        ctx.fillStyle = "#ffe0b8";
+        ctx.fillRect(x + 5, y, 18, 14);
+        ctx.fillStyle = "#2a2118";
+        ctx.fillRect(x + ((p.facing || 1) > 0 ? 15 : 8), y + 5, 4, 4);
+      }
+
+      function draw() {
+        // 天空
+        const sky = ctx.createLinearGradient(0, 0, 0, H);
+        sky.addColorStop(0, "#7ec8ff");
+        sky.addColorStop(1, "#b8e0ff");
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, W, H);
+        // 云
+        ctx.fillStyle = "rgba(255,255,255,0.8)";
+        for (let i = 0; i < 5; i++) {
+          const cx = ((i * 220 - cameraX * 0.3) % (W + 200)) - 80;
+          ctx.beginPath();
+          ctx.ellipse(cx, 60 + (i % 2) * 30, 50, 22, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // 远处树
+        for (let i = 0; i < 12; i++) {
+          const tx = i * 320 - cameraX * 0.5;
+          if (tx < -80 || tx > W + 80) continue;
+          ctx.fillStyle = "#228B22";
+          ctx.beginPath();
+          ctx.arc(tx, GROUND_Y - 50, 36, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#5d4037";
+          ctx.fillRect(tx - 8, GROUND_Y - 50, 16, 50);
+        }
+        // 草坪
+        ctx.fillStyle = "#3cb371";
+        ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+        ctx.fillStyle = "#2e8b57";
+        for (let i = 0; i < 40; i++) {
+          const gx = (i * 28 - cameraX * 0.8) % W;
+          ctx.fillRect(gx, GROUND_Y, 4, 12);
+        }
+        // 平台
+        for (const p of platforms) {
+          if (p.y > GROUND_Y) continue;
+          const sx = p.x - cameraX;
+          if (sx + p.w < -20 || sx > W + 20) continue;
+          ctx.fillStyle = "#8fbc8f";
+          ctx.fillRect(sx, p.y, p.w, p.h);
+          ctx.fillStyle = "#6b8e23";
+          ctx.fillRect(sx, p.y, p.w, 6);
+        }
+        // 出生点入口图（把游戏画面贴上去）
+        for (const p of portals) {
+          const sx = p.x - cameraX;
+          if (sx < -160 || sx > W + 80) continue;
+          // 边框
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(sx - 4, p.y - 4, p.w + 8, p.h + 8);
+          ctx.fillStyle = p.c;
+          ctx.fillRect(sx, p.y, p.w, p.h);
+
+          // 预览画面
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(sx, p.y, p.w, p.h - 28);
+          ctx.clip();
+          if (p.title === "颜色躲猫猫") {
+            // 农场小人预览
+            ctx.fillStyle = "#87ceeb";
+            ctx.fillRect(sx, p.y, p.w, 50);
+            ctx.fillStyle = "#7cb342";
+            ctx.fillRect(sx, p.y + 50, p.w, p.h - 78);
+            ctx.fillStyle = "#8B4513";
+            ctx.fillRect(sx + 8, p.y + 50, 28, 12);
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillRect(sx + 50, p.y + 50, 28, 12);
+            // 彩色小人
+            ctx.fillStyle = "#9b59b6";
+            ctx.fillRect(sx + 28, p.y + 38, 18, 14);
+            ctx.beginPath();
+            ctx.arc(sx + 37, p.y + 32, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(sx + 33, p.y + 30, 3, 3);
+            ctx.fillRect(sx + 39, p.y + 30, 3, 3);
+          } else if (p.title === "向上跑酷") {
+            // 方塔跑酷预览
+            ctx.fillStyle = "#1a237e";
+            ctx.fillRect(sx, p.y, p.w, p.h - 28);
+            ctx.fillStyle = "#283593";
+            ctx.fillRect(sx + 18, p.y, p.w - 36, p.h - 28);
+            const cols = ["#e91e63", "#f4d35e", "#2c2c2c", "#6d4c41"];
+            for (let i = 0; i < 4; i++) {
+              ctx.fillStyle = cols[i];
+              ctx.fillRect(sx + 24 + (i % 2) * 30, p.y + 20 + i * 18, 36, 8);
+            }
+            // 小人
+            ctx.fillStyle = "#3ec6ff";
+            ctx.fillRect(sx + 40, p.y + 48, 12, 12);
+          } else {
+            // 未开放锁
+            ctx.fillStyle = "#455a64";
+            ctx.fillRect(sx, p.y, p.w, p.h - 28);
+            ctx.fillStyle = "#90a4ae";
+            ctx.fillRect(sx + 34, p.y + 28, 42, 32);
+            ctx.fillStyle = "#455a64";
+            ctx.beginPath();
+            ctx.arc(sx + 55, p.y + 28, 16, Math.PI, 0);
+            ctx.lineWidth = 8;
+            ctx.strokeStyle = "#90a4ae";
+            ctx.stroke();
+            ctx.fillStyle = "#fff";
+            ctx.font = "700 18px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("?", sx + p.w / 2, p.y + 50);
+          }
+          ctx.restore();
+
+          // 标题条
+          ctx.fillStyle = "rgba(0,0,0,0.55)";
+          ctx.fillRect(sx, p.y + p.h - 28, p.w, 28);
+          ctx.fillStyle = "#fff";
+          ctx.font = "700 12px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(p.title, sx + p.w / 2, p.y + p.h - 14);
+          ctx.font = "10px sans-serif";
+          ctx.fillStyle = "rgba(255,255,255,0.8)";
+          ctx.fillText(p.sub, sx + p.w / 2, p.y + p.h - 2);
+          ctx.textAlign = "left";
+        }
+        // 篝火烤串
+        for (const f of fires) {
+          const fx = f.x - cameraX;
+          if (fx < -100 || fx > W + 100) continue;
+          ctx.fillStyle = "#5d4037";
+          ctx.fillRect(fx - 18, f.y + 2, 36, 10);
+          ctx.fillStyle = "#8d6e63";
+          ctx.fillRect(fx - 12, f.y - 6, 24, 8);
+          const fl = 0.85 + Math.sin(time * 8 + f.x) * 0.15;
+          const fg = ctx.createLinearGradient(fx, f.y - 6, fx, f.y - 40);
+          fg.addColorStop(0, "#ff6b00");
+          fg.addColorStop(1, "rgba(255,200,40,0)");
+          ctx.fillStyle = fg;
+          ctx.beginPath();
+          ctx.moveTo(fx - 12, f.y - 4);
+          ctx.quadraticCurveTo(fx, f.y - 42 * fl, fx + 12, f.y - 4);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = "#8d6e63";
+          ctx.lineWidth = 3;
+          for (let i = -1; i <= 1; i++) {
+            ctx.beginPath();
+            ctx.moveTo(fx + i * 12, f.y - 30);
+            ctx.lineTo(fx + i * 12 + 6, f.y - 2);
+            ctx.stroke();
+            ctx.fillStyle = "#c0392b";
+            ctx.beginPath();
+            ctx.arc(fx + i * 12 + 3, f.y - 18, 5, 0, Math.PI * 2);
+            ctx.arc(fx + i * 12 + 4, f.y - 10, 5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        // 店铺
+        for (const s of shops) {
+          const sx = s.x - cameraX;
+          if (sx < -200 || sx > W + 200) continue;
+          ctx.save();
+          ctx.translate(-cameraX, 0);
+          drawShop(s);
+          ctx.restore();
+        }
+        // 长椅
+        for (const b of benches) {
+          const sx = b.x - cameraX;
+          if (sx < -80 || sx > W + 80) continue;
+          ctx.save();
+          // 椅面
+          ctx.fillStyle = "#8B5A2B";
+          ctx.fillRect(sx - 30, b.y, 60, 8);
+          // 椅背
+          ctx.fillStyle = "#A0522D";
+          ctx.fillRect(sx - 30, b.y - 18, 60, 8);
+          // 腿
+          ctx.fillStyle = "#5D4037";
+          ctx.fillRect(sx - 26, b.y + 8, 6, 16);
+          ctx.fillRect(sx + 20, b.y + 8, 6, 16);
+          // 靠背竖条
+          ctx.fillStyle = "#A0522D";
+          ctx.fillRect(sx - 28, b.y - 18, 4, 18);
+          ctx.fillRect(sx + 24, b.y - 18, 4, 18);
+          ctx.restore();
+        }
+        // 店旁 NPC
+        for (const n of npcs) {
+          const sx = n.x - cameraX;
+          if (sx < -80 || sx > W + 80) continue;
+          ctx.save();
+          ctx.translate(-cameraX, 0);
+          // 身体
+          ctx.fillStyle = "#e74c3c";
+          ctx.fillRect(n.x - 12, n.y + 8, 24, 28);
+          // 头
+          ctx.fillStyle = "#ffe0b8";
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, 12, 0, Math.PI * 2);
+          ctx.fill();
+          // 眼睛
+          ctx.fillStyle = "#2a2118";
+          ctx.fillRect(n.x - 5, n.y - 2, 3, 3);
+          ctx.fillRect(n.x + 2, n.y - 2, 3, 3);
+          // 名字
+          ctx.fillStyle = "#fff";
+          ctx.font = "11px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(n.name, n.x, n.y - 22);
+          // 对话气泡
+          if (n.say && n.sayT > 0) {
+            ctx.fillStyle = "rgba(255,255,255,0.95)";
+            const tw = ctx.measureText(n.say).width + 16;
+            ctx.fillRect(n.x - tw / 2, n.y - 52, tw, 22);
+            ctx.fillStyle = "#223";
+            ctx.font = "12px 'Noto Sans SC', sans-serif";
+            ctx.fillText(n.say, n.x, n.y - 36);
+          }
+          ctx.textAlign = "left";
+          ctx.restore();
+        }
+        // 远程玩家
+        for (const rp of remotes.values()) {
+          if (rp.x == null) continue;
+          drawPlayer(rp, rp.color || "#7dffb0");
+          ctx.fillStyle = "#e8f4ff";
+          ctx.font = "700 11px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(rp.name || "玩家", rp.x - cameraX + 14, rp.y - 8);
+          ctx.textAlign = "left";
+        }
+        // 自己
+        drawPlayer(player, "#3ec6ff");
+        if (player.say) {
+          ctx.fillStyle = "rgba(255,255,255,0.95)";
+          const tw = ctx.measureText(player.say).width + 16;
+          const px = player.x - cameraX + 14;
+          ctx.fillRect(px - tw / 2, player.y - 36, tw, 22);
+          ctx.fillStyle = "#223";
+          ctx.font = "12px 'Noto Sans SC', sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(player.say, px, player.y - 20);
+          ctx.textAlign = "left";
+        }
+      }
+
+      function loop(ts) {
+        if (!loop.last) loop.last = ts;
+        const dt = Math.min(0.04, (ts - loop.last) / 1000);
+        loop.last = ts;
+        update(dt);
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      window.addEventListener("keydown", (e) => {
+        if (["ArrowLeft", "ArrowRight", "ArrowUp", " ", "s", "S", "ArrowDown"].includes(e.key)) e.preventDefault();
+        if ((e.key === "s" || e.key === "S" || e.key === "ArrowDown") && !e.repeat) {
+          sitToggle = true;
+        }
+        keys.add(e.key);
+        // 老板生气时：直接打 duobuqi / duibuqi / sorry
+        if (e.key && e.key.length === 1) {
+          typeBuf = (typeBuf + e.key.toLowerCase()).slice(-12);
+          if (/duobuqi|duibuqi|sorry/.test(typeBuf)) {
+            calmBoss();
+            typeBuf = "";
+          }
+        }
+        if (e.key === "Enter") {
+          const box = document.getElementById("apology-input");
+          if (box && !box.parentElement.classList.contains("hidden")) {
+            tryApology(box.value);
+            box.value = "";
+            box.parentElement.classList.add("hidden");
+          }
+        }
+      });
+      window.addEventListener("keyup", (e) => keys.delete(e.key));
+
+      function calmBoss() {
+        for (const n of npcs) {
+          if (n.angry) {
+            n.angry = false;
+            n.say = "算了算了，下次小心";
+            n.sayT = 3;
+            player.say = "对不起！";
+            player.sayT = 2;
+            sfx("playClick");
+            statusEl.textContent = "老板消气了";
+            return true;
+          }
+        }
+        return false;
+      }
+      function tryApology(text) {
+        const t = String(text || "").trim().toLowerCase().replace(/\s+/g, "");
+        if (!t) return;
+        if (t.includes("duobuqi") || t.includes("duibuqi") || t.includes("对不起") || t.includes("sorry")) {
+          calmBoss();
+        } else {
+          statusEl.textContent = "要输入「对不起」或 duobuqi 哦";
+        }
+      }
+
+      // 手机：点老板出打字框
+      canvas.addEventListener("click", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const wx = ((e.clientX - rect.left) / rect.width) * W + cameraX;
+        const wy = ((e.clientY - rect.top) / rect.height) * H;
+        for (const n of npcs) {
+          if (Math.abs(wx - n.x) < 30 && Math.abs(wy - n.y) < 50) {
+            if (n.angry) {
+              const wrap = document.getElementById("apology-wrap");
+              if (wrap) {
+                wrap.classList.remove("hidden");
+                const box = document.getElementById("apology-input");
+                if (box) box.focus();
+              }
+              statusEl.textContent = "输入 对不起 或 duobuqi 让老板消气";
+            } else {
+              n.say = NPC_SAYS[(Math.random() * NPC_SAYS.length) | 0];
+              n.sayT = 2.5;
+            }
+            return;
+          }
+        }
+        for (const p of portals) {
+          if (wx >= p.x && wx <= p.x + p.w && wy >= p.y && wy <= p.y + p.h) {
+            if (p.href) {
+              sfx("playClick");
+              location.href = p.href;
+            } else {
+              statusEl.textContent = "这个入口还没开放";
+              sfx("playClick");
+            }
+            return;
+          }
+        }
+      });
+
+      function bindHold(el, key) {
+        if (!el) return;
+        const on = (e) => {
+          e.preventDefault();
+          touch[key] = true;
+        };
+        const off = () => {
+          touch[key] = false;
+        };
+        el.addEventListener("pointerdown", on);
+        el.addEventListener("pointerup", off);
+        el.addEventListener("pointercancel", off);
+        el.addEventListener("pointerleave", off);
+      }
+      document.querySelectorAll("[data-dir]").forEach((el) => {
+        bindHold(el, el.dataset.dir === "left" ? "left" : "right");
+      });
+      document.querySelectorAll("[data-action='jump']").forEach((el) => bindHold(el, "jump"));
+
+      // 联机
+      function colorFor(id) {
+        let h = 0;
+        for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+        return ["#ff8a5c", "#b8ff6a", "#d47aff", "#ffd36a", "#6ad4ff", "#ff6b9d"][Math.abs(h) % 6];
+      }
+      function handleCoopMsg(msg) {
+        if (!msg || msg.lv !== COOP_LEVEL) return;
+        const id = msg.id || "peer";
+        if (id === myId) return;
+        if (msg.type === "bye") {
+          remotes.delete(id);
+          return;
+        }
+        if (msg.type === "hello" || msg.type === "state") {
+          const prev = remotes.get(id) || { id, color: colorFor(id) };
+          prev.name = (msg.name || prev.name || "游客").slice(0, 12);
+          if (msg.type === "state") {
+            prev.x = msg.x;
+            prev.y = msg.y;
+            prev.facing = msg.facing || 1;
+            prev.last = time;
+          } else prev.last = time;
+          remotes.set(id, prev);
+        }
+      }
+      function updateCoop(dt) {
+        if (!window.LevelCoop || !LevelCoop.isJoined()) return;
+        coopAcc += dt;
+        const moved = Math.abs(player.x - lastSend.x) > 0.8 || Math.abs(player.y - lastSend.y) > 0.8;
+        if (coopAcc >= (moved ? 0.1 : 0.4)) {
+          coopAcc = 0;
+          lastSend = { x: player.x, y: player.y };
+          LevelCoop.send({
+            type: "state",
+            lv: COOP_LEVEL,
+            x: player.x | 0,
+            y: player.y | 0,
+            facing: player.facing,
+            name: "游客",
+          });
+        }
+        for (const [id, rp] of [...remotes]) {
+          if (time - (rp.last || 0) > 6) remotes.delete(id);
+        }
+      }
+      if (window.LevelCoop) {
+        LevelCoop.join(myId, {
+          level: COOP_LEVEL,
+          name: "游客",
+          onMessage: handleCoopMsg,
+          onCount: (n) => {
+            coopCount = Math.max(1, Number(n) || 1);
+            statusEl.textContent = `乐园联机中 · ${coopCount} 人`;
+          },
+          onStatus: () => {
+            statusEl.textContent = `乐园 · ${coopCount} 人在线`;
+          },
+        });
+      }
+
+      reset();
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

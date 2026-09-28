@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>第二季 · 第7关 · 安全常识</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #0a1a3a;
+      font-family: "Noto Sans SC", -apple-system, "PingFang SC", sans-serif;
+      color: #e8f4ff;
+      overflow: hidden;
+      user-select: none;
+    }
+    .wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+    }
+    .top {
+      width: min(860px, 96vw);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(16px, 3.5vw, 22px);
+      color: #7ec8ff;
+    }
+    .tag {
+      margin: 4px 0 0;
+      color: #8eb8e0;
+      font-size: 12px;
+    }
+    .back {
+      appearance: none;
+      border: 1px solid #4a90c8;
+      background: rgba(30, 70, 120, 0.55);
+      color: #cfeaff;
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .elevator {
+      width: min(420px, 94vw);
+      border-radius: 18px;
+      border: 3px solid #6a7a8a;
+      background:
+        linear-gradient(180deg, #c5d0d8 0%, #a8b6c2 100%);
+      padding: 14px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.4);
+    }
+    .display {
+      height: 56px;
+      border-radius: 10px;
+      background: #1a2030;
+      border: 2px solid #3a4a5a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Press Start 2P", ui-monospace, monospace;
+      font-size: 28px;
+      color: #7dffb0;
+      letter-spacing: 0.2em;
+      margin-bottom: 12px;
+    }
+    .display.broken {
+      color: #ff6b6b;
+      animation: flick 0.35s steps(2) infinite;
+    }
+    @keyframes flick {
+      50% { opacity: 0.45; }
+    }
+    .cab {
+      position: relative;
+      height: 320px;
+      border-radius: 12px;
+      background:
+        linear-gradient(180deg, #d8e2ea 0%, #b8c6d2 55%, #8a9aaa 100%);
+      overflow: hidden;
+      border: 2px solid #7a8a9a;
+    }
+    /* 门外：商场景象 */
+    .mall {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background:
+        linear-gradient(180deg, #f5e6c8 0%, #e8d4a8 35%, #c8b088 100%);
+      overflow: hidden;
+    }
+    .mall .floor {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 28%;
+      background: linear-gradient(180deg, #b08968, #8a6a4a);
+    }
+    .mall .shop {
+      position: absolute;
+      bottom: 28%;
+      width: 28%;
+      height: 42%;
+      border-radius: 8px 8px 0 0;
+      background: linear-gradient(180deg, #6ec6ff, #2f7fd4);
+      border: 2px solid #1e5fa8;
+    }
+    .mall .shop.s2 {
+      left: 36%;
+      background: linear-gradient(180deg, #ffb347, #e67e22);
+      border-color: #c45c26;
+    }
+    .mall .shop.s3 {
+      right: 6%;
+      background: linear-gradient(180deg, #7dffb0, #27ae60);
+      border-color: #1e7a4a;
+    }
+    .mall .shop.s1 { left: 6%; }
+    .mall .sign {
+      position: absolute;
+      top: 8%;
+      left: 0; right: 0;
+      text-align: center;
+      color: #5a3a20;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .mall .light {
+      position: absolute;
+      top: 0;
+      width: 36px;
+      height: 8px;
+      border-radius: 4px;
+      background: #fff6c8;
+      box-shadow: 0 0 18px #ffe07a;
+    }
+
+    /* 电梯门：金属双开门 */
+    .door {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 50.5%;
+      z-index: 2;
+      transition: transform 1.6s ease;
+      background:
+        linear-gradient(90deg, #6a7a88 0%, #c5d2dc 18%, #e8f0f6 42%, #a8b8c4 58%, #7a8a98 100%);
+      border: 2px solid #4a5a68;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+    }
+    .door.left {
+      left: 0;
+      transform: translateX(-100%);
+      border-right: 3px solid #3a4a58;
+    }
+    .door.right {
+      right: 0;
+      transform: translateX(100%);
+      border-left: 3px solid #3a4a58;
+    }
+    .door-open .door.left { transform: translateX(-100%); }
+    .door-open .door.right { transform: translateX(100%); }
+    .doors-closed .door.left,
+    .doors-closed .door.right { transform: translateX(0); }
+    .door .seam {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 2px;
+      background: rgba(40,50,60,0.35);
+    }
+    .door.left .seam { right: 10px; }
+    .door.right .seam { left: 10px; }
+    .door .handle {
+      position: absolute;
+      top: 50%;
+      width: 6px;
+      height: 28px;
+      border-radius: 3px;
+      background: #5a6a78;
+      transform: translateY(-50%);
+    }
+    .door.left .handle { right: 18px; }
+    .door.right .handle { left: 18px; }
+    .person {
+      position: absolute;
+      bottom: 18px;
+      width: 48px;
+      text-align: center;
+      z-index: 3;
+    }
+    .person .body {
+      width: 36px;
+      height: 48px;
+      margin: 0 auto;
+      border-radius: 12px 12px 8px 8px;
+    }
+    .person .head {
+      width: 28px;
+      height: 28px;
+      margin: 0 auto -6px;
+      border-radius: 50%;
+      background: #ffe0b8;
+      border: 2px solid #d4a888;
+    }
+    .bubble {
+      position: absolute;
+      bottom: 92px;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      background: rgba(255, 255, 255, 0.95);
+      color: #223;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 10px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .bubble.show { opacity: 1; }
+    .panel {
+      width: min(420px, 94vw);
+      border-radius: 14px;
+      border: 2px solid #2f7fd4;
+      background: rgba(10, 28, 58, 0.92);
+      padding: 12px;
+    }
+    .status {
+      color: #ffd24a;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+      min-height: 1.4em;
+      margin-bottom: 10px;
+    }
+    .keys {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .key {
+      appearance: none;
+      min-height: 48px;
+      border-radius: 10px;
+      border: 2px solid #4a6a8a;
+      background: #e8eef4;
+      color: #234;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .key.small {
+      grid-column: span 1;
+      font-size: 12px;
+      min-height: 40px;
+      background: #d0dce6;
+    }
+    .key.alarm {
+      grid-column: span 3;
+      background: linear-gradient(180deg, #ff8a5c, #c45c26);
+      color: #fff;
+      border-color: #8a3a10;
+      font-size: 18px;
+      letter-spacing: 0.08em;
+    }
+    .key:active { transform: translateY(2px); filter: brightness(0.95); }
+    .hint {
+      color: #8eb8e0;
+      font-size: 12px;
+      text-align: center;
+      margin-top: 8px;
+    }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 15, 40, 0.72);
+      z-index: 10;
+    }
+    .overlay.show { display: flex; }
+    .card {
+      text-align: center;
+      padding: 28px 24px;
+      border-radius: 18px;
+      background: rgba(15, 45, 90, 0.95);
+      border: 2px solid #4a90c8;
+      width: min(380px, 92vw);
+    }
+    .card h2 { margin: 0 0 10px; color: #9fd6ff; }
+    .card p { margin: 0 0 18px; color: #cfe8ff; line-height: 1.6; font-size: 14px; }
+    .card button {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      margin: 6px;
+    }
+    .btn-primary {
+      background: linear-gradient(180deg, #7ec8ff, #2f7fd4);
+      color: #062040;
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid #4a90c8;
+      color: #cfeaff;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>第二季 · 第 7 关 · 安全常识</h1>
+        <p class="tag">电梯故障时，按应急按钮求助</p>
+      </div>
+      <a class="back" href="season2.html">← 第二季首页</a>
+    </div>
+
+    <div class="elevator">
+      <div class="display" id="display">▲ 1</div>
+      <div class="cab door-open" id="cab">
+        <!-- 门外商场 -->
+        <div class="mall">
+          <div class="sign">🛒 商场 1F</div>
+          <div class="light" style="left: 18%"></div>
+          <div class="light" style="left: 48%"></div>
+          <div class="light" style="left: 78%"></div>
+          <div class="shop s1"></div>
+          <div class="shop s2"></div>
+          <div class="shop s3"></div>
+          <div class="floor"></div>
+        </div>
+        <div class="door left"><div class="seam"></div><div class="handle"></div></div>
+        <div class="door right"><div class="seam"></div><div class="handle"></div></div>
+        <div class="person" style="left: 28px">
+          <div class="bubble" id="b0"></div>
+          <div class="head"></div>
+          <div class="body" style="background:#3ec6ff"></div>
+        </div>
+        <div class="person" style="left: 50%; transform: translateX(-50%)">
+          <div class="bubble" id="b1"></div>
+          <div class="head"></div>
+          <div class="body" style="background:#ff7eb6"></div>
+        </div>
+        <div class="person" style="right: 28px">
+          <div class="bubble" id="b2"></div>
+          <div class="head"></div>
+          <div class="body" style="background:#7dffb0"></div>
+        </div>
+        <div class="person" style="left: 32%; bottom: 18px">
+          <div class="bubble" id="b3"></div>
+          <div class="head"></div>
+          <div class="body" style="background:#ffd24a"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="status" id="status">电梯正常运行中…</div>
+      <div class="keys">
+        <button class="key" data-floor="1">1</button>
+        <button class="key" data-floor="2">2</button>
+        <button class="key" data-floor="3">3</button>
+        <button class="key small" data-floor="5">5</button>
+        <button class="key small" data-floor="8">8</button>
+        <button class="key small" data-floor="12">12</button>
+        <button class="key alarm" id="alarm-btn" type="button">🔔 应急按钮</button>
+      </div>
+      <p class="hint">电梯故障时不要慌，按红色<strong>应急按钮</strong>联系救援</p>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="card">
+      <h2 id="ov-title">第 7 关通关！</h2>
+      <p id="ov-msg">正确做法：按应急按钮求助，不要扒门、不要乱跳。</p>
+      <button class="btn-primary" type="button" id="ov-retry">再玩一次</button>
+      <button class="btn-ghost" type="button" id="ov-home">回第二季首页</button>
+    </div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script>
+    (() => {
+      function sfx(name) {
+        try {
+          if (!window.GameAudio) return;
+          if (GameAudio.unlock) GameAudio.unlock();
+          if (GameAudio[name]) GameAudio[name]();
+        } catch (e) {}
+      }
+      window.addEventListener("pointerdown", function once() {
+        try {
+          if (window.GameAudio && GameAudio.unlock) GameAudio.unlock();
+        } catch (e) {}
+        window.removeEventListener("pointerdown", once);
+      });
+
+      const display = document.getElementById("display");
+      const statusEl = document.getElementById("status");
+      const overlay = document.getElementById("overlay");
+      const bubbles = [0, 1, 2, 3].map((i) => document.getElementById("b" + i));
+
+      const SAYS = ["这电梯怎么了", "这电梯怎么坏了", "好害怕"];
+      let floor = 1;
+      let broken = false;
+      let sayTimer = 0;
+      let rideTimer = 0;
+      let win = false;
+
+      function showFloor(n) {
+        display.textContent = (broken ? "" : "▲ ") + n;
+      }
+
+      function say(i, text) {
+        const b = bubbles[i];
+        if (!b) return;
+        b.textContent = text;
+        b.classList.add("show");
+        setTimeout(() => b.classList.remove("show"), 1800);
+      }
+
+      // ── 献给爱丽丝 + going up（底层 Web Audio，保证有声） ──
+      let furTimer = 0;
+      function getAc() {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        const ac = window.__musAc || (window.__musAc = new AC());
+        if (ac.state === "suspended") ac.resume();
+        return ac;
+      }
+      function beep(freq, dur) {
+        const ac = getAc();
+        if (!ac) return;
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        o.type = "triangle";
+        o.frequency.value = freq;
+        const t = ac.currentTime;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g);
+        g.connect(ac.destination);
+        o.start(t);
+        o.stop(t + dur + 0.05);
+      }
+      function playGoingUp() {
+        try {
+          if (window.GameAudio && GameAudio.playSubwayDing) GameAudio.playSubwayDing();
+        } catch (e) {}
+        [392, 523, 659, 784].forEach((f, i) => {
+          setTimeout(() => beep(f, 0.16), i * 100);
+        });
+      }
+      function playFurElise() {
+        clearInterval(furTimer);
+        const seq = [
+          [659.25, 200], [622.25, 200], [659.25, 200], [622.25, 200], [659.25, 200],
+          [493.88, 200], [587.33, 200], [523.25, 200], [440, 400],
+          [220, 200], [261.63, 200], [329.63, 200], [440, 200],
+          [493.88, 400], [329.63, 200], [415.3, 200], [493.88, 200], [523.25, 400],
+        ];
+        let idx = 0;
+        function step() {
+          if (win || broken) {
+            clearInterval(furTimer);
+            return;
+          }
+          const [f, d] = seq[idx % seq.length];
+          beep(f, d / 1000 * 0.9);
+          idx++;
+        }
+        step();
+        furTimer = setInterval(step, 230);
+      }
+      function stopFurElise() {
+        clearInterval(furTimer);
+      }
+
+      function startNormal() {
+        broken = false;
+        win = false;
+        floor = 1;
+        display.classList.remove("broken");
+        showFloor(1);
+        const cab = document.getElementById("cab");
+        if (cab) {
+          cab.classList.remove("doors-closed");
+          cab.classList.add("door-open");
+        }
+        statusEl.textContent = "1 楼 · 电梯门打开中…（10 秒后关门上行）";
+        overlay.classList.remove("show");
+        clearInterval(rideTimer);
+        clearInterval(sayTimer);
+
+        // 1 楼开门 10 秒 → 关门 → 上行
+        setTimeout(() => {
+          if (win) return;
+          statusEl.textContent = "电梯门正在关闭…";
+          if (cab) {
+            cab.classList.remove("door-open");
+            cab.classList.add("doors-closed");
+          }
+          sfx("playClick");
+          setTimeout(() => {
+            if (win) return;
+            statusEl.textContent = "电梯上行 going up";
+            // 语音/提示：电梯上行 going up
+            try {
+              if (window.GameAudio && GameAudio.playSubwayAnnounce) {
+                GameAudio.playSubwayAnnounce("电梯上行，going up");
+              } else if (window.speechSynthesis) {
+                const u = new SpeechSynthesisUtterance("电梯上行，going up");
+                u.lang = "zh-CN";
+                speechSynthesis.speak(u);
+              } else {
+                playGoingUp();
+              }
+            } catch (e) {
+              playGoingUp();
+            }
+            // 提示后再放献给爱丽丝
+            setTimeout(() => {
+              if (!win && !broken) playFurElise();
+            }, 700);
+            rideTimer = setInterval(() => {
+              if (win || broken) {
+                clearInterval(rideTimer);
+                return;
+              }
+              floor += 1;
+              showFloor(floor);
+              statusEl.textContent = "电梯上升中… 当前 " + floor + " 楼";
+              if (floor >= 20) {
+                clearInterval(rideTimer);
+                breakElevator();
+              }
+            }, 420);
+          }, 1500);
+        }, 10000);
+      }
+
+      function breakElevator() {
+        if (win) return;
+        broken = true;
+        stopFurElise();
+        display.textContent = "▼ ▲ --";
+        display.classList.add("broken");
+        statusEl.textContent = "电梯在 20 楼附近故障！楼层显示 -- · 快按应急按钮！";
+        sfx("playPipeClang");
+        // 三个人随机说话
+        let n = 0;
+        clearInterval(sayTimer);
+        sayTimer = setInterval(() => {
+          if (win) {
+            clearInterval(sayTimer);
+            return;
+          }
+          const i = n % 3; // 只让那三人说话
+          say(i, SAYS[(Math.random() * SAYS.length) | 0]);
+          n++;
+        }, 900);
+        say(0, SAYS[0]);
+        say(1, SAYS[1]);
+        say(2, SAYS[2]);
+      }
+
+      function pressAlarm() {
+        if (!broken) {
+          statusEl.textContent = "电梯还没坏，不用紧张";
+          sfx("playClick");
+          return;
+        }
+        win = true;
+        clearInterval(sayTimer);
+        clearInterval(rideTimer);
+        display.textContent = "▲ OK";
+        display.classList.remove("broken");
+        statusEl.textContent = "已呼叫救援，请保持冷静！";
+        sfx("playWin");
+        say(3, "按应急按钮才是对的！");
+        setTimeout(() => overlay.classList.add("show"), 600);
+      }
+
+      document.querySelectorAll("[data-floor]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          sfx("playClick");
+          if (broken) {
+            statusEl.textContent = "按键无效！请按红色应急按钮";
+            return;
+          }
+          floor = Number(btn.dataset.floor);
+          showFloor(floor);
+          statusEl.textContent = "正在前往 " + floor + " 楼…";
+        });
+      });
+      document.getElementById("alarm-btn").addEventListener("click", pressAlarm);
+
+      document.getElementById("ov-retry").addEventListener("click", startNormal);
+      document.getElementById("ov-home").addEventListener("click", () => {
+        location.href = "season2.html";
+      });
+
+      startNormal();
+    })();
+  </script>
+</body>
+</html>
