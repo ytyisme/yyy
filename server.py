@@ -9,14 +9,14 @@ import sys
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
 ROOT = os.path.dirname(os.path.abspath(__file__))
-BUILD = "247"
+BUILD = "264"
 
 
 def lan_ips():
     ips = []
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.connect(("247.5.5.5", 80))
+        sock.connect(("1.1.1.1", 80))
         ip = sock.getsockname()[0]
         sock.close()
         if ip and not ip.startswith("127."):
@@ -57,7 +57,7 @@ class Handler(SimpleHTTPRequestHandler):
                 "urls": [f"http://{ip}:{PORT}/?v={BUILD}" for ip in lan_ips()],
             }
             body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-            self.send_response(247)
+            self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()

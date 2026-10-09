@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第二季 · 第13关 · 演唱会</title>
+  <link rel="stylesheet" href="season2-lv13.css?v=1">
+</head>
+<body>
+  <main>
+    <nav><a href="season2.html">← 第二季首页</a><span class="level-badge">第 13 关</span></nav>
+    <header class="heading"><span class="eyebrow">LAVA PARKOUR / LIVE MUSIC</span><h1>今晚，你来点歌</h1><p>选一首喜欢的歌，开启属于你的演唱会。</p></header>
+    <div class="concert-layout">
+      <section class="performance" aria-label="演唱会舞台与播放器">
+        <div id="stage" class="stage">
+          <div class="stage-topline"><span class="live-tag">● LIVE STAGE</span><span>岩浆跑酷音乐现场</span></div>
+          <div class="stage-art" aria-hidden="true">
+            <div class="stars"></div>
+            <div class="spotlight beam-one"></div><div class="spotlight beam-two"></div><div class="spotlight beam-three"></div>
+            <div class="stage-ring"></div>
+            <div class="back-sign">MUSIC<br><span>BRINGS US TOGETHER</span></div>
+            <div class="equalizer"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="performer"><div class="singer-head"><span></span></div><div class="singer-body"></div><div class="singer-arm"></div><div class="microphone"></div><div class="singer-legs"></div></div>
+            <div class="platform"></div>
+            <div id="crowd" class="crowd"></div>
+          </div>
+          <div class="stage-bottomline"><span id="stage-state">等待你的第一首歌</span><span>✦ 只听音乐，享受现场</span></div>
+        </div>
+        <div class="player-card">
+          <div class="now-playing"><div class="record" aria-hidden="true">♫</div><div><p class="eyebrow">NOW PLAYING</p><h2 id="song-title">选一首喜欢的歌</h2><p id="song-subtitle">从歌单选一首，舞台为你亮起</p></div></div>
+          <audio id="song-audio" preload="metadata"></audio>
+          <label class="sr-only" for="seek">歌曲播放进度</label>
+          <input id="seek" class="seek" type="range" min="0" max="100" step="0.1" value="0" disabled aria-valuetext="尚未选择歌曲">
+          <div class="times"><span id="elapsed">0:00</span><span id="duration">0:00</span></div>
+          <div class="playback-controls"><button id="play-toggle" class="play-toggle" type="button" disabled>▶ 播放</button><button id="next-song" class="secondary" type="button" disabled>下一首 →</button><label class="volume-label" for="volume">音量<input id="volume" type="range" min="0" max="100" value="80" aria-label="音量"></label></div>
+          <p id="status" class="status" role="status" aria-live="polite">从歌单选择歌曲开始。只播放音频，不显示视频。</p>
+        </div>
+      </section>
+      <aside class="setlist" aria-labelledby="setlist-title"><div class="setlist-heading"><div><span class="eyebrow">YOUR SETLIST</span><h2 id="setlist-title">今晚的歌单</h2></div><span class="track-count">09 首</span></div><p class="list-hint">想听哪首，就点哪首。</p><div id="song-list" class="song-list"></div><div class="challenge-note"><span>✦</span><p id="challenge-note">听完任意一首即可过关，也可以继续自由点歌。</p></div></aside>
+    </div>
+    <section id="complete" class="complete" hidden aria-labelledby="complete-title"><div><span class="eyebrow">ENCORE!</span><h2 id="complete-title">第 13 关通关！</h2><p>一首歌的时间，留给今晚的自己。</p></div><div class="complete-actions"><button id="continue" type="button" class="secondary">继续点歌</button><a href="season2-lv14.html">下一关 →</a></div></section>
+    <footer>戴上耳机，找到你的节奏。<span>曲目来自你选择的 B站投稿。</span></footer>
+  </main>
+  <script src="season2-lv13-data.js?v=1"></script>
+  <script src="season2-lv13.js?v=1"></script>
+</body>
+</html>

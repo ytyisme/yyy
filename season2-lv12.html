@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第二季 · 第12关 · 电影院</title>
+  <link rel="stylesheet" href="season2-lv12.css?v=4">
+</head>
+<body>
+  <main>
+    <header class="topbar">
+      <a class="back" href="season2.html">← 第二季首页</a>
+      <div class="header-actions"><button id="music-toggle" class="music-toggle" type="button" aria-pressed="false">♫ 开启候场音乐</button><button id="ticket-button" class="ticket-button" type="button" aria-haspopup="dialog">🎟 电影票</button></div>
+    </header>
+    <div class="heading"><span class="eyebrow">LEVEL 12 / CINEMA</span><h1>星光电影院</h1><p>灯光暗下来，好故事就要开始了。</p></div>
+    <section id="cinema" class="cinema lights-on" aria-label="电影院放映厅">
+      <div class="hall-sign"><span>01 号放映厅</span><span id="light-status" class="live-dot">候场中 · 灯光明亮</span></div>
+      <div class="wall-light wall-light-left" aria-hidden="true"></div><div class="wall-light wall-light-right" aria-hidden="true"></div>
+      <div class="curtain curtain-left" aria-hidden="true"></div><div class="curtain curtain-right" aria-hidden="true"></div>
+      <div class="screen-frame">
+        <div class="screen">
+          <div id="screen-welcome" class="screen-welcome">
+            <div class="film-symbol" aria-hidden="true">▶</div>
+            <p class="eyebrow">三片放映 · 欢迎入座</p>
+            <h2 id="welcome-title">今日影片 · 第一部</h2>
+            <p>你的位置已为你留好：A排3座</p>
+            <button id="play-film" type="button" class="play-button">▶ 开始放映</button>
+          </div>
+          <div id="studio-intro" class="studio-intro" hidden role="img" aria-label="岩浆跑酷影业：六个字从空中混着落下，落地后拼成片头">
+            <div class="intro-stars" aria-hidden="true">✦ · ✧ · ✦</div>
+            <div class="intro-ground" aria-hidden="true"></div>
+            <div class="studio-letters" aria-hidden="true"><span class="logo-letter">岩</span><span class="logo-letter">浆</span><span class="logo-letter">跑</span><span class="logo-letter">酷</span><span class="logo-letter">影</span><span class="logo-letter">业</span></div>
+            <p class="studio-caption">LAVA PARKOUR PICTURES</p>
+          </div>
+          <iframe id="movie-player" title="第一部影片 · B站播放器" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" hidden></iframe>
+          <video id="local-movie" src="assets/cinema/film-three.mp4" preload="metadata" controls playsinline hidden aria-label="第三部：从前有座饽饽山"></video>
+          <!-- User-selected ending: https://www.bilibili.com/video/BV1syZWBXEKr/ -->
+          <video id="ending-video" src="assets/cinema/forest-outro.mp4" preload="metadata" playsinline disablepictureinpicture disableremoteplayback hidden aria-label="片尾：早安大森林"></video>
+          <div id="screen-goodbye" class="screen-goodbye" hidden tabindex="-1"><span>✦</span><h2>感谢观影</h2><p>岩浆跑酷影业 · 下次见</p></div>
+        </div>
+        <div class="screen-caption"><span>STARLIGHT CINEMA</span><span>请将手机调至静音</span></div>
+      </div>
+      <div id="movie-controls" class="movie-controls">
+        <div class="film-switch" role="group" aria-label="选择影片">
+          <button type="button" class="film-choice selected" data-film="0" aria-pressed="true">01 <span>第一部</span></button>
+          <button type="button" class="film-choice" data-film="1" aria-pressed="false">02 <span>第二部</span></button>
+          <button type="button" class="film-choice" data-film="2" aria-pressed="false">03 <span>第三部</span></button>
+        </div>
+        <a id="original-film" href="https://www.bilibili.com/video/BV146YJ6pETw/" target="_blank" rel="noopener noreferrer">在 B站打开本片 ↗</a>
+      </div>
+      <div class="show-controls"><p id="play-status" class="play-status" role="status" aria-live="polite">点击页面可开启候场音乐；点击「开始放映」观看开场动画。</p><button id="next-film" type="button" class="next-film" hidden>下一部 →</button></div>
+      <div class="auditorium">
+        <span class="exit-sign" aria-hidden="true">EXIT →</span>
+        <div class="light-beam" aria-hidden="true"></div>
+        <div class="seats-title"><span></span>观众席<span></span></div>
+        <div id="seat-rows" class="seat-rows" aria-label="三排观众席，你坐在 A排3座"></div>
+        <p class="seat-note"><span class="your-seat-dot"></span>蓝色座位是你 · NPC 正在安静地享用零食</p>
+      </div>
+      <footer id="hall-footer" class="hall-footer"><p>前两部看完后点击「下一部」。第三部播完自动接片尾，片尾结束后亮灯，候场音乐自动响起。</p><button id="finish" class="finish-button" type="button">结束观影，观看片尾 →</button></footer>
+    </section>
+    <section id="complete" class="complete" hidden tabindex="-1" aria-labelledby="complete-title"><span aria-hidden="true">✦</span><h2 id="complete-title">观影结束，第 12 关通关！</h2><p>谢谢光临星光电影院，下次再来。</p><button id="again" type="button" class="finish-button">再看一场</button><a href="season2-lv13.html">下一关：演唱会 →</a><a href="season2.html">返回选关 →</a></section>
+  </main>
+  <dialog id="ticket-dialog" aria-labelledby="ticket-title">
+    <div class="ticket-top"><span>STARLIGHT CINEMA</span><button id="close-ticket" type="button" aria-label="关闭电影票">×</button></div>
+    <div class="ticket-content"><p class="eyebrow">01 号厅 · 三片放映</p><h2 id="ticket-title">你的电影票</h2><div class="ticket-seat">A<span>排</span>3<span>座</span></div><dl><div><dt>座位号：</dt><dd>A排3座</dd></div><div><dt>姓名：</dt><dd>玩*</dd></div><div><dt>电影开始时间：</dt><dd>12:30</dd></div><div><dt>结束时间：</dt><dd>12：50</dd></div></dl><p class="ticket-note">请对号入座 · 祝你观影愉快</p></div>
+    <div class="ticket-stub"><div class="barcode" aria-hidden="true"></div><span>STL · A03 · 1230</span></div>
+  </dialog>
+  <script src="lib/cinema-audio.js?v=2"></script>
+  <script src="season2-lv12.js?v=4"></script>
+</body>
+</html>

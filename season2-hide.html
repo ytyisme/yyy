@@ -34,6 +34,26 @@
     .card p { margin: 0 0 18px; color: #cfe8ff; line-height: 1.6; font-size: 14px; }
     .card button { appearance: none; border: none; border-radius: 12px; padding: 12px 22px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; margin: 6px; background: linear-gradient(180deg,#7ec8ff,#2f7fd4); color: #062040; }
     .card button.ghost { background: transparent; border: 1px solid #4a90c8; color: #cfeaff; }
+
+    .touch-pad {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 8;
+      display: none; justify-content: space-between; align-items: flex-end;
+      padding: 12px 14px max(14px, env(safe-area-inset-bottom));
+      pointer-events: none;
+      background: linear-gradient(180deg, transparent, rgba(0,0,0,.35));
+    }
+    .touch-move, .touch-actions { display: flex; gap: 12px; pointer-events: auto; }
+    .touch-btn {
+      appearance: none; width: 72px; height: 72px; border-radius: 16px;
+      border: 2px solid rgba(80,150,220,.9); background: rgba(15,45,90,.72);
+      color: #9fd6ff; font-size: 16px; font-family: inherit;
+    }
+    .touch-btn:active, .touch-btn.pressed { transform: translateY(3px); filter: brightness(1.15); }
+    .touch-jump { width: 88px; height: 88px; border-radius: 50%; font-size: 18px; }
+    @media (pointer: coarse) {
+      .touch-pad { display: flex; }
+      .wrap { padding-bottom: 120px; }
+    }
   </style>
 </head>
 <body>
@@ -56,6 +76,16 @@
     <div class="paint" id="swatches"></div>
     <p class="hint">←→/AD 移动 · 躲在农场颜色里 · 抓人者靠近即可抓到</p>
   </div>
+
+    <div class="touch-pad">
+      <div class="touch-move">
+        <button type="button" class="touch-btn" data-dir="left">◀</button>
+        <button type="button" class="touch-btn" data-dir="right">▶</button>
+      </div>
+      <div class="touch-actions">
+        <button type="button" class="touch-btn" data-act="paint">🎨</button>
+      </div>
+    </div>
   <div class="overlay" id="overlay">
     <div class="card">
       <h2 id="ov-title">游戏结束</h2>
@@ -84,6 +114,24 @@
       let myRole = "hide"; // hide | catch（人少时当躲藏者，第二人是抓捕）
       let player = { x: 120, y: GROUND - 40, w: 28, h: 40, vx: 0, facing: 1, alive: true };
       let keys = new Set();
+
+      // 手机触控
+      const touch = { left: false, right: false, jump: false };
+      function bindHold(el, key) {
+        if (!el) return;
+        const on = (e) => { e.preventDefault(); touch[key] = true; el.classList.add("pressed"); };
+        const off = (e) => { if (e && e.preventDefault) e.preventDefault(); touch[key] = false; el.classList.remove("pressed"); };
+        el.addEventListener("pointerdown", on);
+        el.addEventListener("pointerup", off);
+        el.addEventListener("pointercancel", off);
+        el.addEventListener("pointerleave", off);
+      }
+      document.querySelectorAll("[data-dir]").forEach((el) => {
+        bindHold(el, el.dataset.dir === "left" ? "left" : "right");
+      });
+      document.querySelectorAll("[data-act='jump']").forEach((el) => bindHold(el, "jump"));
+
+      const _ok = () => touch.left || touch.right || touch.jump;
       let coopAcc = 0;
       const COOP_LEVEL = 103;
 
@@ -142,8 +190,8 @@
       }
 
       function update(dt) {
-        const left = keys.has("ArrowLeft") || keys.has("a") || keys.has("A");
-        const right = keys.has("ArrowRight") || keys.has("d") || keys.has("D");
+        const left = keys.has("ArrowLeft") || keys.has("a") || keys.has("A") || touch.left;
+        const right = keys.has("ArrowRight") || keys.has("d") || keys.has("D") || touch.right;
         player.vx = (right ? 3.2 : 0) - (left ? 3.2 : 0);
         if (player.vx) player.facing = player.vx > 0 ? 1 : -1;
         player.x += player.vx;

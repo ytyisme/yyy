@@ -24,6 +24,26 @@
     .card p { margin: 0 0 18px; color: #cfe8ff; line-height: 1.6; }
     .card button { appearance: none; border: none; border-radius: 12px; padding: 12px 22px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; margin: 6px; background: linear-gradient(180deg,#7ec8ff,#2f7fd4); color: #062040; }
     .card button.ghost { background: transparent; border: 1px solid #4a90c8; color: #cfeaff; }
+
+    .touch-pad {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 8;
+      display: none; justify-content: space-between; align-items: flex-end;
+      padding: 12px 14px max(14px, env(safe-area-inset-bottom));
+      pointer-events: none;
+      background: linear-gradient(180deg, transparent, rgba(0,0,0,.35));
+    }
+    .touch-move, .touch-actions { display: flex; gap: 12px; pointer-events: auto; }
+    .touch-btn {
+      appearance: none; width: 72px; height: 72px; border-radius: 16px;
+      border: 2px solid rgba(80,150,220,.9); background: rgba(15,45,90,.72);
+      color: #9fd6ff; font-size: 16px; font-family: inherit;
+    }
+    .touch-btn:active, .touch-btn.pressed { transform: translateY(3px); filter: brightness(1.15); }
+    .touch-jump { width: 88px; height: 88px; border-radius: 50%; font-size: 18px; }
+    @media (pointer: coarse) {
+      .touch-pad { display: flex; }
+      .wrap { padding-bottom: 120px; }
+    }
   </style>
 </head>
 <body>
@@ -43,6 +63,16 @@
     </div>
     <p class="hint">←→/AD 移动 · 空格跳 · 每上一层都有存档点</p>
   </div>
+
+    <div class="touch-pad">
+      <div class="touch-move">
+        <button type="button" class="touch-btn" data-dir="left">◀</button>
+        <button type="button" class="touch-btn" data-dir="right">▶</button>
+      </div>
+      <div class="touch-actions">
+        <button type="button" class="touch-btn touch-jump" data-act="jump">跳</button>
+      </div>
+    </div>
   <div class="overlay" id="overlay">
     <div class="card">
       <h2 id="ov-title">通关！</h2>
@@ -98,6 +128,23 @@
 
       keys = new Set();
 
+      // 手机触控
+      const touch = { left: false, right: false, jump: false };
+      function bindHold(el, key) {
+        if (!el) return;
+        const on = (e) => { e.preventDefault(); touch[key] = true; el.classList.add("pressed"); };
+        const off = (e) => { if (e && e.preventDefault) e.preventDefault(); touch[key] = false; el.classList.remove("pressed"); };
+        el.addEventListener("pointerdown", on);
+        el.addEventListener("pointerup", off);
+        el.addEventListener("pointercancel", off);
+        el.addEventListener("pointerleave", off);
+      }
+      document.querySelectorAll("[data-dir]").forEach((el) => {
+        bindHold(el, el.dataset.dir === "left" ? "left" : "right");
+      });
+      document.querySelectorAll("[data-act='jump']").forEach((el) => bindHold(el, "jump"));
+
+
       function rects(a, b) {
         return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
       }
@@ -112,9 +159,9 @@
       }
 
       function update() {
-        const left = keys.has("ArrowLeft") || keys.has("a") || keys.has("A");
-        const right = keys.has("ArrowRight") || keys.has("d") || keys.has("D");
-        const jump = keys.has(" ") || keys.has("ArrowUp") || keys.has("w") || keys.has("W");
+        const left = keys.has("ArrowLeft") || keys.has("a") || keys.has("A") || touch.left;
+        const right = keys.has("ArrowRight") || keys.has("d") || keys.has("D") || touch.right;
+        const jump = keys.has(" ") || keys.has("ArrowUp") || keys.has("w") || keys.has("W") || touch.jump;
 
         player.vx = (right ? MOVE : 0) - (left ? MOVE : 0);
         if (jump && player.onGround) {

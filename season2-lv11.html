@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第二季 · 第11关 · 成语接龙</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: #0a1a3a; color: #e8f4ff; font-family: system-ui, sans-serif; }
+    main { max-width: 760px; margin: auto; padding: 24px 16px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    h1 { margin: 0; font-size: clamp(20px, 4vw, 28px); color: #7ec8ff; }
+    a { color: #cfeaff; }
+    .hint, #progress, .source { color: #9bbfe0; line-height: 1.7; }
+    .source { font-size: 13px; }
+    .card { margin-top: 24px; padding: clamp(18px, 4vw, 32px); border: 2px solid #3d7eb8; border-radius: 20px; background: #102b50; }
+    .prompt { padding: 20px; background: #1d4775; border-radius: 16px; margin: 20px 0; }
+    .prompt p { margin: 0; color: #c5e3fa; }
+    #idiom { font-size: clamp(28px, 7vw, 42px); line-height: 1.6; margin: 10px 0; overflow-wrap: anywhere; }
+    #idiom strong { color: #ffd24a; }
+    label { display: block; margin-bottom: 10px; }
+    .reply, .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    input { flex: 1; width: 100%; min-width: 150px; padding: 14px; border-radius: 10px; border: 2px solid #639ad0; background: #071b34; color: #fff; font: inherit; }
+    input:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid #ffd24a; outline-offset: 3px; }
+    button { cursor: pointer; padding: 13px 18px; border-radius: 10px; border: 1px solid #ffd24a; background: #ffd24a; color: #302400; font: inherit; }
+    .secondary { background: #224e82; color: #fff; border-color: #609cd5; }
+    .actions { margin-top: 16px; align-items: center; }
+    #status { min-height: 3em; line-height: 1.6; color: #ffd875; }
+    #history { padding-left: 24px; line-height: 1.9; overflow-wrap: anywhere; }
+    #complete { text-align: center; }
+    #complete h2 { color: #ffd24a; font-size: 30px; }
+    #complete .actions { justify-content: center; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <header><h1>第 11 关 · 成语接龙</h1><a href="season2.html">← 第二季首页</a></header>
+    <p class="hint">每轮随机 5 题。用上句的最后一个字，接一个成语；必须是同一个字，五题全部接对后过关。</p>
+    <section class="card" aria-label="成语接龙挑战">
+      <p id="progress"></p>
+      <div id="challenge">
+        <div class="prompt">
+          <p>系统出题</p><h2 id="idiom"></h2><p id="clue"></p>
+        </div>
+        <form id="reply-form">
+          <label for="reply">你来接：</label>
+          <div class="reply"><input id="reply" placeholder="输入一个成语" autocomplete="off" maxlength="40" aria-describedby="status clue"><button type="submit">接龙</button></div>
+        </form>
+        <div class="actions"><button id="hint" type="button" class="secondary">给个提示</button></div>
+      </div>
+      <p id="status" role="status" aria-live="polite"></p>
+      <div id="complete" hidden>
+        <h2>恭喜过关！</h2><p>五题全部接对，成语接龙挑战完成！</p>
+        <div class="actions"><button id="retry" type="button">再随机一轮</button><a href="season2-lv12.html">下一关：电影院 →</a><a href="season2.html">回第二季首页</a></div>
+      </div>
+      <ol id="history" aria-label="本轮接龙记录"></ol>
+    </section>
+    <p class="source">本关收录<a href="https://wenku.baidu.com/tfview/5968022726c52cc58bd63186bceb19e8b8f6ec35" target="_blank" rel="noopener noreferrer">《成语接龙500条》</a>公开预览中的 104 个成语。请用收录的成语接龙，不会时可以查看提示。</p>
+  </main>
+  <script src="season2-lv11-data.js?v=1"></script>
+  <script src="season2-lv11.js?v=1"></script>
+</body>
+</html>

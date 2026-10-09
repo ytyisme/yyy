@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>第二季 · 第8关 · 电梯模拟器</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #0a1a3a; color: #e8f4ff; font-family: "Noto Sans SC", sans-serif; }
+    .wrap { min-height: 100vh; display: flex; flex-direction: column; gap: 10px; padding: 12px; max-width: 920px; margin: 0 auto; }
+    .top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    h1 { margin: 0; font-size: clamp(16px, 3.5vw, 22px); color: #7ec8ff; }
+    .tag { margin: 4px 0 0; color: #8eb8e0; font-size: 12px; }
+    .back { appearance: none; border: 1px solid #4a90c8; background: rgba(30,70,120,.55); color: #cfeaff; padding: 8px 12px; border-radius: 10px; cursor: pointer; text-decoration: none; font-size: 13px; }
+    .stage { display: grid; grid-template-columns: 1.15fr 1fr; gap: 12px; }
+    @media (max-width: 760px) { .stage { grid-template-columns: 1fr; } }
+
+    /* 舞台：外面看是商场/楼层，里面是轿厢 */
+    .scene {
+      border-radius: 14px; border: 2px solid #3d7eb8; min-height: 420px;
+      position: relative; overflow: hidden;
+    }
+    .scene.outside { background: linear-gradient(180deg, #f5e6c8, #c8b088); }
+    .scene.inside {
+      background: linear-gradient(180deg, #b0bec5 0%, #78909c 40%, #455a64 100%);
+    }
+    .floor-tag {
+      position: absolute; left: 12px; top: 12px; z-index: 5;
+      background: rgba(0,0,0,.45); color: #ffd24a; font-weight: 700;
+      padding: 6px 10px; border-radius: 8px; font-size: 13px;
+    }
+
+    /* 楼层显示屏（电梯上方 / 外面小屏） */
+    .display {
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      background: #101820; border: 2px solid #3a4a5a; border-radius: 8px;
+      color: #7dffb0; font-family: "Press Start 2P", ui-monospace, monospace;
+    }
+    .scene .display {
+      position: absolute; left: 50%; top: 14px; transform: translateX(-50%);
+      width: 200px; height: 48px; z-index: 6; font-size: 22px;
+    }
+
+    /* 更长的门 */
+    .door {
+      position: absolute; top: 70px; bottom: 0; width: 50.5%;
+      background: linear-gradient(90deg, #5a6a78 0%, #c5d2dc 22%, #e8f0f6 48%, #a8b8c4 62%, #6a7a88 100%);
+      transition: transform 1.35s ease; z-index: 4;
+      border: 2px solid #3a4a58;
+    }
+    .door.l { left: 0; transform: translateX(-100%); }
+    .door.r { right: 0; transform: translateX(100%); }
+    .doors-closed .door.l, .doors-closed .door.r { transform: translateX(0); }
+    .door-open .door.l { transform: translateX(-100%); }
+    .door-open .door.r { transform: translateX(100%); }
+    .door .seam { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(40,50,60,.35); }
+    .door.l .seam { right: 12px; }
+    .door.r .seam { left: 12px; }
+
+    /* 外面：每层门厅不同 */
+    .lobby { position: absolute; inset: 0; z-index: 1; }
+    .lobby .wall { position: absolute; left: 0; right: 0; top: 70px; bottom: 0; }
+    .lobby .floor { position: absolute; left: 0; right: 0; bottom: 0; height: 18%; background: #b08968; }
+    .lobby .shop { position: absolute; bottom: 18%; width: 22%; height: 34%; border-radius: 8px 8px 0 0; border: 2px solid rgba(0,0,0,.2); }
+
+    /* 呼叫板：上小屏 + 上下箭头 */
+    .call-panel {
+      position: absolute; right: 18px; top: 100px; z-index: 7;
+      width: 92px; padding: 10px; border-radius: 12px;
+      background: #2c3e50; border: 2px solid #1a252f;
+      display: flex; flex-direction: column; gap: 8px; align-items: center;
+    }
+    .call-panel .display { position: static; transform: none; width: 100%; height: 34px; font-size: 16px; }
+    .call-btn {
+      appearance: none; width: 100%; min-height: 40px; border-radius: 10px;
+      border: 2px solid #5a6a78; background: #90a4ae; color: #263238;
+      font-size: 18px; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .call-btn:active { filter: brightness(1.1); }
+
+    /* 电梯内：内壁、扶手、按键 */
+    .cab-inner { position: absolute; inset: 70px 0 0 0; z-index: 2; display: none; }
+    .inside .cab-inner { display: block; }
+    .cab-inner .wall {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, #cfd8dc 0%, #90a4ae 45%, #607d8b 100%);
+    }
+    .cab-inner .rail {
+      position: absolute; left: 8%; right: 8%; top: 42%; height: 10px; border-radius: 6px;
+      background: #78909c;
+    }
+    .cab-inner .mirror {
+      position: absolute; left: 22%; right: 22%; top: 12%; height: 28%;
+      background: linear-gradient(180deg, #b0bec5, #78909c); border: 2px solid #546e7a; border-radius: 6px;
+    }
+
+    .panel { border: 2px solid #2f7fd4; border-radius: 14px; background: rgba(10,28,58,.92); padding: 12px; }
+    .panel h3 { margin: 0 0 8px; color: #7ec8ff; font-size: 15px; }
+    .hint { color: #8eb8e0; font-size: 12px; margin: 0 0 10px; }
+    .card-swipe {
+      display: block; width: 100%; margin-bottom: 10px;
+      border: 2px dashed #ffb347; background: rgba(255,179,71,.12); color: #ffd24a;
+      padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .card-swipe.ok { border-style: solid; background: rgba(125,255,176,.15); color: #7dffb0; }
+    .keys { display: none; grid-template-columns: repeat(6, 1fr); gap: 6px; max-height: 300px; overflow: auto; padding: 4px; }
+    .keys.show { display: grid; }
+    .key {
+      appearance: none; min-height: 36px; border-radius: 8px; border: 1px solid #4a6a8a;
+      background: #cfe3f5; color: #234; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .key:disabled { opacity: .45; cursor: not-allowed; }
+    .key.active {
+      background: linear-gradient(180deg, #ffe07a, #ffb347);
+      color: #5a2200;
+      border-color: #8a4a18;
+      box-shadow: 0 0 12px rgba(255, 200, 60, 0.65);
+    }
+    .ctrl { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .ctrl button {
+      appearance: none; flex: 1; min-width: 90px; min-height: 44px; border-radius: 10px;
+      border: 2px solid #2f7fd4; background: #1a4a8c; color: #cfeaff; font-weight: 700;
+      font-family: inherit; cursor: pointer;
+    }
+    .ctrl button.alarm { border-color: #c45c26; background: #c45c26; color: #fff; }
+    .ctrl button.call-main {
+      background: linear-gradient(180deg, #ffe07a, #ffb347);
+      color: #5a2200;
+      border-color: #8a4a18;
+      min-height: 52px;
+      font-size: 15px;
+    }
+    .ctrl .only-out, .ctrl .only-in { display: none; }
+    .status { margin-top: 10px; color: #ffd24a; font-size: 13px; min-height: 1.4em; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>第二季 · 第 8 关 · 电梯模拟器</h1>
+        <p class="tag">外面呼叫 · 里面刷卡选层 · 每 2 秒一层 · 丁！提示音</p>
+      </div>
+      <a class="back" href="season2.html">← 第二季首页</a>
+    </div>
+
+    <div class="stage">
+      <div class="scene outside" id="scene">
+        <div class="floor-tag" id="floor-tag">1F 商场</div>
+        <div class="display"><span class="arrow" id="arrow">—</span><span id="floor-text">1</span><span class="arrow" id="arrow2">—</span></div>
+
+        <!-- 外面：每层门厅 -->
+        <div class="lobby" id="lobby">
+          <div class="wall" id="lobby-wall"></div>
+          <div class="shop" id="shop1"></div>
+          <div class="shop" id="shop2"></div>
+          <div class="floor"></div>
+        </div>
+
+        <!-- 电梯内 -->
+        <div class="cab-inner" id="cab-inner">
+          <div class="wall"></div>
+          <div class="mirror"></div>
+          <div class="rail"></div>
+        </div>
+
+        <!-- 长门 -->
+        <div class="door l"></div>
+        <div class="door r"></div>
+
+        <!-- 呼叫板（仅外面） -->
+        <div class="call-panel" id="call-panel">
+          <div class="display"><span id="call-floor">1</span></div>
+          <button class="call-btn" id="call-up" type="button" aria-label="上">▲</button>
+          <button class="call-btn" id="call-down" type="button" aria-label="下">▼</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>电梯操作</h3>
+        <p class="hint" id="hint">1. 呼叫电梯 → 2. 进电梯 → 3. 刷卡 → 4. 按楼层</p>
+        <div class="ctrl" style="margin-top:0;margin-bottom:10px">
+          <button type="button" data-call="up" class="call-main">▲ 呼叫上行</button>
+          <button type="button" data-call="down" class="call-main">▼ 呼叫下行</button>
+        </div>
+        <button class="card-swipe" id="card-btn" type="button">💳 刷卡（丁！）</button>
+        <button type="button" id="test-go2" style="width:100%;margin-bottom:10px;min-height:52px;border-radius:12px;border:2px solid #7dffb0;background:#1e6a50;color:#fff;font-weight:700;font-family:inherit;cursor:pointer;font-size:16px">🚀 直达 2 楼（测试）</button>
+        <div class="keys" id="floor-keys"></div>
+        <div class="ctrl">
+          <button type="button" class="only-out" id="enter-btn">进电梯</button>
+          <button type="button" class="only-in" id="exit-btn">出电梯</button>
+          <button type="button" class="only-in" id="door-open">开门</button>
+          <button type="button" class="only-in" id="door-close">关门</button>
+          <button type="button" class="only-in alarm" id="alarm-btn">紧急按钮</button>
+        </div>
+        <div class="status" id="status">在 1F 商场 · 点「▲ 呼叫上行」</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script>
+    (() => {
+      function sfx(n) {
+        try {
+          if (!window.GameAudio) return;
+          if (GameAudio.unlock) GameAudio.unlock();
+          if (GameAudio[n]) GameAudio[n]();
+        } catch (e) {}
+      }
+      // 「丁！」刷卡
+      function ding() {
+        try {
+          if (window.GameAudio && GameAudio.playSubwayDing) GameAudio.playSubwayDing();
+          else if (window.GameAudio && GameAudio.playMusicNote) GameAudio.playMusicNote(1480, "sine", 0.18, { beat: 0 });
+        } catch (e) {}
+      }
+      // 「叮咚」开门
+      function dingdong() {
+        try {
+          const ac = window.__musAc || (window.__musAc = new (window.AudioContext || window.webkitAudioContext)());
+          if (ac.state === "suspended") ac.resume();
+          const play = (freq, t0, dur) => {
+            const o = ac.createOscillator();
+            const g = ac.createGain();
+            o.type = "sine";
+            o.frequency.value = freq;
+            g.gain.setValueAtTime(0.0001, t0);
+            g.gain.exponentialRampToValueAtTime(0.7, t0 + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+            o.connect(g);
+            g.connect(ac.destination);
+            o.start(t0);
+            o.stop(t0 + dur + 0.05);
+          };
+          const t = ac.currentTime;
+          play(880, t, 0.28);      // 叮
+          play(660, t + 0.18, 0.4); // 咚
+        } catch (e) {
+          try { if (window.GameAudio && GameAudio.playSubwayDing) GameAudio.playSubwayDing(); } catch (e2) {}
+        }
+      }
+      // 「乓」「乓乓」金属敲击
+      function pang(times) {
+        try {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return;
+          const ac = window.__musAc || (window.__musAc = new AC());
+          if (ac.state === "suspended") ac.resume();
+          const n = times || 1;
+          for (let i = 0; i < n; i++) {
+            const t = ac.currentTime + i * 0.12;
+            const o = ac.createOscillator();
+            const g = ac.createGain();
+            o.type = "square";
+            o.frequency.setValueAtTime(900 + Math.random() * 250, t);
+            o.frequency.exponentialRampToValueAtTime(280, t + 0.08);
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.exponentialRampToValueAtTime(0.45, t + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+            o.connect(g);
+            g.connect(ac.destination);
+            o.start(t);
+            o.stop(t + 0.12);
+          }
+        } catch (e) {}
+      }
+      // 「咕咚」
+      function gudong() {
+        try {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return;
+          const ac = window.__musAc || (window.__musAc = new AC());
+          if (ac.state === "suspended") ac.resume();
+          const t = ac.currentTime;
+          // 闷响：低频正弦往下掉
+          const o = ac.createOscillator();
+          const g = ac.createGain();
+          o.type = "sine";
+          o.frequency.setValueAtTime(120, t);
+          o.frequency.exponentialRampToValueAtTime(48, t + 0.22);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.9, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+          o.connect(g);
+          g.connect(ac.destination);
+          o.start(t);
+          o.stop(t + 0.35);
+          // 轻一点的「咚」尾音
+          const o2 = ac.createOscillator();
+          const g2 = ac.createGain();
+          o2.type = "triangle";
+          o2.frequency.setValueAtTime(70, t + 0.06);
+          o2.frequency.exponentialRampToValueAtTime(35, t + 0.28);
+          g2.gain.setValueAtTime(0.0001, t + 0.06);
+          g2.gain.exponentialRampToValueAtTime(0.55, t + 0.09);
+          g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+          o2.connect(g2);
+          g2.connect(ac.destination);
+          o2.start(t + 0.06);
+          o2.stop(t + 0.4);
+        } catch (e) {}
+      }
+      // 「嘎吱」
+      function creak() {
+        try {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return;
+          const ac = window.__musAc || (window.__musAc = new AC());
+          if (ac.state === "suspended") ac.resume();
+          const t = ac.currentTime;
+          const o = ac.createOscillator();
+          const g = ac.createGain();
+          o.type = "sawtooth";
+          o.frequency.setValueAtTime(220 + Math.random() * 120, t);
+          o.frequency.exponentialRampToValueAtTime(110 + Math.random() * 60, t + 0.18);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.22, t + 0.03);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+          const filt = ac.createBiquadFilter();
+          filt.type = "bandpass";
+          filt.frequency.value = 700;
+          filt.Q.value = 4;
+          o.connect(filt);
+          filt.connect(g);
+          g.connect(ac.destination);
+          o.start(t);
+          o.stop(t + 0.22);
+        } catch (e) {}
+      }
+      // 电梯绳索运行声
+      let ropeNodes = null;
+      let creakTimer = 0;
+      function startRopeSound() {
+        try {
+          if (ropeNodes) return;
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return;
+          const ac = window.__musAc || (window.__musAc = new AC());
+          if (ac.state === "suspended") ac.resume();
+          // 低频嗡鸣 + 咔哒节奏
+          const osc = ac.createOscillator();
+          const osc2 = ac.createOscillator();
+          const g = ac.createGain();
+          const g2 = ac.createGain();
+          const filter = ac.createBiquadFilter();
+          osc.type = "sawtooth";
+          osc.frequency.value = 55;
+          osc2.type = "triangle";
+          osc2.frequency.value = 28;
+          filter.type = "lowpass";
+          filter.frequency.value = 180;
+          g.gain.value = 0.08;
+          g2.gain.value = 0.05;
+          osc.connect(g);
+          osc2.connect(g2);
+          g.connect(filter);
+          g2.connect(filter);
+          filter.connect(ac.destination);
+          osc.start();
+          osc2.start();
+          // 轻微抖动，像绳子/滑轮
+          const lfo = ac.createOscillator();
+          const lfoGain = ac.createGain();
+          lfo.frequency.value = 8;
+          lfoGain.gain.value = 12;
+          lfo.connect(lfoGain);
+          lfoGain.connect(osc.frequency);
+          lfo.start();
+          ropeNodes = { ac, osc, osc2, lfo, g, g2 };
+        } catch (e) {}
+      }
+      function stopRopeSound() {
+        try {
+          if (!ropeNodes) return;
+          const { osc, osc2, lfo, g, g2 } = ropeNodes;
+          const t = ropeNodes.ac.currentTime;
+          g.gain.setTargetAtTime(0.0001, t, 0.05);
+          g2.gain.setTargetAtTime(0.0001, t, 0.05);
+          setTimeout(() => {
+            try { osc.stop(); osc2.stop(); lfo.stop(); } catch (e) {}
+          }, 200);
+          ropeNodes = null;
+        } catch (e) {
+          ropeNodes = null;
+        }
+      }
+      // 「咔哒！」按键
+      function clickSound() {
+        try {
+          if (window.GameAudio && GameAudio.playClick) GameAudio.playClick();
+        } catch (e) {}
+      }
+
+      const floors = [];
+      for (let i = -10; i <= -1; i++) floors.push(i);
+      for (let i = 1; i <= 60; i++) floors.push(i);
+
+      const keysEl = document.getElementById("floor-keys");
+      floors.forEach((f) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "key";
+        b.textContent = String(f);
+        b.dataset.floor = String(f);
+        b.addEventListener("click", () => onFloorClick({ target: b }));
+        b.addEventListener("pointerup", () => onFloorClick({ target: b }));
+        keysEl.appendChild(b);
+      });
+
+      // 每层门厅配色/店铺
+      const THEMES = [
+        { wall: "#e8d5b7", shop1: "#2f7fd4", shop2: "#e67e22", name: "商场" },
+        { wall: "#c8e6c9", shop1: "#27ae60", shop2: "#f1c40f", name: "花园层" },
+        { wall: "#ffcdd2", shop1: "#c62828", shop2: "#8e24aa", name: "美食层" },
+        { wall: "#b3e5fc", shop1: "#0277bd", shop2: "#00838f", name: "办公层" },
+        { wall: "#d1c4e9", shop1: "#5e35b1", shop2: "#3949ab", name: "酒店层" },
+        { wall: "#ffe0b2", shop1: "#ef6c00", shop2: "#6d4c41", name: "观景层" },
+      ];
+
+      const state = {
+        floor: 1,
+        doorOpen: true,
+        called: false,
+        inElevator: false,
+        cardOK: false,
+        target: null,
+        moving: false,
+      };
+
+      const scene = document.getElementById("scene");
+      const floorText = document.getElementById("floor-text");
+      const arrow = document.getElementById("arrow");
+      const arrow2 = document.getElementById("arrow2");
+      const floorTag = document.getElementById("floor-tag");
+      const callFloor = document.getElementById("call-floor");
+      const statusEl = document.getElementById("status");
+      const hint = document.getElementById("hint");
+      const cardBtn = document.getElementById("card-btn");
+      function setStatus(t) {
+        try {
+          if (statusEl) statusEl.textContent = String(t);
+        } catch (e) {}
+      }
+
+      function themeFor(f) {
+        const idx = Math.abs(f) % THEMES.length;
+        return THEMES[idx];
+      }
+      function setView() {
+        scene.classList.toggle("outside", !state.inElevator);
+        scene.classList.toggle("inside", state.inElevator);
+        document.getElementById("call-panel").style.display = state.inElevator ? "none" : "flex";
+        keysEl.classList.toggle("show", state.inElevator);
+        document.querySelectorAll(".only-out").forEach((el) => {
+          el.style.display = state.inElevator ? "none" : "inline-block";
+        });
+        document.querySelectorAll(".only-in").forEach((el) => {
+          el.style.display = state.inElevator ? "inline-block" : "none";
+        });
+        // 每层门外不同
+        const t = themeFor(state.floor);
+        const wall = document.getElementById("lobby-wall");
+        if (wall) wall.style.background = t.wall;
+        const s1 = document.getElementById("shop1");
+        const s2 = document.getElementById("shop2");
+        if (s1) s1.style.background = t.shop1;
+        if (s2) s2.style.background = t.shop2;
+        floorTag.textContent = state.floor + "F " + (t.name || "");
+      }
+      function showFloor() {
+        floorText.textContent = String(state.floor);
+        callFloor.textContent = String(state.floor);
+        if (state.moving && state.target != null) {
+          const up = state.target > state.floor;
+          arrow.textContent = up ? "▲" : "▼";
+          arrow2.textContent = up ? "▲" : "▼";
+        } else {
+          arrow.textContent = "—";
+          arrow2.textContent = "—";
+        }
+      }
+      function setDoors(open) {
+        state.doorOpen = open;
+        scene.classList.toggle("door-open", open);
+        scene.classList.toggle("doors-closed", !open);
+      }
+      function enableKeys(on) {
+        keysEl.querySelectorAll("button").forEach((b) => { b.disabled = false; b.removeAttribute("disabled"); });
+        cardBtn.classList.toggle("ok", !!on);
+      }
+
+      function callElevator(dir) {
+        if (state.moving) return;
+        state.called = true;
+        clickSound();
+        setStatus(`已呼叫（${dir > 0 ? "上" : "下"}）· 电梯 3 秒后开门`);
+        setTimeout(() => {
+          setDoors(true);
+          dingdong();
+          setStatus("门开了 · 点「进电梯」");
+          hint.textContent = "门开了 · 进电梯后刷卡选层";
+        }, 3000);
+      }
+
+      document.querySelectorAll("[data-call], #call-up, #call-down").forEach((el) => {
+        el.addEventListener("click", () => {
+          const dir = el.id === "call-down" || el.dataset.call === "down" ? -1 : 1;
+          callElevator(dir);
+        });
+      });
+
+      document.getElementById("enter-btn").addEventListener("click", () => {
+        if (!state.called || !state.doorOpen) {
+          setStatus("门没开，进不去");
+          return;
+        }
+        state.inElevator = true;
+        setView();
+        if (state.cardOK) {
+          enableKeys(true);
+          setStatus("已进电梯 · 点右侧楼层键，例如 2");
+        } else {
+          setStatus("已进电梯 · 点「💳 刷卡」解锁楼层键");
+        }
+        hint.textContent = "里面：刷卡后按楼层 · 开门/关门/紧急/出电梯";
+      });
+
+      document.getElementById("exit-btn").addEventListener("click", () => {
+        if (state.moving) { setStatus("运行中不能出去"); return; }
+        if (!state.doorOpen) { setStatus("先开门"); return; }
+        state.inElevator = false;
+        setView();
+        setStatus(`走出电梯 · 现在在 ${state.floor}F`);
+        hint.textContent = "外面：点呼叫板 ▲/▼ 叫电梯";
+      });
+
+      cardBtn.addEventListener("click", () => {
+        if (!state.inElevator) { setStatus("先进电梯再刷卡"); return; }
+        ding(); // 丁！
+        state.cardOK = true;
+        enableKeys(true);
+        setView();
+        setStatus("刷卡成功 丁！· 请选择楼层");
+      });
+
+      let moveAcc = 0;
+      let floorQueue = []; // 可连按多个楼层
+      function startMove(target) {
+        if (!floorQueue.includes(target)) floorQueue.push(target);
+        if (state.moving) {
+          setStatus(`已加入队列：${floorQueue.join(" → ")}`);
+          return;
+        }
+        nextStop();
+      }
+      function nextStop() {
+        if (!floorQueue.length) {
+          state.moving = false;
+          state.target = null;
+          return;
+        }
+        // 选最近的下一站
+        floorQueue.sort((a, b) => a - b);
+        let target = floorQueue[0];
+        for (const f of floorQueue) {
+          if (Math.abs(f - state.floor) < Math.abs(target - state.floor)) target = f;
+        }
+        state.target = target;
+        floorQueue = floorQueue.filter((f) => f !== target);
+        if (target === state.floor) {
+          state.target = null;
+          nextStop();
+          return;
+        }
+        state.moving = true;
+        moveAcc = 0;
+        setDoors(false);
+        startRopeSound();
+        setStatus(`前往 ${target} 层…${floorQueue.length ? "（后面还有：" + floorQueue.join("、") + "）" : ""}`);
+      }
+      function tickMove(dt) {
+        if (!state.moving || state.target == null) return;
+        moveAcc += dt;
+        // 嘎吱嘎吱
+        if (creakTimer <= 0) {
+          creak();
+          creakTimer = 0.45 + Math.random() * 0.55;
+        } else {
+          creakTimer -= dt;
+        }
+        if (moveAcc < 2) return;
+        moveAcc = 0;
+        const dir = state.target > state.floor ? 1 : -1;
+        state.floor += dir;
+        showFloor();
+        setView();
+        gudong();
+        // 乓 / 乓乓
+        pang(Math.random() < 0.45 ? 2 : 1);
+        if (state.floor === state.target) {
+          state.target = null;
+          showFloor();
+          if (floorQueue.length) {
+            setStatus(`已到 ${state.floor} 层 · 继续下一站`);
+            nextStop();
+          } else {
+            state.moving = false;
+            stopRopeSound();
+            gudong();
+            keysEl.querySelectorAll("button").forEach((x) => x.classList.remove("active"));
+            setTimeout(() => {
+              setDoors(true);
+              dingdong();
+              setStatus(`已到 ${state.floor} 层 · 门开`);
+            }, 350);
+          }
+        }
+      }
+
+      function onFloorClick(e) {
+        const b = e.target && e.target.closest ? e.target.closest("[data-floor]") : e;
+        if (!b || !b.dataset || b.dataset.floor == null) return;
+        const target = Number(b.dataset.floor);
+        if (!Number.isFinite(target)) return;
+        setStatus(`按了 ${target} 层`);
+        // 点到楼层键就当作已在电梯里，可连按
+        state.inElevator = true;
+        state.called = true;
+        if (!state.cardOK) {
+          state.cardOK = true;
+          enableKeys(true);
+        }
+        clickSound();
+        b.classList.add("active");
+        startMove(target);
+      }
+      keysEl.addEventListener("click", onFloorClick);
+      document.getElementById("test-go2").addEventListener("click", () => {
+        setStatus("测试：直达 2 楼");
+        state.inElevator = true;
+        state.cardOK = true;
+        startMove(2);
+      });
+
+      document.getElementById("door-open").addEventListener("click", () => {
+        if (state.moving) { setStatus("运行中不能开门"); return; }
+        setDoors(true);
+        dingdong();
+        setStatus("门开了");
+      });
+      document.getElementById("door-close").addEventListener("click", () => {
+        setDoors(false);
+        clickSound();
+        setStatus("门关了");
+      });
+      document.getElementById("alarm-btn").addEventListener("click", () => {
+        state.moving = false;
+        stopRopeSound();
+        clickSound();
+        setStatus("已按紧急按钮！请冷静等待救援");
+      });
+
+      setDoors(true);
+      setView();
+      showFloor();
+
+      // 主循环：驱动楼层变化
+      let _lastTs = 0;
+      requestAnimationFrame(function tick(ts) {
+        const dt = Math.min(0.1, (ts - (_lastTs || ts)) / 1000);
+        _lastTs = ts;
+        tickMove(dt);
+        requestAnimationFrame(tick);
+      });
+    })();
+  </script>
+</body>
+</html>

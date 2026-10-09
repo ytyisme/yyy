@@ -169,6 +169,7 @@
 
   <script src="audio.js"></script>
   <script src="coop.js"></script>
+  <script src="lib/paradise-sky.js?v=1"></script>
   <script>
     (() => {
       function sfx(name) {
@@ -195,6 +196,24 @@
       const JUMP = 10.5;
       const WORLD_W = 3600;
       const GROUND_Y = 430;
+
+      let skyRenderer;
+      function resizeDrawingBuffer() {
+        const density = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+        const displayWidth = canvas.getBoundingClientRect().width || W;
+        const scale = Math.max(1, displayWidth * density / W);
+        const pixelWidth = Math.round(W * scale);
+        const pixelHeight = Math.round(H * scale);
+        if (canvas.width === pixelWidth && canvas.height === pixelHeight && skyRenderer) return;
+        canvas.width = pixelWidth;
+        canvas.height = pixelHeight;
+        ctx.setTransform(pixelWidth / W, 0, 0, pixelHeight / H, 0, 0);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        skyRenderer = ParadiseSky.create(W, H, scale);
+      }
+      resizeDrawingBuffer();
+      window.addEventListener("resize", resizeDrawingBuffer);
 
       let player, platforms, cameraX, keys, touch, time;
       const remotes = new Map();
@@ -482,20 +501,7 @@
       }
 
       function draw() {
-        // 天空
-        const sky = ctx.createLinearGradient(0, 0, 0, H);
-        sky.addColorStop(0, "#7ec8ff");
-        sky.addColorStop(1, "#b8e0ff");
-        ctx.fillStyle = sky;
-        ctx.fillRect(0, 0, W, H);
-        // 云
-        ctx.fillStyle = "rgba(255,255,255,0.8)";
-        for (let i = 0; i < 5; i++) {
-          const cx = ((i * 220 - cameraX * 0.3) % (W + 200)) - 80;
-          ctx.beginPath();
-          ctx.ellipse(cx, 60 + (i % 2) * 30, 50, 22, 0, 0, Math.PI * 2);
-          ctx.fill();
-        }
+        skyRenderer.draw(ctx, cameraX, time);
         // 远处树
         for (let i = 0; i < 12; i++) {
           const tx = i * 320 - cameraX * 0.5;
