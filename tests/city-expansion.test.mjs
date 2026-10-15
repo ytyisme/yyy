@@ -1,0 +1,23 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {chinaCities,cityAtGrid,findCities,highwayNames} from '../lib/city-cities.mjs';
+import {highwayJourney,roadAt} from '../lib/city-roads.mjs';
+import {createWallet,moneyText} from '../lib/city-life.mjs';
+import {cloudAltitude,arrivalTaxiPose,arrivalStageAt,flightPose} from '../lib/city-flight.mjs';
+import {createHousing} from '../lib/city-housing.mjs';
+import {createCitySound} from '../lib/city-sound.mjs';
+import {shortVideos} from '../lib/city-phone.mjs';
+test('694 distinct Chinese city records all have reachable highway and exit routes',()=>{
+ assert.equal(chinaCities.length,694);assert.equal(new Set(chinaCities.map(c=>c.name+'|'+c.province)).size,694);
+ for(const c of chinaCities){assert.equal(cityAtGrid(c.cx,c.cz).name,c.name);const route=highwayJourney({x:0,z:0},c);assert.equal(route[0].y,0);assert.equal(route.at(-1).y,0);for(let i=1;i<route.length;i++){const a=route[i-1],b=route[i],n=Math.ceil(Math.hypot(a.x-b.x,a.z-b.z)/3);for(let j=1;j<n;j++){const t=j/n,x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t;assert(Math.abs(roadAt({x,z}).height-(a.y+(b.y-a.y)*t))<.2,c.name);}}}
+ assert(findCities('深圳').some(c=>c.name==='深圳市'));assert.equal(findCities('不存在的城市').length,0);assert.notDeepEqual(highwayNames(0),highwayNames(3));assert.equal(new Set(Array.from({length:16},(_,i)=>highwayNames(i).join('|'))).size,16);
+});
+test('unlimited money never becomes NaN through spending, wages or bank transfers',()=>{const w=createWallet(Infinity);for(const amount of [-680000,-3800,-60,50])assert(w.change(amount));assert(w.deposit(100));assert(w.withdraw(100));assert.equal(w.balance,Infinity);assert.equal(w.deposits,0);assert(w.canPay(1000000000));assert.equal(moneyText(w.balance),'∞');assert.equal(w.change(Infinity),false);});
+test('cloud height is fixed in the world and cabin clouds move relative to aircraft height',()=>{assert.equal(cloudAltitude(98,0),98);assert.equal(cloudAltitude(98,97),98);assert.equal(cloudAltitude(98,0,true),98);assert.equal(cloudAltitude(98,97,true),1);});
+test('arrival proceeds from touchdown to forward taxi and then to a connected terminal',()=>{assert.equal(arrivalStageAt(7).id,'landing');assert.equal(arrivalStageAt(8).id,'taxi-in');assert.equal(arrivalStageAt(16).id,'docking');assert.equal(arrivalStageAt(20).id,'disembark');assert.equal(arrivalStageAt(22),null);const start={z:-500,y:98};let previous=flightPose(80,{id:'landing',progress:1},start);for(let i=1;i<=100;i++){const p=arrivalTaxiPose(i/100,start);assert(Math.hypot(p.x-previous.x,p.z-previous.z)<10);const dx=p.x-previous.x,dz=p.z-previous.z;assert(-Math.sin(p.heading)*dx-Math.cos(p.heading)*dz>0);previous=p;}const dock=flightPose(80,{id:'docking',progress:0},start);assert.equal(previous.z,dock.z);assert.equal(previous.x,dock.x);});
+test('house ownership survives reload and remains separate by city and country',()=>{let data;const storage={getItem:()=>data,setItem:(k,v)=>data=v},b={id:'residence',name:'晴空小区',x:110,z:110,floors:24},h=createHousing(storage);assert.equal(h.buy(b,1),false);assert.equal(h.buy(b,25),false);assert(h.buy(b,12));const restored=createHousing(storage);assert(restored.owns(b,12));assert.equal(restored.owns(b,12,1),false);assert.equal(restored.owns({...b,x:710},12),false);assert.equal(restored.resident(12),'晓雨');});
+test('one engine loop changes power, touchdown adds tyre noise and mute stops all motor sources',()=>{
+ let sources=0,started=0,stopped=0,buffers=0;const param=()=>({value:0,setValueAtTime(){},setTargetAtTime(){},exponentialRampToValueAtTime(){}}),node=()=>({connect(){},disconnect(){},start(){started++},stop(){stopped++}});
+ class AudioContext{constructor(){this.state='running';this.currentTime=0;this.sampleRate=100;}createGain(){return {...node(),gain:param()}}createOscillator(){sources++;return {...node(),frequency:param()}}createBufferSource(){sources++;return node()}createBiquadFilter(){return {...node(),frequency:param(),Q:param()}}createBuffer(c,n){buffers++;return {getChannelData:()=>new Float32Array(n)}}suspend(){return Promise.resolve()}resume(){return Promise.resolve()}}
+ const s=createCitySound({AudioContext});for(let i=0;i<100;i++)s.engine('takeoff',200);assert.equal(sources,2);assert.equal(started,2);assert.equal(buffers,1);s.play('touchdown');assert.equal(buffers,2);assert.equal(stopped,3);assert(s.engineRunning);s.toggle();assert.equal(s.engineRunning,false);assert.equal(stopped,5);
+});
+test('all eight original video IDs are present without their tracking parameters',()=>{assert.equal(shortVideos.length,8);assert.equal(new Set(shortVideos.map(v=>v.bvid)).size,8);assert(shortVideos.every(v=>/^BV[0-9A-Za-z]{10}$/.test(v.bvid)));});

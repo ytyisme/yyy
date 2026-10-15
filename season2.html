@@ -542,6 +542,19 @@
       .friend-layout { grid-template-columns: 1fr; }
     }
   </style>
+
+<!-- Installable game application -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#152d36">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="岩浆跑酷">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="app-icons/icon-180.png">
+<link rel="icon" type="image/png" href="app-icons/icon-192.png">
+<link rel="stylesheet" href="pwa.css">
+<script defer src="pwa.js"></script>
+<script defer src="phone-login/demo-session.js"></script>
 </head>
 <body>
   <div class="shell">
@@ -594,7 +607,7 @@
     <div class="level-select">
       <div class="level-select-card">
         <h2>选择关卡</h2>
-        <p class="level-select-desc">共 35 关 · 第二季 · 已开放第 1–15 关</p>
+        <p class="level-select-desc">共 35 关 · 第二季 · 已开放第 1–16 关</p>
         <p class="phone-join">第二季已正式上线 · 蓝色世界等你来玩</p>
 
         <div id="level-grid" class="level-grid"></div>
@@ -816,7 +829,7 @@
       });
 
       const TOTAL = 35;
-      const OPEN_LEVELS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+      const OPEN_LEVELS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
       const LEVEL_TITLES = {
         1: "蓝色跑酷",
         2: "找黄方块",
@@ -833,6 +846,7 @@
         13: "演唱会",
         14: "屁股接子弹",
         15: "自由城市",
+        16: "level！",
       };
       const LEVEL_HREF = {
         1: "season2-lv1.html",
@@ -850,6 +864,7 @@
         13: "season2-lv13.html",
         14: "season2-lv14.html",
         15: "season2-lv15.html",
+        16: "season2-lv16.html",
       };
 
       function showTip(text) {
@@ -886,7 +901,7 @@
             if (OPEN_LEVELS.has(i)) {
               location.href = LEVEL_HREF[i] || "season2-lv1.html";
             } else {
-              showTip("第 " + i + " 关还在制作，第二季已上线 1–15 关");
+              showTip("第 " + i + " 关还在制作，第二季已上线 1–16 关");
             }
           });
           grid.appendChild(btn);

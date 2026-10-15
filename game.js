@@ -4346,7 +4346,7 @@
   function showPhoneJoin(urls) {
     const url = urls && urls[0];
     const text = url
-      ? `手机请用相机扫下面二维码，或在 Safari 输入这个地址（必须带 http://）：\n${url}`
+      ? `手机扫码或用浏览器打开下面的地址，再添加到主屏幕：\n${url}`
       : "手机请和电脑连同一个 WiFi，用电脑屏幕上显示的地址打开最新版";
     document.querySelectorAll("[data-phone-url]").forEach((el) => {
       el.textContent = text;
@@ -4363,10 +4363,14 @@
     });
   }
 
-  fetch("lan.json?t=" + Date.now())
-    .then((r) => (r.ok ? r.json() : null))
-    .then((data) => showPhoneJoin(data && data.urls))
-    .catch(() => showPhoneJoin(null));
+  if (location.hostname === "localhost" || location.hostname === "127.0.0.1" || /^10\.|^192\.168\.|^172\.(1[6-9]|2\d|3[01])\./.test(location.hostname)) {
+    fetch("lan.json?t=" + Date.now())
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => showPhoneJoin(data && data.urls))
+      .catch(() => showPhoneJoin(null));
+  } else {
+    showPhoneJoin([new URL("app.html", location.href).href]);
+  }
 
   if (chatBtn) {
     chatBtn.addEventListener("click", (e) => {

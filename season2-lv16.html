@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>第二季 · 第16关 · level！</title><meta name="description" content="level！红色长廊，全长3000米。你快，笑脸怪物慢，跑到出口就通关。"><link rel="stylesheet" href="season2-lv16.css?v=2">
+<!-- Installable game application -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#152d36">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="岩浆跑酷">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="app-icons/icon-180.png">
+<link rel="icon" type="image/png" href="app-icons/icon-192.png">
+<link rel="stylesheet" href="pwa.css">
+<script defer src="pwa.js"></script>
+</head>
+<body>
+<div id="world" aria-label="红色走廊3D场景"></div>
+<header><a href="season2.html">‹ 第二季</a><span>第 16 关 <b>level！</b></span><div><button id="online-toggle">联机</button><button id="view-mode">第三人称</button><button id="music-toggle" aria-pressed="true" aria-label="切换背景音乐">♫ 音乐开</button><button id="pause" disabled>暂停</button></div></header>
+<section class="hud" aria-label="逃离进度"><div><span class="eyebrow">距离出口</span><strong id="remaining">3,000 <small>米</small></strong></div><div class="progress-wrap"><div><span id="distance">0 / 3,000 米</span><span id="section">起点</span></div><progress id="progress" max="3000" value="0"></progress></div><div class="pursuit"><span class="eyebrow">身后追赶</span><strong id="gap">30 <small>米</small></strong></div></section>
+<div id="status" role="status" aria-live="polite">你比它快。往前跑，出口就在 3,000 米处。</div>
+<div id="rear-label" hidden>正在回头看 · 玩家仍向出口跑</div>
+<div id="hit-flash" aria-hidden="true"></div>
+<section class="overlay" id="intro"><div class="intro-card"><span class="eyebrow">第二季 / 第16关</span><h1>level！</h1><div class="character-preview"><img src="assets/chase/player-reference.png" alt="玩家参考：黄色防护服、黑色面罩"><img src="assets/chase/smiler.png" class="monster-preview" alt="从身后追赶的发光笑脸怪物"></div><p>穿上黄色防护服，冲过 <b>3,000 米</b>红色长廊。<br>你跑 <b>22 米/秒</b>，它跑 <b>16 米/秒</b>。<br>避开病床和路障，和朋友一起逃离。</p><button id="start" class="primary" disabled>正在准备走廊…</button><button id="multiplayer" class="secondary">创建 / 加入联机房间</button><p class="intro-hint">左右方向键 / A、D 换道 · 空格跳跃 · 按住 C 回头<br>V 切换视角 · 手机使用屏幕按钮</p></div></section>
+<section class="overlay" id="lobby" hidden aria-label="联机房间"><div class="room-card"><button id="close-lobby" aria-label="关闭房间面板">×</button><span class="eyebrow">level！ / 一起逃离</span><h2>联机房间</h2><div id="room-setup"><label>你的昵称<input id="player-name" maxlength="12" autocomplete="off"></label><button id="create-room" class="primary">创建房间</button><label class="backup"><input id="backup-route" type="checkbox">使用备用线路</label><form id="join-room"><label>朋友的房间码<input id="room-code-input" placeholder="输入8位房间码" maxlength="12" autocapitalize="characters" autocomplete="off" spellcheck="false"></label><button id="join-room-button">加入房间 →</button></form></div><div id="room-active" hidden><div class="room-code"><strong id="room-code-display" tabindex="0"></strong><button id="copy-room">复制房间码</button></div><p id="room-count">1 / 6 人</p><ul id="room-players"></ul><div class="room-actions"><button id="room-ready">我准备好了</button><button id="room-start" class="primary">一起开跑 →</button></div><button id="leave-room" class="quiet">退出房间 · 返回单人</button></div><p id="room-status" role="status">创建房间，或输入朋友的房间码。</p></div></section>
+<aside id="room-mini" hidden><button id="room-mini-label"></button><ul id="mini-players"></ul></aside><div id="countdown" hidden aria-live="assertive"></div>
+<section class="overlay" id="result" hidden><div class="result-card"><span class="eyebrow" id="result-label">逃离成功</span><h2 id="result-title">你跑出了长廊！</h2><p id="result-detail"></p><button id="retry" class="primary">再跑一次</button><a href="season2.html">返回第二季选关 →</a><a href="season2-lv15.html">回到自由城市</a></div></section>
+<section class="overlay" id="paused" hidden><div class="result-card"><span class="eyebrow">暂时休息</span><h2>已暂停</h2><p>玩家、怪物和音乐都已暂停。</p><button id="resume" class="primary">继续跑</button><a href="season2.html">返回选关</a></div></section>
+<div class="touch-controls" aria-label="跑酷操作"><div><button id="left" aria-label="向左换道">◀<small>左移</small></button><button id="right" aria-label="向右换道">▶<small>右移</small></button></div><div><button id="look" aria-label="按住回头看怪物">↶<small>按住回头</small></button><button id="jump" class="jump">↑<small>跳跃</small></button></div></div>
+<aside class="music-note"><span id="music-status">开始后播放指定音乐</span><details><summary>视频与音乐参考</summary><a href="https://www.bilibili.com/video/BV1BTwgzLEK2/" target="_blank" rel="noopener">Level ! 场景参考 ↗</a><a href="https://www.bilibili.com/video/BV1we4y1d7Pj/" target="_blank" rel="noopener">你指定的音乐 ↗</a></details></aside>
+<audio id="music" src="assets/chase/level-run-theme.m4a" preload="auto" loop></audio>
+<script type="module" src="season2-lv16.js?v=2"></script>
+</body></html>

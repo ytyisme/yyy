@@ -1,0 +1,17 @@
+{
+  "id": "./app.html",
+  "name": "岩浆跑酷 · 自由城市",
+  "short_name": "岩浆跑酷",
+  "description": "两季冒险与自由城市，在手机和电脑上开始游戏。",
+  "lang": "zh-CN",
+  "start_url": "./app.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#152d36",
+  "theme_color": "#152d36",
+  "icons": [
+    {"src": "app-icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "app-icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

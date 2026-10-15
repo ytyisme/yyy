@@ -1,12 +1,21 @@
-import {nightStrength,regionAt} from '../lib/city-world.mjs';
+import {nightStrength,regionAt,countries,buildingName,waterfrontAt} from '../lib/city-world.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import {trafficPhase,collisionClaim,terrainHeight,canEnterGarage,buildings,trafficCountdown,createJustice} from '../lib/city-rules.mjs';
 test('traffic never gives both directions a green light and includes all-red transitions',()=>{assert.equal(trafficPhase(0),'NS');assert.equal(trafficPhase(10),'STOP');assert.equal(trafficPhase(12),'EW');assert.equal(trafficPhase(22),'STOP');assert.equal(trafficPhase(24),'NS');});
 test('a moving driver pays for hitting others while pedestrians and stationary drivers receive compensation',()=>{assert.equal(collisionClaim({driving:true,speed:8,npcMoving:true}).amount,-1500);assert.equal(collisionClaim({driving:false,speed:5,npcMoving:true}).amount,2000);assert.equal(collisionClaim({driving:true,speed:0,npcMoving:true}).amount,2000);assert.equal(collisionClaim({driving:false,speed:0,npcMoving:false}),null);});
 test('ramp descends continuously and entering the garage from its side is blocked',()=>{assert(Math.abs(terrainHeight(20,46))<.001);assert.equal(terrainHeight(20,58),-3);assert.equal(terrainHeight(20,70),-6);assert.equal(terrainHeight(20,90),-6);assert.equal(canEnterGarage({x:20,z:69},{x:20,z:70}),true);assert.equal(canEnterGarage({x:49,z:80},{x:47,z:80}),false);assert.equal(canEnterGarage({x:20,z:80},{x:20,z:81}),true);});
-test('all requested building activities are available',()=>{for(const id of ['office','restaurant','hotel','market','school','store','police'])assert(buildings.find(b=>b.id===id)?.items.length);});
+test('all requested building activities are available',()=>{for(const id of ['office','restaurant','hotel','market','school','store','police','hospital','bank'])assert(buildings.find(b=>b.id===id)?.items.length);});
 
 test('countdowns match the next transition for each direction',()=>{assert.deepEqual(trafficCountdown(9.1,'NS'),{green:true,seconds:1});assert.deepEqual(trafficCountdown(10,'NS'),{green:false,seconds:14});assert.deepEqual(trafficCountdown(11,'EW'),{green:false,seconds:1});assert.deepEqual(trafficCountdown(21,'EW'),{green:true,seconds:1});assert.deepEqual(trafficCountdown(22,'EW'),{green:false,seconds:14});assert.deepEqual(trafficCountdown(24,'NS'),{green:true,seconds:10});});
-test('full crime progress triggers one escort, hearing, fine and reset',()=>{const j=createJustice();j.add(50);assert.equal(j.phase,'free');j.add(80);assert.equal(j.progress,100);assert.equal(j.phase,'wanted');assert.equal(j.begin(),true);assert.equal(j.begin(),false);assert.equal(j.add(50),false);assert.equal(j.advance(2),null);assert.equal(j.advance(.5),'court');assert.equal(j.advance(3),'release');assert.equal(j.progress,0);assert.equal(j.phase,'free');assert.equal(j.advance(100),null);j.add(20);assert.equal(j.progress,20);});
+test('full crime progress triggers one escort, hearing, fine and reset',()=>{const j=createJustice();j.add(50);assert.equal(j.phase,'free');j.add(9999950);assert.equal(j.progress,10000000);assert.equal(j.phase,'wanted');assert.equal(j.begin(),true);assert.equal(j.begin(),false);assert.equal(j.add(50),false);assert.equal(j.advance(2),null);assert.equal(j.advance(.5),'court');assert.equal(j.advance(3),'release');assert.equal(j.progress,0);assert.equal(j.phase,'free');assert.equal(j.advance(100),null);j.add(20);assert.equal(j.progress,20);});
 
 test('moonlight increases at dusk, remains at night and fades by morning',()=>{assert.equal(nightStrength(16*60),0);assert.equal(nightStrength(18*60),.5);assert.equal(nightStrength(20*60),1);assert.equal(nightStrength(2*60),1);assert.equal(nightStrength(6*60),.5);assert.equal(nightStrength(8*60),0);});
 test('distant and negative world coordinates select stable cities',()=>{assert.equal(regionAt(-600,1200).key,'-1,2');assert.equal(regionAt(600000,0,2).country,'法国');});
+
+test('sixteen countries and city branches have distinct stable shop and school names',()=>{
+ assert.equal(countries.length,16);assert.equal(new Set(countries.map(c=>c.name)).size,16);
+ for(const id of ['school','market','store','mall']){const names=[];for(let country=0;country<countries.length;country++)for(let x=-1;x<=1;x++)for(let z=-1;z<=1;z++)names.push(buildingName({id},x,z,country));assert.equal(new Set(names).size,names.length);}
+ assert.notEqual(buildingName({id:'school'},0,0),buildingName({id:'school'},1,0));
+});
+test('river and ocean have dry bridges and an accessible beach in every city',()=>{
+ for(const offset of [0,600,-1200]){assert.equal(waterfrontAt(-145+offset,30),'river');assert.equal(waterfrontAt(-145+offset,0),'bridge');assert.equal(waterfrontAt(40+offset,-260),'sea');assert.equal(waterfrontAt(offset,-260),'bridge');assert.equal(waterfrontAt(60+offset,-207),'beach');}
+});

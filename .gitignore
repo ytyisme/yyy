@@ -1,1 +1,34 @@
 .DS_Store
+
+# Prepared Sites checkout and deployment artifacts
+sites/
+
+# Private phone login configuration and persistent session data
+.env
+.env.*
+!.env.example
+.phone-login-data/
+.server-control-data/
+__pycache__/
+
+# Generated native application resources, builds and archives
+ios/LavaCity/Resources/Web/
+ios/build*/
+ios/*.xcarchive/
+ios/export/
+ios/**/*.xcuserstate
+ios/**/xcuserdata/
+
+# Local screenshots and video analysis
+/.vidpreview/
+/*-preview.png
+/*-preview.jpg
+/city-independent-*.jpg
+/vidframe_*.png
+/thumb_s.png
+/录屏*.mov.png
+
+# Local device and upload reports
+/ios/device-*-result.json
+/ios/level-online-update.json
+/ios/upload-status.json
