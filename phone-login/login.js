@@ -6,7 +6,9 @@
   let mode=document.body.dataset.phoneMode||'demo',server=false,ready=false,busy=false,until=0,challenge=null;
   const validPhone=()=>/^1[3-9]\d{9}$/.test(phone.value.trim());
   function message(text,tone=''){status.textContent=text;status.dataset.tone=tone;}
-  function refresh(){const left=Math.max(0,Math.ceil((until-Date.now())/1000));send.disabled=!ready||busy||left>0;submit.disabled=!ready||busy;send.textContent=left?`${left} 秒后重发`:(mode==='demo'?'获取演示码':'获取验证码');}
+  function refresh(){const left=Math.max(0,Math.ceil((until-Date.now())/1000));send.disabled=!ready||busy||left>0;submit.disabled=!ready||busy||!window.GameAgreement?.isAccepted();document.getElementById('login-agreement').disabled=busy;send.textContent=left?`${left} 秒后重发`:(mode==='demo'?'获取演示码':'获取验证码');}
+  document.getElementById('login-agreement').addEventListener('change',refresh);
+  window.addEventListener('pageshow',refresh);
   function setMode(value){mode=value;document.getElementById('phone-mode').textContent=mode==='demo'?'演示登录':'欢迎回来';document.getElementById('code-label').textContent=mode==='demo'?'演示验证码':'短信验证码';document.getElementById('phone-private').textContent=mode==='demo'?'演示模式 · 不发送短信':'私人游戏 · 仅已授权的手机号可以登录';document.getElementById('phone-note').textContent=mode==='demo'?'演示码 5 分钟内有效，输入正确后即可试玩。':'验证码 5 分钟内有效。登录状态保留 7 天。';}
   function nextPath(){
     const fallback=new URL('app.html',appRoot);
@@ -35,17 +37,19 @@
   });
   form.addEventListener('submit',async event=>{
     event.preventDefault();if(!ready||busy)return;
+    if(!window.GameAgreement?.requireAcceptance())return;
     if(!validPhone()){message('请输入正确的 11 位手机号','error');phone.focus();return;}
     if(!/^\d{6}$/.test(code.value.trim())){message('请输入 6 位验证码','error');code.focus();return;}
     busy=true;refresh();message('正在验证…');
     try{
-      if(server)await api('verify',{phone:phone.value.trim(),code:code.value.trim()});
+      if(server)await api('verify',{phone:phone.value.trim(),code:code.value.trim(),agreementAccepted:true});
       else{
         if(!challenge||challenge.phone!==phone.value.trim()||challenge.expires<=Date.now()||challenge.code!==code.value.trim())throw new Error('演示码错误或已过期，请使用本次获取的演示码');
         const number=phone.value.trim();challenge=null;
         const profile={displayName:'玩家'+number.slice(-4),maskedPhone:number.slice(0,3)+'****'+number.slice(-4),expires:Date.now()+7*86400000};
         try{localStorage.setItem(demoKey,JSON.stringify(profile));}catch{}
       }
+      window.GameAgreement.recordAcceptance();
       code.value='';location.replace(nextPath());
     }
     catch(error){message(error.message,'error');busy=false;refresh();}
@@ -54,7 +58,7 @@
   setMode(mode);
   async function boot(){
     if(location.protocol!=='file:'){
-      try{const session=await api('session');server=true;setMode(session.mode||'sms');if(session.authenticated){location.replace(nextPath());return;}ready=session.ready;}
+      try{const session=await api('session');server=true;setMode(session.mode||'sms');if(session.authenticated&&window.GameAgreement?.hasAcceptedSession()){location.replace(nextPath());return;}ready=session.ready;}
       catch(error){if(mode==='sms'){message(error.message,'error');return;}}
     }
     if(!server)ready=mode==='demo';

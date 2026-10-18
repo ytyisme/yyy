@@ -61,6 +61,7 @@ function hud(){const d=Math.floor(s.distance);$('remaining').innerHTML=(RUN_LENG
 function setRear(value){rear=value&&s.phase==='running';$('rear-label').hidden=!rear;$('look').classList.toggle('active',rear);}
 function syncPhase(){document.body.classList.toggle('running',s.phase==='running');$('intro').hidden=s.phase!=='ready'||online.active;$('paused').hidden=s.phase!=='paused';$('result').hidden=!['won','caught'].includes(s.phase);$('pause').disabled=s.phase!=='running';$('retry').textContent=online.active?'回房间准备下一局':'再跑一次';if(s.phase!=='running')setRear(false);syncMusic();}
 function complete(){if(saveDone)return;saveDone=true;const win=s.phase==='won';$('result-label').textContent=win?'3,000 米 · 逃离成功':'笑脸追上来了';$('result-title').textContent=win?'你跑出了长廊！':'再快一点，别撞路障';$('result-detail').textContent=win?`跑完 3,000 米，用时 ${Math.floor(s.elapsed/60)} 分 ${Math.floor(s.elapsed%60)} 秒。它比你慢，你成功甩开了它！`:`你跑了 ${Math.floor(s.distance).toLocaleString('zh-CN')} 米。躲开病床，跳过矮路障，再试一次。`;
+  $('next-level').hidden=!win;
   if(win){try{const old=Number(localStorage.getItem('lava-s2-lv16-best'))||Infinity;if(s.elapsed<old)localStorage.setItem('lava-s2-lv16-best',String(s.elapsed));localStorage.setItem('lava-s2-lv16-cleared','true');}catch{}}
   syncPhase();
 }

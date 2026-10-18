@@ -9,6 +9,7 @@ sites/
 !.env.example
 .phone-login-data/
 .server-control-data/
+.game-community-data/
 __pycache__/
 
 # Generated native application resources, builds and archives

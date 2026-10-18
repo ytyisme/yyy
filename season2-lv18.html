@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#e9ecdf"><title>第二季 · 第18关 · 自由建造</title>
+  <link rel="stylesheet" href="season2-lv18.css?v=6"><link rel="stylesheet" href="build-loading.css">
+  <script>
+    if(new URLSearchParams(location.search).get('loading')==='1'){
+      document.documentElement.dataset.buildLoading='true';
+      const showLoadingError=()=>{if(!document.documentElement.hasAttribute('data-build-loading'))return;const show=()=>{const panel=document.getElementById('build-loading');if(!panel)return;panel.classList.add('loading-error');document.getElementById('build-loading-title').textContent='暂时无法进入地图';document.getElementById('build-loading-message').textContent='请返回游戏列表后重试。';};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',show,{once:true});else show();};
+      window.addEventListener('error',event=>{if(event.error||event.target?.tagName==='SCRIPT')showLoadingError();},true);
+      window.addEventListener('unhandledrejection',showLoadingError);
+    }
+  </script>
+  <!-- Installable game application -->
+  <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="app-icons/icon-180.png"><link rel="icon" href="app-icons/icon-192.png"><link rel="stylesheet" href="pwa.css"><script defer src="pwa.js"></script>
+</head>
+<body>
+  <div id="world" aria-label="自由建造的平地和道路"></div>
+  <section id="build-loading" aria-label="正在进入游戏"><div class="loading-header"><div class="loading-wordmark"><span>▦</span><div>岩浆跑酷<small>自由创造 / YOUR WORLD</small></div></div><a class="loading-back" href="map-list.html">返回游戏列表 ↗</a></div><div class="loading-bottom"><p class="loading-eyebrow">READY FOR YOUR NEXT ADVENTURE</p><h1 id="build-loading-title">接着，去创造。</h1><p class="loading-map" id="build-loading-map">正在打开你的地图…</p><div class="loading-progress-top"><span id="build-loading-message">跑起来，回到你的世界。</span><strong id="build-loading-percent" aria-hidden="true">0%</strong></div><div id="build-loading-progress" class="loading-progress-track" role="progressbar" aria-label="进入地图进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="build-loading-fill"></span></div><p class="loading-caption">每一块砖，都在等你回来。</p></div></section>
+  <header class="topbar"><a class="back" id="map-back" href="map-list.html" aria-label="保存并返回游戏列表">‹ 游戏列表</a><div class="brand"><span class="brand-mark">▦</span><span>自由建造<small>第 18 关 / OPEN WORLD</small></span></div><div class="top-actions"><button id="online-toggle" type="button"><i class="dot"></i><span id="online-label">联机</span></button><button class="bag-button" id="bag-toggle" type="button">▤ 背包 <kbd>B</kbd></button></div></header>
+  <section class="world-note" aria-label="建造说明"><p class="eyebrow">YOUR WORLD, YOUR RULES</p><h1>一条平路，<br>无限可能。</h1><p>打开背包，放下你的想法。</p><div><span id="object-count">0 件物品</span><span id="save-state">正在准备场景…</span></div></section>
+  <div id="room-badge" hidden><button id="room-summary" type="button"></button></div>
+  <aside id="inspector" class="glass" hidden aria-label="物品编辑器">
+    <div class="panel-top"><div><p class="eyebrow" id="selection-state">已选中</p><h2 id="selection-name">砖块</h2></div><button id="deselect" class="icon-button" aria-label="取消选中物品" type="button">×</button></div>
+    <p class="editor-note">分别调整宽、高、长 · 单位：米</p>
+    <div class="dimension"><label for="width-number">宽度 <b>W</b></label><input id="width-range" type="range" min=".2" max="60" step=".1" aria-label="宽度滑杆"><input id="width-number" type="number" min=".2" max="60" step=".1" aria-label="宽度数值"></div>
+    <div class="dimension"><label for="height-number"><span id="height-label">高度</span><b>H</b></label><input id="height-range" type="range" min=".2" max="60" step=".1" aria-label="高度滑杆"><input id="height-number" type="number" min=".2" max="60" step=".1" aria-label="高度数值"></div>
+    <div class="dimension"><label for="length-number">长度 <b>L</b></label><input id="length-range" type="range" min=".2" max="60" step=".1" aria-label="长度滑杆"><input id="length-number" type="number" min=".2" max="60" step=".1" aria-label="长度数值"></div>
+    <label class="coaster-field" id="elevation-field">离地高度（负数进入地下）<input id="elevation-number" type="number" min="-60" max="80" step=".2" value="0" aria-label="离地高度"></label>
+    <div id="track-editor" hidden><label class="coaster-field" id="shape-field">轨道形状<select id="track-shape" aria-label="轨道形状"></select></label><label class="coaster-check"><input type="checkbox" id="track-tunnel">给这段轨道加隧道</label><button id="track-extend" type="button">＋ 从轨道末端接下一段</button><p class="small">宽度是轨距，高度控制坡高或回环高度。放到已有轨道末端会自动吸附。</p></div>
+    <div id="train-editor" hidden><p id="train-detail" class="small"></p><label class="coaster-field">列车速度（米/秒）<input id="train-speed" type="number" min="2" max="25" step="1" value="9"></label><div class="train-actions"><button id="train-board" type="button">乘坐这节车</button><button id="train-run" type="button">启动列车</button></div></div>
+    <div class="editor-actions"><button id="rotate-object" type="button">↻ 旋转 90°</button><button id="move-object" type="button">↔ 移动</button><button id="copy-object" type="button">⧉ 复制</button><button id="delete-object" class="danger" type="button">⌫ 删除</button></div>
+    <p id="selection-detail" class="small"></p>
+  </aside>
+  <div id="placement-bar" class="glass" hidden><span id="placement-hint">点击地面选择位置</span><button id="place-object" class="primary" type="button">放置物品 ✓</button><button id="cancel-place" type="button">取消</button></div>
+  <div id="ride-bar" class="glass" hidden><strong id="ride-status">过山车</strong><button id="ride-launch" type="button">发车</button><button id="ride-exit" type="button">下车 E</button></div>
+  <div id="coaster-tools"><button id="terrain-toggle" type="button" aria-pressed="false">地下视图</button><button id="coaster-demo" type="button">添加示范线路</button></div>
+  <section id="map-tools" class="glass" aria-label="地图存档"><label>当前存档<input id="map-name" maxlength="40" aria-label="地图名称" value="我的自由创造"></label><div><button id="reset-map" type="button">↶ 还原</button><a id="circle-link" href="game-circle.html" target="_blank" rel="noopener">☻ 游戏圈</a></div><button id="save-exit" class="primary" type="button">保存地图并上传、退出 ↗</button></section>
+  <div id="play-controls"><button id="home" type="button" title="回到道路起点">⌂ 回到起点</button><button id="interact" type="button" disabled>互动 E</button><button id="jump" type="button">跳跃 ␣</button></div>
+  <nav id="movement" aria-label="移动控制"><button data-key="KeyW" aria-label="向前移动">▲</button><div><button data-key="KeyA" aria-label="向左移动">◀</button><button data-key="KeyS" aria-label="向后移动">▼</button><button data-key="KeyD" aria-label="向右移动">▶</button></div></nav>
+  <footer><span>WASD 移动 · B 背包 · E 乘坐/下车 · P 发车/停车 · 拖动画面转视角</span><span id="coordinates">X 0 · Z 12</span></footer>
+  <div id="toast" role="status" aria-live="polite">正在准备平地建造场…</div>
+  <dialog id="bag" aria-labelledby="bag-title"><div class="panel-top"><div><p class="eyebrow">BUILD SOMETHING YOU LOVE</p><h2 id="bag-title">我的背包 <span id="bag-count">12</span></h2></div><button id="bag-close" class="icon-button" type="button" aria-label="关闭背包">×</button></div><p class="bag-intro">点选物品，就能带到你的世界。轨道、站台、列车和地道也能自由建造。</p><nav id="bag-tabs" aria-label="背包分类"><button data-category="basic" type="button" aria-pressed="true">基础物品</button><button data-category="coaster" type="button" aria-pressed="false">过山车与地道</button></nav><div id="inventory" class="inventory"></div><div class="bag-bottom"><span>尺寸 · 高度 · 轨道形状都能调整</span><span>自由放置 / 联机同步</span></div></dialog>
+  <dialog id="online" aria-labelledby="online-title"><div class="panel-top"><div><p class="eyebrow">BUILD TOGETHER</p><h2 id="online-title">一起建造</h2></div><button id="online-close" class="icon-button" type="button" aria-label="关闭联机面板">×</button></div>
+    <div id="room-setup"><label class="field">你的昵称<input id="player-name" maxlength="12" autocomplete="off"></label><button id="create-room" class="primary" type="button">创建联机房间</button><label class="backup"><input id="backup-route" type="checkbox">使用备用线路</label><form id="join-room"><label class="field">朋友的房间码<input id="room-input" maxlength="12" placeholder="输入8位房间码" autocomplete="off" autocapitalize="characters"></label><button type="submit" id="join-button">加入房间 →</button></form></div>
+    <div id="room-active" hidden><div class="room-heading"><strong id="room-code"></strong><button id="copy-room" type="button">复制房间码</button></div><p id="room-count"></p><ul id="room-members"></ul><button id="keep-room-scene" type="button">把房间作品保存到我的单人场景</button><button id="leave-room" type="button">退出联机</button></div>
+    <p id="room-status" role="status" aria-live="polite">最多6人，一起放置、移动和调整物品。</p><p class="small">加入后显示房主的场景，退出后回到自己的单人场景。昵称、人物位置和房间作品通过网络同步。</p>
+  </dialog>
+  <script type="module" src="season2-lv18.js?v=6"></script>
+</body>
+</html>

@@ -554,6 +554,7 @@
 <link rel="icon" type="image/png" href="app-icons/icon-192.png">
 <link rel="stylesheet" href="pwa.css">
 <script defer src="pwa.js"></script>
+<link rel="stylesheet" href="login-agreement.css?v=265">
 <script defer src="phone-login/demo-session.js"></script>
 </head>
 <body>
@@ -592,8 +593,13 @@
           <input id="login-idcard" type="text" maxlength="18" placeholder="输入 18 位身份证号" />
         </div>
 
+        <div class="login-consent">
+          <input id="login-agreement" type="checkbox" aria-describedby="agreement-error" />
+          <span><label for="login-agreement">我已阅读并同意 岩浆跑酷·全关联机 </label><button type="button" data-agreement-document="terms">用户协议</button>和<button type="button" data-agreement-document="privacy">隐私政策</button></span>
+        </div>
+        <p id="agreement-error" role="alert" hidden></p>
         <p id="login-error" class="login-error hidden">请输入账号和密码</p>
-        <button id="login-submit" type="button">登录</button>
+        <button id="login-submit" type="button" data-agreement-required disabled>登录</button>
         <button type="button" class="modal-close" id="s2-login-s1">回第一季</button>
       </div>
     </div>
@@ -607,7 +613,7 @@
     <div class="level-select">
       <div class="level-select-card">
         <h2>选择关卡</h2>
-        <p class="level-select-desc">共 35 关 · 第二季 · 已开放第 1–16 关</p>
+        <p class="level-select-desc">共 35 关 · 第二季 · 已开放第 1–18 关</p>
         <p class="phone-join">第二季已正式上线 · 蓝色世界等你来玩</p>
 
         <div id="level-grid" class="level-grid"></div>
@@ -669,6 +675,7 @@
 
   <script src="audio.js"></script>
   <script src="coop.js"></script>
+  <script src="login-agreement.js?v=265"></script>
   <script>
     (function () {
 
@@ -713,6 +720,7 @@
         } catch (e) {}
       }
       function showLogin() {
+        window.GameAgreement?.reset();
         const p = document.getElementById("s2-login");
         if (p) {
           p.classList.remove("hidden");
@@ -732,7 +740,7 @@
       }
 
       const fromS1 = qs("from") === "s1";
-      if (fromS1 || getPlayer()) {
+      if (window.GameAgreement?.hasAcceptedSession() && (fromS1 || getPlayer())) {
         if (fromS1 && !getPlayer()) setPlayer("第一季旅客");
         hideLogin();
       } else {
@@ -770,6 +778,7 @@
       }
 
       function doLogin() {
+        if (!window.GameAgreement?.requireAcceptance()) return;
         let name = "";
         if (loginMode === "account") {
           const u = document.getElementById("login-user");
@@ -799,6 +808,7 @@
           }
           name = "旅客" + id.value.trim().slice(-4);
         }
+        window.GameAgreement.recordAcceptance();
         setPlayer(name);
         hideLogin();
         sfx('playWin');
@@ -829,7 +839,7 @@
       });
 
       const TOTAL = 35;
-      const OPEN_LEVELS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+      const OPEN_LEVELS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
       const LEVEL_TITLES = {
         1: "蓝色跑酷",
         2: "找黄方块",
@@ -847,6 +857,8 @@
         14: "屁股接子弹",
         15: "自由城市",
         16: "level！",
+        17: "闪身步",
+        18: "自由建造",
       };
       const LEVEL_HREF = {
         1: "season2-lv1.html",
@@ -865,6 +877,8 @@
         14: "season2-lv14.html",
         15: "season2-lv15.html",
         16: "season2-lv16.html",
+        17: "season2-lv17.html",
+        18: "season2-lv18.html",
       };
 
       function showTip(text) {
@@ -901,7 +915,7 @@
             if (OPEN_LEVELS.has(i)) {
               location.href = LEVEL_HREF[i] || "season2-lv1.html";
             } else {
-              showTip("第 " + i + " 关还在制作，第二季已上线 1–16 关");
+              showTip("第 " + i + " 关还在制作，第二季已上线 1–18 关");
             }
           });
           grid.appendChild(btn);

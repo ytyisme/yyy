@@ -3402,6 +3402,7 @@
   function playMoonCoopNow() {
     playUiClick();
     if (blockIfBanned()) return;
+    if (!loggedIn && !window.GameAgreement?.recordAcceptance()) return;
     loggedIn = true;
     if (!playerName) playerName = "玩家";
     closeLoginScreen();
@@ -3413,6 +3414,7 @@
   function playCraftCoopNow() {
     playUiClick();
     if (blockIfBanned()) return;
+    if (!loggedIn && !window.GameAgreement?.recordAcceptance()) return;
     loggedIn = true;
     if (!playerName) playerName = "玩家";
     closeLoginScreen();
@@ -3495,6 +3497,7 @@
     loginPhone.value = "";
     loginSms.value = "";
     loginIdcard.value = "";
+    window.GameAgreement?.reset();
     mockSmsCode = "";
     setLoginMode("account");
     loginScreen.classList.remove("hidden");
@@ -3518,6 +3521,7 @@
 
   function returnToHomeMenu() {
     if (blockIfBanned()) return;
+    if (!loggedIn && !window.GameAgreement?.recordAcceptance()) return;
     loggedIn = true;
     closeLoginScreen();
     stopLevelCoop();
@@ -3614,6 +3618,7 @@
   function submitLogin() {
     loginError.style.color = "#ff7a5c";
     if (blockIfBanned()) return;
+    if (!window.GameAgreement?.requireAcceptance()) return;
     if (loginMode === "account") {
       const user = (loginUser.value || "").trim();
       const pass = loginPass.value || "";

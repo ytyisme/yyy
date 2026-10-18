@@ -12,7 +12,7 @@ from urllib.parse import unquote, urlsplit
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
 ROOT = os.path.dirname(os.path.abspath(__file__))
-BUILD = "264"
+BUILD = "266"
 CONTROL_DATA = os.path.join(ROOT, ".server-control-data")
 CONTROL_TOKEN = secrets.token_urlsafe(32)
 
@@ -20,7 +20,7 @@ CONTROL_TOKEN = secrets.token_urlsafe(32)
 def private_path(path):
     parts = [part for part in unquote(urlsplit(path).path).split("/") if part]
     return any(part.startswith(".") for part in parts) or any(
-        part in ("server-control", "server.py", "__server-control__") for part in parts
+        part in ("server-control", "server.py", "community_store.py", "__server-control__") for part in parts
     )
 
 
@@ -62,6 +62,8 @@ class Handler(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        if self.community_request():
+            return
         if urlsplit(self.path).path == "/__server-control__/status":
             if not self.control_authorized():
                 self.send_error(404)
@@ -93,6 +95,8 @@ class Handler(SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_HEAD(self):
+        if self.community_request():
+            return
         if private_path(self.path):
             self.send_error(404)
             return
@@ -104,6 +108,8 @@ class Handler(SimpleHTTPRequestHandler):
         )
 
     def do_POST(self):
+        if self.community_request():
+            return
         if urlsplit(self.path).path != "/__server-control__/stop" or not self.control_authorized():
             self.send_error(404)
             return
@@ -114,6 +120,12 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
         threading.Thread(target=self.server.shutdown, daemon=True).start()
+
+    def community_request(self):
+        if not urlsplit(self.path).path.startswith('/api/community/'):
+            return False
+        from community_store import handle
+        return handle(self)
 
     def list_directory(self, path):
         self.send_error(404)

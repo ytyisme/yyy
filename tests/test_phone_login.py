@@ -185,7 +185,7 @@ class HTTPTests(AuthFixture):
         status, _, response = self.request("POST", "/api/phone/send", {"phone": TEST_PHONE})
         self.assertEqual(status, 200)
         self.assertNotIn(self.sent[-1][1].encode(), response)
-        status, headers, _ = self.request("POST", "/api/phone/verify", {"phone": TEST_PHONE, "code": self.sent[-1][1]})
+        status, headers, _ = self.request("POST", "/api/phone/verify", {"phone": TEST_PHONE, "code": self.sent[-1][1], "agreementAccepted": True})
         self.assertEqual(status, 200)
         self.assertIn("HttpOnly", headers["Set-Cookie"])
         return headers["Set-Cookie"].split(";", 1)[0]
@@ -197,6 +197,26 @@ class HTTPTests(AuthFixture):
             self.assertTrue(headers["Location"].startswith("/phone-login/"))
         self.assertEqual(self.request("GET", "/game.js")[0], 401)
         self.assertEqual(self.request("GET", "/lib/city-world.mjs")[0], 401)
+
+    def test_login_requires_explicit_agreement_without_consuming_the_code(self):
+        self.request("POST", "/api/phone/send", {"phone": TEST_PHONE})
+        data = {"phone": TEST_PHONE, "code": self.sent[-1][1]}
+        for consent in [None, False, "true", 1]:
+            request = dict(data)
+            if consent is not None:
+                request["agreementAccepted"] = consent
+            status, headers, body = self.request("POST", "/api/phone/verify", request)
+            self.assertEqual(status, 400)
+            self.assertIn("勾选", json.loads(body)["error"])
+            self.assertNotIn("Set-Cookie", headers)
+        data["agreementAccepted"] = True
+        self.assertEqual(self.request("POST", "/api/phone/verify", data)[0], 200)
+
+    def test_agreement_assets_are_readable_before_login(self):
+        for path in ["/login-agreement.css?v=265", "/login-agreement.js?v=265"]:
+            status, _, body = self.request("GET", path)
+            self.assertEqual(status, 200)
+            self.assertTrue(body)
 
     def test_public_login_and_status_do_not_leak_owner_phone(self):
         status, headers, body = self.request("GET", "/phone-login/")
@@ -229,7 +249,7 @@ class HTTPTests(AuthFixture):
     def test_https_cookie_is_secure(self):
         self.server.RequestHandlerClass = server_module.partial(server_module.PhoneHandler, auth=self.auth, origin="https://game.example")
         self.auth.send(TEST_PHONE, "direct-test")
-        status, headers, _ = self.request("POST", "/api/phone/verify", {"phone": TEST_PHONE, "code": self.sent[-1][1]}, host="game.example", origin="https://game.example")
+        status, headers, _ = self.request("POST", "/api/phone/verify", {"phone": TEST_PHONE, "code": self.sent[-1][1], "agreementAccepted": True}, host="game.example", origin="https://game.example")
         self.assertEqual(status, 200)
         self.assertIn("; Secure", headers["Set-Cookie"])
 
@@ -251,7 +271,7 @@ class HTTPTests(AuthFixture):
             self.assertEqual(status, 200)
             demo = json.loads(body)["demoCode"]
             self.assertRegex(demo, r"^\d{6}$")
-            status, headers, _ = self.request("POST", "/api/phone/verify", {"phone": TEST_PHONE, "code": demo})
+            status, headers, _ = self.request("POST", "/api/phone/verify", {"phone": TEST_PHONE, "code": demo, "agreementAccepted": True})
             self.assertEqual(status, 200)
             self.assertEqual(self.request("GET", "/app.html", cookie=headers["Set-Cookie"].split(";", 1)[0])[0], 200)
             network.assert_not_called()

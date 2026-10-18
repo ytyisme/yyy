@@ -24,6 +24,8 @@ PhoneAuth, SmsConfig, AuthError = auth_module.PhoneAuth, auth_module.SmsConfig, 
 DemoPhoneAuth = auth_module.DemoPhoneAuth
 COOKIE, SESSION_TTL = auth_module.COOKIE, auth_module.SESSION_TTL
 PUBLIC = {
+    "/login-agreement.css": "login-agreement.css",
+    "/login-agreement.js": "login-agreement.js",
     "/phone-login/": "phone-login/index.html",
     "/phone-login/index.html": "phone-login/index.html",
     "/phone-login/login.css": "phone-login/login.css",
@@ -201,6 +203,8 @@ class PhoneHandler(SimpleHTTPRequestHandler):
             if path == "/api/phone/send":
                 self.json_response(200, self.auth.send(data.get("phone"), address))
             elif path == "/api/phone/verify":
+                if data.get("agreementAccepted") is not True:
+                    raise AuthError("请先阅读并勾选同意用户协议和隐私政策", 400)
                 token = self.auth.verify(data.get("phone"), data.get("code"), address)
                 self.auth.logout(self.token())
                 self.json_response(200, {"authenticated": True}, {"Set-Cookie": self.cookie_header(token)})

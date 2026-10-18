@@ -1,5 +1,6 @@
 (() => {
  'use strict';
+ const gameRoot=new URL('.',document.currentScript.src);
  const managedServer=location.protocol==='http:'&&location.port==='8080';
  if(managedServer)import('./lib/server-gate.mjs').then(({installServerGate})=>installServerGate()).catch(()=>{
   const gate=document.createElement('section');gate.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#101816;color:white;display:grid;place-items:center;padding:24px;text-align:center;font:18px system-ui';
@@ -23,7 +24,8 @@
   dialog.showModal();
  }
  document.querySelectorAll('[data-install-app]').forEach(b=>b.addEventListener('click',install));
- if(!document.querySelector('.app-home')){const tools=document.createElement('nav');tools.className='game-app-tools';tools.setAttribute('aria-label','游戏应用');tools.innerHTML='<a href="app.html">游戏主页</a><button type="button" data-install-app>安装</button>';tools.querySelector('button').onclick=install;document.body.append(tools);}
+ if(!document.querySelector('.app-home')){const tools=document.createElement('nav');tools.className='game-app-tools';tools.setAttribute('aria-label','游戏应用');for(const [file,title]of [['app.html','游戏主页'],['map-list.html','游戏列表'],['game-circle.html','游戏圈']]){const link=document.createElement('a');link.href=new URL(file,gameRoot);link.textContent=title;tools.append(link);}const button=document.createElement('button');button.type='button';button.dataset.installApp='';button.textContent='安装';button.onclick=install;tools.append(button);document.body.append(tools);}
+ else if(!document.querySelector('.app-community-nav')){const nav=document.createElement('nav');nav.className='app-community-nav';for(const [file,title]of [['map-list.html','游戏列表'],['game-circle.html','游戏圈 ☻']]){const a=document.createElement('a');a.href=new URL(file,gameRoot);a.textContent=title;nav.append(a);}document.querySelector('.app-header')?.append(nav);}
  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;status('已准备好，点击“安装游戏”添加应用');});
  window.addEventListener('appinstalled',()=>{installPrompt=null;status('安装完成，下次点主屏幕的游戏图标即可');});
  if(standalone())status('应用模式 · 选择关卡开始游戏');
