@@ -1,11 +1,11 @@
-import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';import * as Three from '../lib/three.module.js';import * as rules from '../lib/city-rules.mjs';import * as worldRules from '../lib/city-world.mjs';import * as flightRules from '../lib/city-flight.mjs';import * as roads from '../lib/city-roads.mjs';import * as life from '../lib/city-life.mjs';import {createCityPhone} from '../lib/city-phone.mjs';import {createCitySound} from '../lib/city-sound.mjs';import * as cityNames from '../lib/city-cities.mjs';import {createHousing} from '../lib/city-housing.mjs';import * as garageRules from '../lib/city-garage.mjs';import {createCityPeerViews} from '../lib/city-peer-views.mjs';
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';import * as Three from '../lib/three.module.js';import * as rules from '../lib/city-rules.mjs';import * as worldRules from '../lib/city-world.mjs';import * as flightRules from '../lib/city-flight.mjs';import * as roads from '../lib/city-roads.mjs';import * as life from '../lib/city-life.mjs';import {createCityPhone} from '../lib/city-phone.mjs';import {createCitySound} from '../lib/city-sound.mjs';import * as cityNames from '../lib/city-cities.mjs';import {createHousing} from '../lib/city-housing.mjs';import * as garageRules from '../lib/city-garage.mjs';import {createCityPeerViews} from '../lib/city-peer-views.mjs';import {createCityRailGame} from '../lib/city-rail-game.mjs';
 function cityHarness(){
  class Element{constructor(){this.style={};this.dataset={};this.listeners={};this.children=[];this.open=false;this.classList={toggle(){},add(){},remove(){}};}addEventListener(k,f){this.listeners[k]=f;}append(...c){this.children.push(...c);}replaceChildren(){this.children=[];}getContext(){return {fillRect(){},fillText(){},beginPath(){},moveTo(){},lineTo(){},stroke(){},arc(){},fill(){}};}showModal(){this.open=true;}close(){this.open=false;this.listeners.close?.();}setPointerCapture(){}setAttribute(){}focus(){}}
  const elements=new Map();const el=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id);};
  class Renderer{constructor(){this.shadowMap={};this.domElement=new Element();}setPixelRatio(){}setSize(){}render(){}}
- const context=vm.createContext({THREE:{...Three,WebGLRenderer:Renderer},...rules,...worldRules,...flightRules,...roads,...life,...cityNames,...garageRules,createHousing,createCityPeerViews:options=>createCityPeerViews({...options,document:context.document}),setupCityOnline:options=>({id:'local-player',online:false,members:new Map(),isVehicleTaken:()=>false,...options}),createCityPhone:options=>createCityPhone({...options,document:context.document}),baseBuildings:rules.buildings,createCitySound,innerWidth:1024,innerHeight:768,devicePixelRatio:1,performance:{now:()=>0},requestAnimationFrame(){},setTimeout(){},document:{getElementById:el,createElement:()=>new Element(),querySelectorAll:()=>[],addEventListener(){},hidden:false},window:{addEventListener(){}},console});
+ const context=vm.createContext({THREE:{...Three,WebGLRenderer:Renderer},...rules,...worldRules,...flightRules,...roads,...life,...cityNames,...garageRules,createHousing,createCityPeerViews:options=>createCityPeerViews({...options,document:context.document}),setupCityOnline:options=>({id:'local-player',online:false,members:new Map(),isVehicleTaken:()=>false,...options}),createCityPhone:options=>createCityPhone({...options,document:context.document}),baseBuildings:rules.buildings,createCityRailGame,createCitySound,innerWidth:1024,innerHeight:768,devicePixelRatio:1,performance:{now:()=>0},requestAnimationFrame(){},setTimeout(){},document:{getElementById:el,createElement:()=>new Element(),querySelectorAll:()=>[],addEventListener(){},hidden:false},window:{addEventListener(){}},console});
  const code=fs.readFileSync(new URL('../season2-lv15.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
- vm.runInContext(code+'\nglobalThis.harness={scene,cityOnline,cityPeerViews,cityPose,assembleCityPeer,wallet,housing,garageAccess,garageScene,updateGarage,garageServiceDialog,registerGarage,updateNear,interact,takeElevator,updateElevator,buyHome,startNavigation,updateNavigation,record,stopWork,phoneUI,bankDialog,surfaceHeight,traffic,enter,leave,toggleCar,perform,frame,addCrime,justice,requestTaxi,verifyTaxi,confirmTaxi,updateTaxi,validMove,world,updateCityTravel,sleepHotel,bookFlight,updateFlight,setFlightView,startLanding,updatePlayer,updateCarEffects,toggleSignal,eatInventory,updateEating,meal,moon,updateDayNight,player,city,inside,parked,keys,ledger,inventory,buildings,get state(){return {interior,driving,activity,time,dayMinutes,taxi,flight,hotelKey,health,interiorFloor,elevatorTrip,navigation};}};',context);
+ vm.runInContext(code+'\nglobalThis.harness={rail,updateTraffic,scene,cityOnline,cityPeerViews,cityPose,assembleCityPeer,wallet,housing,garageAccess,garageScene,updateGarage,garageServiceDialog,registerGarage,updateNear,interact,takeElevator,updateElevator,buyHome,startNavigation,updateNavigation,record,stopWork,phoneUI,bankDialog,surfaceHeight,traffic,enter,leave,toggleCar,perform,frame,addCrime,justice,requestTaxi,verifyTaxi,confirmTaxi,updateTaxi,validMove,world,updateCityTravel,sleepHotel,bookFlight,updateFlight,setFlightView,startLanding,updatePlayer,updateCarEffects,toggleSignal,eatInventory,updateEating,meal,moon,updateDayNight,player,city,inside,parked,keys,ledger,inventory,buildings,get state(){return {interior,driving,activity,time,dayMinutes,taxi,flight,hotelKey,health,interiorFloor,elevatorTrip,navigation};}};',context);
  return {h:context.harness,el};
 }
 test('3D scene builds and car entry/exit keeps the player outdoors',()=>{const {h}=cityHarness();assert(h.world.root.children.length>30);assert.equal(h.world.chunkCount,1);h.toggleCar();assert.equal(h.state.driving,true);h.toggleCar();assert.equal(h.state.driving,false);assert.equal(h.player.g.visible,true);});
@@ -109,4 +109,55 @@ test('online citizens render only in the same city and remote cars release their
 test('assembling joins another city and the room dialog pauses movement',()=>{
  const {h,el}=cityHarness(),pose=h.cityPose();assert(h.assembleCityPeer({...pose,city:1,x:8,z:12}));assert.equal(h.world.profile.index,1);assert.equal(h.cityPose().city,1);
  el('city-online-dialog').open=true;h.keys.add('KeyW');const before=h.player.g.position.clone();h.updatePlayer(.1);assert(h.player.g.position.equals(before));
+});
+
+test('rail station enforces the whole walking flow and takes the passenger to the chosen independent city',()=>{
+ const {h,el}=cityHarness(),station=h.buildings.find(b=>b.id==='railwayStation');h.enter(station);assert(h.rail.active);
+ assert.equal(h.validMove({x:0,z:20},{x:0,z:17},.4),false);assert.equal(h.rail.buy(cityNames.chinaCities[2]),false);
+ h.player.g.position.set(0,0,22);h.interact();assert(h.rail.journey.secured);
+ assert.equal(h.validMove({x:2,z:-8},{x:2,z:-11},.4),false);h.player.g.position.set(-16,0,5);h.interact();assert.equal(el('dialog').open,true);assert(h.rail.buy(cityNames.chinaCities[2]));assert.equal(el('dialog').open,false);
+ assert.equal(h.rail.buy(cityNames.chinaCities[3]),false);h.player.g.position.set(2,0,-6);h.interact();assert.equal(h.rail.journey.phase,'waiting');
+ h.player.g.position.set(0,0,-29);h.interact();assert.equal(h.rail.journey.phase,'platform');h.player.g.position.set(7,0,1);h.interact();assert.equal(h.rail.journey.phase,'platform');
+ for(let i=1;i<=650;i++)h.frame(i*40);h.interact();assert.equal(h.rail.journey.phase,'cabin');assert.equal(h.rail.leave(),false);el('recover').onclick();assert.equal(h.rail.journey.phase,'cabin');
+ assert.equal(h.validMove({x:0,z:0},{x:1.5,z:0},.4),false);assert.equal(h.validMove({x:0,z:0},{x:0,z:-1},.4),true);
+ h.interact(); // A seated passenger must stand up automatically on arrival.
+ for(let i=651;i<=1720;i++)h.frame(i*40);assert.equal(h.rail.journey.phase,'arrived');assert.equal(h.world.profile.name,'上海市');assert.equal(h.rail.journey.ticket.used,true);
+ const z=h.player.g.position.z;h.keys.add('KeyW');h.updatePlayer(.1);h.keys.clear();assert.notEqual(h.player.g.position.z,z);h.interact();assert.equal(h.state.interior,null);assert.equal(h.cityPose().city,2);assert.equal(h.player.g.parent,h.city);assert.equal(h.ledger.filter(r=>r.text.includes('高铁票')).length,1);
+});
+test('rail guidance walks the player to each real checkpoint and a city unload removes its train',()=>{
+ const {h}=cityHarness();h.enter(h.buildings.find(b=>b.id==='railwayStation'));h.rail.next();for(let i=0;i<50;i++)h.rail.move(.1);assert(Math.abs(h.player.g.position.z-22)<.3);h.rail.next();assert(h.rail.journey.secured);
+ h.rail.next();for(let i=0;i<50;i++)h.rail.move(.1);assert(Math.hypot(h.player.g.position.x+16,h.player.g.position.z-5)<.3);
+ h.rail.leave();const old=h.rail.exterior.vehicle,root=h.world.root;assert(old.parent);h.world.beginHighway();assert.equal(h.rail.exterior,null);assert.equal(root.parent,null);
+});
+test('NPC traffic stops at the actual red rail barrier and resumes once the train has cleared',()=>{
+ const {h}=cityHarness();for(let i=1;i<=65;i++)h.frame(i*1000);
+ const c=h.traffic[0];c.g.position.set(176,0,210);c.route=[{x:176,y:0,z:210},{x:176,y:0,z:228}];c.routeIndex=1;
+ h.updateTraffic(.5);assert.equal(c.g.position.z,210);assert.equal(c.moving,false);h.rail.update(2);
+ const signal=h.rail.exterior.signals.find(s=>Math.abs(s.crossing.x-176)<.01);assert(signal);assert.equal(signal.progress,1);assert(signal.lamps.some(l=>l.material.emissive.getHex()!==0));
+ for(let i=66;i<=85;i++)h.frame(i*1000);c.g.position.set(176,0,210);c.routeIndex=1;h.updateTraffic(.5);assert(c.g.position.z>210);
+});
+
+function boardRailForDriving(h){
+ h.enter(h.buildings.find(b=>b.id==='railwayStation'));h.player.g.position.set(0,0,22);h.interact();h.player.g.position.set(-16,0,5);h.rail.buy(cityNames.chinaCities[2]);h.player.g.position.set(2,0,-6);h.interact();h.player.g.position.set(0,0,-29);h.interact();h.player.g.position.set(7,0,1);
+ for(let i=1;i<=650;i++)h.frame(i*40);h.interact();assert.equal(h.rail.journey.phase,'cabin');
+}
+test('the driver cab controls a real rail-only train and stops instead of completing on the passenger timer',()=>{
+ const {h,el}=cityHarness();boardRailForDriving(h);assert.equal(h.rail.enterDriver(),false);h.rail.goDriver();for(let i=0;i<70;i++)h.rail.move(.1);assert(h.player.g.position.z<-13);assert(h.rail.enterDriver());assert(h.rail.inDriver);assert.equal(h.player.g.visible,false);assert(h.inside.getObjectByName('high-speed-driver-cab'));
+ h.keys.add('KeyW');for(let i=0;i<60;i++)h.rail.update(.1);h.keys.clear();assert(h.rail.drive.velocity>10);assert.equal(h.rail.exitDriver(),false);const z=h.player.g.position.z;
+ h.keys.add('KeyA');h.keys.add('KeyD');h.rail.move(1);h.keys.clear();assert.equal(h.player.g.position.z,z);assert.equal(h.rail.drive.pose.z,224);
+ el('rail-driver-brake').onpointerdown({preventDefault(){},pointerId:1});const speed=h.rail.drive.velocity;h.rail.update(1);el('rail-driver-brake').listeners.pointerup();assert(h.rail.drive.velocity<speed);
+ h.rail.stopTrain();for(let i=0;i<60;i++)h.rail.update(.1);assert.equal(h.rail.drive.velocity,0);const parked=h.rail.drive.distance;for(let i=0;i<500;i++)h.rail.update(.1);assert.equal(h.rail.drive.distance,parked);assert.equal(h.rail.journey.phase,'cabin');
+ h.rail.setDriverView();assert.equal(h.inside.visible,false);assert(h.rail.driveWorld.vehicle.visible);h.rail.setDriverView();assert(h.inside.visible);
+ assert(h.rail.exitDriver());assert(!h.rail.inDriver);assert(h.player.g.visible);for(let i=0;i<500;i++)h.rail.update(.1);assert.equal(h.rail.drive.distance,parked);
+ assert(h.rail.enterDriver());h.keys.add('KeyW');for(let i=0;i<1400&&h.rail.journey.phase==='cabin';i++)h.rail.update(.1);h.keys.clear();assert(h.rail.drive.arrived);assert.equal(h.rail.journey.phase,'cabin');assert(h.rail.toggleDoors());for(let i=0;i<150&&!h.rail.drive.service.complete;i++)h.rail.update(.1);assert(h.rail.toggleDoors());h.rail.update(1);assert.equal(h.rail.journey.phase,'arrived');assert.equal(h.world.profile.name,'上海市');assert(!h.rail.inDriver);assert.equal(h.rail.driveWorld,null);assert(h.player.g.visible);
+});
+
+test('intermediate stations show actual opening doors and passengers, and the driver can resume to the next stop',()=>{
+ const {h,el}=cityHarness();boardRailForDriving(h);h.rail.goDriver();for(let i=0;i<70;i++)h.rail.move(.1);assert(h.rail.enterDriver());
+ const world=h.rail.driveWorld,d=h.rail.drive;assert.equal(world.stations.length,5);for(const id of ['origin','qinghe','lakeside','newtown','terminal'])assert(world.g.getObjectByName('rail-stop-'+id));
+ d.distance=1050;d.velocity=0;d.stop();h.rail.update(.1);assert.equal(el('rail-next-stop').textContent,'本站：青禾站');assert.equal(el('rail-driver-doors').disabled,false);assert(h.rail.toggleDoors());assert.equal(h.inside.visible,false);
+ assert.equal(h.rail.toggleDoors(),false);h.rail.update(1.3);assert(world.exchange.some(p=>p.g.visible));assert(world.vehicle.railDoors.every(door=>door.g.position.x>door.x));assert.equal(el('rail-driver-accelerate').disabled,true);
+ for(let i=0;i<80&&!d.service.complete;i++)h.rail.update(.1);assert.equal(d.passengers,14);assert.equal(world.stations[1].waiting.filter(p=>p.g.visible).length,0);assert.equal(el('rail-passengers').textContent,'车内乘客 14 / 40 人');assert.equal(h.rail.journey.phase,'cabin');assert.equal(h.world.profile.name,'北京市');
+ el('rail-driver-doors').onclick();h.rail.update(.7);assert(world.vehicle.railDoors.every(door=>Math.abs(door.g.position.x-door.x)<.000001));assert.equal(el('rail-driver-accelerate').disabled,false);
+ h.keys.add('KeyW');for(let i=0;i<60;i++)h.rail.update(.1);h.keys.clear();assert(d.distance>1068);assert(d.velocity>0);assert.equal(el('rail-next-stop').textContent,'下一站：湖畔站');assert(el('rail-route-stops').textContent.startsWith('✓ 青禾站'));assert.equal(h.rail.toggleDoors(),false);
 });
