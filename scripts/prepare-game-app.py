@@ -72,7 +72,7 @@ head = '''\n<!-- Installable game application -->
 <link rel="stylesheet" href="pwa.css">
 <script defer src="pwa.js"></script>
 '''
-pages = [p for p in ROOT.glob('*.html') if p.name != 'game-qr.html']
+pages = [p for p in ROOT.glob('*.html') if p.name not in {'game-qr.html', 'mc-client.html'}]
 for page in pages:
     text = page.read_text()
     if '<!-- Installable game application -->' not in text:

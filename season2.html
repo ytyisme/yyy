@@ -613,7 +613,7 @@
     <div class="level-select">
       <div class="level-select-card">
         <h2>选择关卡</h2>
-        <p class="level-select-desc">共 35 关 · 第二季 · 已开放第 1–18 关</p>
+        <p class="level-select-desc">共 35 关 · 第二季 · 已开放第 1–20 关</p>
         <p class="phone-join">第二季已正式上线 · 蓝色世界等你来玩</p>
 
         <div id="level-grid" class="level-grid"></div>
@@ -839,7 +839,7 @@
       });
 
       const TOTAL = 35;
-      const OPEN_LEVELS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
+      const OPEN_LEVELS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
       const LEVEL_TITLES = {
         1: "蓝色跑酷",
         2: "找黄方块",
@@ -859,6 +859,8 @@
         16: "level！",
         17: "闪身步",
         18: "自由建造",
+        19: "MCJS 方块世界",
+        20: "在线游戏大厅",
       };
       const LEVEL_HREF = {
         1: "season2-lv1.html",
@@ -879,6 +881,8 @@
         16: "season2-lv16.html",
         17: "season2-lv17.html",
         18: "season2-lv18.html",
+        19: "season2-lv19.html",
+        20: "season2-lv20.html",
       };
 
       function showTip(text) {
@@ -915,7 +919,7 @@
             if (OPEN_LEVELS.has(i)) {
               location.href = LEVEL_HREF[i] || "season2-lv1.html";
             } else {
-              showTip("第 " + i + " 关还在制作，第二季已上线 1–18 关");
+              showTip("第 " + i + " 关还在制作，第二季已上线 1–20 关");
             }
           });
           grid.appendChild(btn);

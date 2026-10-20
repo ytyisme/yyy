@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#eef6f7">
+  <title>第二季 · 第20关 · 在线游戏大厅</title>
+  <meta name="description" content="第20关在线游戏大厅：发现跑酷、赛车、益智和休闲游戏，搜索、收藏，挑一款开始玩。">
+  <!-- Installable game application -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="app-icons/icon-180.png">
+  <link rel="icon" href="app-icons/icon-192.png">
+  <link rel="stylesheet" href="pwa.css">
+  <link rel="stylesheet" href="season2-lv20.css?v=1">
+  <script defer src="pwa.js"></script>
+</head>
+<body>
+  <aside class="rail" aria-label="游戏大厅导航">
+    <a class="rail-brand" href="season2.html" aria-label="返回第二季选关"><span>✦</span></a>
+    <button class="rail-link active" data-collection="all" aria-label="全部游戏" aria-pressed="true"><span aria-hidden="true">▦</span><small>发现</small></button>
+    <button class="rail-link" data-collection="favorites" aria-label="我的收藏" aria-pressed="false"><span aria-hidden="true">♡</span><small>收藏</small></button>
+    <button class="rail-link" data-collection="recent" aria-label="最近打开" aria-pressed="false"><span aria-hidden="true">◷</span><small>最近</small></button>
+    <a class="rail-back" href="season2-lv19.html" aria-label="上一关：MCJS 方块世界">←<small>第19关</small></a>
+  </aside>
+  <div class="arcade-shell">
+    <header class="arcade-header">
+      <a class="wordmark" href="season2-lv20.html" aria-label="第20关在线游戏大厅">PLAY<span>一起玩</span><small>第二季 / 第20关</small></a>
+      <div class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="game-search" type="search" placeholder="今天想玩什么？搜索游戏…" aria-label="搜索游戏" autocomplete="off" maxlength="100"><kbd aria-hidden="true">/</kbd></div>
+      <a class="level-return" href="season2.html">第二季选关 <span>↗</span></a>
+    </header>
+    <main>
+      <section class="intro-row"><div><p class="eyebrow">YOUR NEXT LITTLE ADVENTURE</p><h1 id="view-title">今天，玩点什么<span>？</span></h1><p id="view-description">从一场跑酷到一局解谜，快乐随时开始。</p></div><button id="random-game" class="random-button"><span aria-hidden="true">⚄</span> 帮我挑一个</button></section>
+      <nav id="game-categories" class="categories" aria-label="游戏分类"></nav>
+      <div class="results-row"><p id="game-count" role="status" aria-live="polite"></p><span>精选在线游戏 · 点击即玩</span></div>
+      <div id="game-grid" class="game-grid" aria-label="在线游戏列表"></div>
+      <section id="empty-state" class="empty-state" hidden><span aria-hidden="true">⌕</span><h2 id="empty-title">没有找到这款游戏</h2><p id="empty-description">试试其他名字，或者换一个分类。</p><button id="reset-filters">查看全部游戏</button></section>
+      <section class="more-games"><div><span class="more-mark" aria-hidden="true">✺</span><div><h2>还想继续探索？</h2><p>去 Poki 发现更多在线游戏。</p></div></div><a href="https://poki.com/" target="_blank" rel="noopener noreferrer">探索 Poki <span>↗</span></a></section>
+    </main>
+    <footer class="arcade-footer"><span>第20关 · 你的在线游乐场</span><p>在线游戏需要联网。游戏及封面由原站提供；Poki 游戏会在新标签页打开。</p><a href="season2-lv19.html">‹ 上一关：MCJS 方块世界</a></footer>
+  </div>
+  <dialog id="game-player" class="game-player" aria-labelledby="player-title">
+    <header class="player-header"><div><h2 id="player-title"></h2><p id="player-controls"></p></div><nav aria-label="游戏控制"><button id="player-fullscreen" type="button">全屏 ⛶</button><a id="player-original" target="_blank" rel="noopener noreferrer">打开原网页 ↗</a><button id="player-close" type="button" aria-label="关闭游戏，返回大厅">返回大厅 ×</button></nav></header>
+    <div class="player-screen"><iframe id="online-game" title="在线游戏" allow="autoplay; fullscreen; gamepad" allowfullscreen sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-forms" referrerpolicy="no-referrer" hidden></iframe><section id="external-game" hidden><div id="external-cover"></div><h3 id="external-title"></h3><p>这款游戏由 Poki 提供，在原网页开始游玩。</p><a id="external-play" target="_blank" rel="noopener noreferrer">去 Poki 开玩 ↗</a></section></div>
+    <footer class="player-footer"><p id="player-status" role="status" aria-live="polite"></p><button id="player-retry" type="button">重新加载</button></footer>
+  </dialog>
+  <div id="arcade-toast" class="arcade-toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="season2-lv20.js?v=1"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#172b2a">
+  <title>第二季 · 第19关 · MCJS 方块世界</title>
+  <meta name="description" content="第19关：在游戏里进入 MCJS 1.12.2 WASM 网页版，探索和建造自己的方块世界。">
+  <!-- Installable game application -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="app-icons/icon-180.png">
+  <link rel="icon" type="image/png" href="app-icons/icon-192.png">
+  <link rel="stylesheet" href="pwa.css">
+  <link rel="stylesheet" href="season2-lv19.css?v=2">
+  <script defer src="pwa.js"></script>
+</head>
+<body>
+  <header class="mc-header">
+    <a class="back" href="season2.html">‹ 第二季选关</a>
+    <div class="mc-brand"><span class="cube-mark" aria-hidden="true">▦</span><span>MCJS 方块世界<small>第 19 关 / 1.12.2 WASM</small></span></div>
+    <nav class="mc-actions" aria-label="网页游戏控制">
+      <button id="mc-touch-toggle" type="button" aria-pressed="false">手机按键</button>
+      <button id="mc-reload" type="button" disabled title="重新启动网页游戏，请先在游戏中保存世界">重新加载</button>
+      <a href="https://playmcjscc.pages.dev/1.12.2wasm/" target="_blank" rel="noopener noreferrer">原网页 ↗</a>
+      <button id="mc-fullscreen" class="primary" type="button" disabled>全屏游戏 ⛶</button>
+    </nav>
+  </header>
+  <main id="mc-stage" class="mc-stage" aria-label="MCJS 网页游戏">
+    <iframe id="mc-frame" title="MCJS 1.12.2 WASM 网页游戏" data-src="mc-client.html?v=1" allow="autoplay; fullscreen; gamepad" allowfullscreen sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-downloads allow-forms" referrerpolicy="no-referrer" hidden></iframe>
+    <div id="mc-touch-surface" aria-label="拖动转视角、短按放置、长按拆除" hidden></div>
+    <div id="mc-touch-controls" aria-label="手机移动控制" hidden><nav class="mc-dpad" aria-label="前后左右"><button id="mc-forward" type="button" aria-label="向前">▲<small aria-hidden="true">W</small></button><button id="mc-left" type="button" aria-label="向左">◀<small aria-hidden="true">A</small></button><span aria-hidden="true">✥</span><button id="mc-right" type="button" aria-label="向右">▶<small aria-hidden="true">D</small></button><button id="mc-back" type="button" aria-label="向后">▼<small aria-hidden="true">S</small></button></nav><button id="mc-jump" type="button" aria-label="跳跃">跳跃<span>⇧</span></button><p class="mc-touch-hint">拖动转视角 · 点按放置 · 长按拆除</p></div>
+    <nav id="mc-touch-tools" aria-label="手机游戏菜单" hidden><button id="mc-inventory" type="button">背包 E</button><button id="mc-menu" type="button">菜单 Esc</button></nav>
+    <section id="mc-intro" class="mc-intro" aria-labelledby="mc-title">
+      <div class="voxel-scene" aria-hidden="true"><div class="pixel-sun"></div><div class="cloud cloud-one"></div><div class="cloud cloud-two"></div><div class="voxel-hill hill-back"></div><div class="voxel-hill hill-front"></div><div class="voxel-tree"><i></i><b></b><em></em></div><div class="voxel-ground"></div><div class="voxel-block block-one"></div><div class="voxel-block block-two"></div></div>
+      <div class="intro-copy">
+        <p class="eyebrow">第二季 / 第 19 关</p>
+        <h1 id="mc-title">下一站，<br>方块世界。</h1>
+        <p class="intro-description">进入 MCJS 网页版，<br>从第一块方块开始，探索、建造，创造你的世界。</p>
+        <div class="intro-tags"><span>MCJS 1.12.2</span><span>手机触控</span><span>需要联网</span></div>
+        <button id="mc-start" class="start-button" type="button">进入第19关 <span aria-hidden="true">→</span></button>
+        <p class="start-note">首次启动需要联网加载。原网页已有世界可通过游戏内导入 / 导出迁移。</p>
+      </div>
+    </section>
+    <div id="mc-help" class="mc-help" hidden>
+      <strong>还在等待游戏画面？</strong>
+      <p>首次加载可能较慢，可以继续等待，或点击顶部“原网页”直接打开。</p>
+      <button id="mc-help-close" type="button" aria-label="收起加载提示">×</button>
+    </div>
+  </main>
+  <footer class="mc-footer"><p id="mc-status" role="status" aria-live="polite">准备进入 MCJS · 需要联网</p><span>点击游戏画面操作 · Esc 释放鼠标 / 打开游戏菜单</span><a href="season2-lv18.html">‹ 上一关：自由建造</a><a href="season2-lv20.html">下一关：在线游戏大厅 ›</a></footer>
+  <script type="module" src="season2-lv19.js?v=3"></script>
+</body>
+</html>
