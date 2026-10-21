@@ -67,6 +67,7 @@
 <link rel="icon" type="image/png" href="app-icons/icon-192.png">
 <link rel="stylesheet" href="pwa.css">
 <script defer src="pwa.js"></script>
+  <script type="module" src="lib/player-skins.mjs"></script>
 </head>
 <body>
   <div class="wrap">
@@ -107,7 +108,7 @@
     </div>
   </div>
   <script src="audio.js"></script>
-  <script src="coop.js"></script>
+  <script src="coop.js?v=skins-1"></script>
   <script>
     (() => {
       function sfx(n){ try{ if(window.GameAudio){ GameAudio.unlock&&GameAudio.unlock(); GameAudio[n]&&GameAudio[n](); } }catch(e){} }
@@ -272,17 +273,19 @@
         // 远程玩家（带自己的涂色）
         for (const rp of remotes.values()) {
           const x = rp.x, y = rp.y;
-          // 全身染色
-          ctx.fillStyle = rp.paint || "#fff";
-          ctx.fillRect(x, y + 12, 28, 16);
-          ctx.fillRect(x + 2, y + 26, 10, 14);
-          ctx.fillRect(x + 16, y + 26, 10, 14);
-          ctx.beginPath();
-          ctx.arc(x + 14, y + 8, 11, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = "#2a2118";
-          ctx.fillRect(x + 10, y + 6, 3, 3);
-          ctx.fillRect(x + 17, y + 6, 3, 3);
+          if (!window.LavaSkins?.drawCanvas(ctx, {x,y,w:28,h:40,facing:rp.facing}, rp.skinId || "default")) {
+            // 全身染色
+            ctx.fillStyle = rp.paint || "#fff";
+            ctx.fillRect(x, y + 12, 28, 16);
+            ctx.fillRect(x + 2, y + 26, 10, 14);
+            ctx.fillRect(x + 16, y + 26, 10, 14);
+            ctx.beginPath();
+            ctx.arc(x + 14, y + 8, 11, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#2a2118";
+            ctx.fillRect(x + 10, y + 6, 3, 3);
+            ctx.fillRect(x + 17, y + 6, 3, 3);
+          }
           if (rp.role === "catch") {
             ctx.fillStyle = "#c62828";
             ctx.fillRect(x-2, y+30, 32, 6);
@@ -295,16 +298,18 @@
         }
         // 自己（白色小人 · 全身可染色）
         if (player.alive) {
-          ctx.fillStyle = paintColor;
-          ctx.fillRect(player.x, player.y + 12, player.w, 16);
-          ctx.fillRect(player.x + 2, player.y + 26, 10, 14);
-          ctx.fillRect(player.x + 16, player.y + 26, 10, 14);
-          ctx.beginPath();
-          ctx.arc(player.x + 14, player.y + 8, 11, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = "#2a2118";
-          ctx.fillRect(player.x + 10, player.y + 6, 3, 3);
-          ctx.fillRect(player.x + 17, player.y + 6, 3, 3);
+          if (!window.LavaSkins?.drawCanvas(ctx, player)) {
+            ctx.fillStyle = paintColor;
+            ctx.fillRect(player.x, player.y + 12, player.w, 16);
+            ctx.fillRect(player.x + 2, player.y + 26, 10, 14);
+            ctx.fillRect(player.x + 16, player.y + 26, 10, 14);
+            ctx.beginPath();
+            ctx.arc(player.x + 14, player.y + 8, 11, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#2a2118";
+            ctx.fillRect(player.x + 10, player.y + 6, 3, 3);
+            ctx.fillRect(player.x + 17, player.y + 6, 3, 3);
+          }
           if (myRole === "catch") {
             ctx.fillStyle = "#c62828";
             ctx.fillRect(player.x - 2, player.y + 30, 32, 6);
@@ -361,6 +366,7 @@
           prev.name = msg.name || prev.name || "玩家";
           if (msg.type === "state") {
             prev.x = msg.x; prev.y = msg.y; prev.facing = msg.facing;
+            prev.skinId = window.LavaSkins?.cleanId(msg.skinId) || "default";
             prev.paint = msg.paint; prev.role = msg.role; prev.alive = msg.alive;
             prev.last = performance.now();
           }

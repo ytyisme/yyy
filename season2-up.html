@@ -57,6 +57,7 @@
 <link rel="icon" type="image/png" href="app-icons/icon-192.png">
 <link rel="stylesheet" href="pwa.css">
 <script defer src="pwa.js"></script>
+  <script type="module" src="lib/player-skins.mjs"></script>
 </head>
 <body>
   <div class="wrap">
@@ -283,13 +284,15 @@
         }
 
         // 玩家
-        ctx.fillStyle = "#3ec6ff";
-        ctx.fillRect(player.x, player.y + 12, player.w, 16);
-        ctx.fillStyle = "#245a8a";
-        ctx.fillRect(player.x + 2, player.y + 26, 10, 14);
-        ctx.fillRect(player.x + 16, player.y + 26, 10, 14);
-        ctx.fillStyle = "#ffe0b8";
-        ctx.fillRect(player.x + 5, player.y, 18, 14);
+        if (!window.LavaSkins?.drawCanvas(ctx, player)) {
+          ctx.fillStyle = "#3ec6ff";
+          ctx.fillRect(player.x, player.y + 12, player.w, 16);
+          ctx.fillStyle = "#245a8a";
+          ctx.fillRect(player.x + 2, player.y + 26, 10, 14);
+          ctx.fillRect(player.x + 16, player.y + 26, 10, 14);
+          ctx.fillStyle = "#ffe0b8";
+          ctx.fillRect(player.x + 5, player.y, 18, 14);
+        }
 
         ctx.restore();
       }

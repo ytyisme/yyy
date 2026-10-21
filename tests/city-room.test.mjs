@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {cleanCityPose,sameCitySpace,createCityRoom} from '../lib/city-room.mjs';
 import {createRoomCipher} from '../lib/room-crypto.mjs';
 
-const pose={country:0,city:0,zone:'city',space:'',label:'北京 · 街道',x:8,y:0,z:12,heading:Math.PI,moving:true,mode:'walk',vehicle:null};
+const pose={country:0,city:0,zone:'city',space:'',label:'北京 · 街道',x:8,y:0,z:12,heading:Math.PI,moving:true,mode:'walk',vehicle:null,skinId:'default'};
 function setup(){
   let time=100000;const queue=[],rooms=[];
   const make=(id,host=false)=>{const room=createCityRoom({id,name:id,host,now:()=>time,send:message=>queue.push(message)});rooms.push(room);return room;};

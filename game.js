@@ -1108,6 +1108,7 @@
         vx: msg.vx || 0,
         vy: msg.vy || 0,
         facing: msg.facing || prev.facing || 1,
+        skinId: msg.type === "state" ? (window.LavaSkins?.cleanId(msg.skinId) || "default") : (prev.skinId || "default"),
         alive: msg.alive !== false,
         name: msg.name || prev.name || "玩家",
         color: prev.color || colorForCoopId(msg.id),

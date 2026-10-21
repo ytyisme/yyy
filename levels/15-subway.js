@@ -522,15 +522,17 @@ window.installSubway15 = function (S) {
       ctx.beginPath();
       ctx.ellipse(px + 14, py + 40 + 4 + hop, 14, 4, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#3ec6ff";
-      ctx.fillRect(px + 6, py + 10 + hop, 16, 22);
-      ctx.fillStyle = "#ffe0b8";
-      ctx.fillRect(px + 6, py + hop, 16, 14);
-      ctx.fillStyle = "#1a0c08";
-      ctx.fillRect(px + (facing >= 0 ? 14 : 8), py + 5 + hop, 3, 3);
-      ctx.fillStyle = "#245a8a";
-      ctx.fillRect(px + 7, py + 30 + hop, 5, 10 + swing);
-      ctx.fillRect(px + 16, py + 30 + hop, 5, 10 - swing);
+      if (!window.LavaSkins?.drawCanvas(ctx, {x:px, y:py+hop, w:28, h:40, facing})) {
+        ctx.fillStyle = "#3ec6ff";
+        ctx.fillRect(px + 6, py + 10 + hop, 16, 22);
+        ctx.fillStyle = "#ffe0b8";
+        ctx.fillRect(px + 6, py + hop, 16, 14);
+        ctx.fillStyle = "#1a0c08";
+        ctx.fillRect(px + (facing >= 0 ? 14 : 8), py + 5 + hop, 3, 3);
+        ctx.fillStyle = "#245a8a";
+        ctx.fillRect(px + 7, py + 30 + hop, 5, 10 + swing);
+        ctx.fillRect(px + 16, py + 30 + hop, 5, 10 - swing);
+      }
       const raw = playerName || "玩家";
       const label = raw.length > 16 ? `${raw.slice(0, 16)}…` : raw;
       ctx.save();

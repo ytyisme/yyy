@@ -74,6 +74,16 @@
       color: #a8d4ff;
       font-size: 13px;
     }
+    .skin-status {
+      width: min(960px, 96vw);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 6px 16px;
+      color: #b8e6d5;
+      font-size: 12px;
+    }
+    .skin-status a { color: #b8e6d5; text-underline-offset: 3px; }
     .keys kbd {
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid #4a90c8;
@@ -211,6 +221,7 @@
 <link rel="icon" type="image/png" href="app-icons/icon-192.png">
 <link rel="stylesheet" href="pwa.css">
 <script defer src="pwa.js"></script>
+  <script type="module" src="lib/player-skins.mjs"></script>
 </head>
 <body>
   <div class="wrap">
@@ -222,6 +233,10 @@
       <a class="back" href="season2.html">← 第二季首页</a>
     </div>
     <canvas id="game" width="960" height="540"></canvas>
+    <div class="skin-status">
+      <span id="my-skin" role="status">正在读取我的装备…</span>
+      <a href="skin-shop.html">换装 / 查看我的衣橱 →</a>
+    </div>
     <div class="hud">
       <div class="keys">
         <kbd>←</kbd><kbd>→</kbd> / <kbd>A</kbd><kbd>D</kbd> 移动
@@ -252,7 +267,7 @@
   </div>
 
   <script src="audio.js"></script>
-  <script src="coop.js"></script>
+  <script src="coop.js?v=skins-1"></script>
   <script>
     (() => {
 
@@ -580,26 +595,6 @@
         ctx.textAlign = "left";
         ctx.restore();
 
-        // 玩家（第一季同款配色：青上衣 + 深蓝裤）
-        const p = player;
-        // 腿
-        ctx.fillStyle = "#245a8a";
-        ctx.fillRect(p.x + 2, p.y + 26, 10, 14);
-        ctx.fillRect(p.x + 16, p.y + 26, 10, 14);
-        // 身体
-        ctx.fillStyle = "#3ec6ff";
-        ctx.fillRect(p.x, p.y + 12, p.w, 16);
-        // 头
-        ctx.fillStyle = "#ffe0b8";
-        ctx.fillRect(p.x + 5, p.y, 18, 14);
-        // 眼睛
-        ctx.fillStyle = "#2a2118";
-        ctx.fillRect(p.x + (p.facing > 0 ? 15 : 8), p.y + 5, 4, 4);
-        // 手臂
-        ctx.fillStyle = "#3ec6ff";
-        ctx.fillRect(p.x - 2, p.y + 14, 6, 12);
-        ctx.fillRect(p.x + p.w - 4, p.y + 14, 6, 12);
-
         for (const pt of particles) {
           ctx.globalAlpha = Math.max(0, pt.life);
           ctx.fillStyle = pt.color;
@@ -607,6 +602,42 @@
           ctx.globalAlpha = 1;
         }
 
+        ctx.restore();
+      }
+
+      function drawLocalPlayer() {
+        ctx.save();
+        ctx.translate(-cameraX, 0);
+        // 玩家（第一季同款配色：青上衣 + 深蓝裤）
+        const p = player;
+        if (!window.LavaSkins?.drawCanvas(ctx, p)) {
+          // 腿
+          ctx.fillStyle = "#245a8a";
+          ctx.fillRect(p.x + 2, p.y + 26, 10, 14);
+          ctx.fillRect(p.x + 16, p.y + 26, 10, 14);
+          // 身体
+          ctx.fillStyle = "#3ec6ff";
+          ctx.fillRect(p.x, p.y + 12, p.w, 16);
+          // 头
+          ctx.fillStyle = "#ffe0b8";
+          ctx.fillRect(p.x + 5, p.y, 18, 14);
+          // 眼睛
+          ctx.fillStyle = "#2a2118";
+          ctx.fillRect(p.x + (p.facing > 0 ? 15 : 8), p.y + 5, 4, 4);
+          // 手臂
+          ctx.fillStyle = "#3ec6ff";
+          ctx.fillRect(p.x - 2, p.y + 14, 6, 12);
+          ctx.fillRect(p.x + p.w - 4, p.y + 14, 6, 12);
+        }
+        ctx.save();
+        ctx.font = "700 11px 'Noto Sans SC', sans-serif";
+        ctx.textAlign = "center";
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#0a1a3a";
+        ctx.fillStyle = "#b5ffde";
+        ctx.strokeText("我", p.x + p.w / 2, p.y - 8);
+        ctx.fillText("我", p.x + p.w / 2, p.y - 8);
+        ctx.restore();
         ctx.restore();
       }
 
@@ -622,6 +653,7 @@
         drawBackground();
         drawWorld();
         drawRemotes();
+        drawLocalPlayer();
         drawUI();
       }
 
@@ -675,6 +707,11 @@
       let coopCount = 1;
       let lastSend = { x: 0, y: 0 };
 
+      function syncCoopCount() {
+        coopCount = remotes.size + 1;
+        statusEl.textContent = `联机中 · ${coopCount} 人 · 第 1 关`;
+      }
+
       function colorFor(id) {
         let h = 0;
         for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
@@ -687,6 +724,7 @@
         if (id === myId) return;
         if (msg.type === "bye") {
           remotes.delete(id);
+          syncCoopCount();
           return;
         }
         if (msg.type === "hello" || msg.type === "state") {
@@ -698,11 +736,13 @@
             prev.vx = msg.vx || 0;
             prev.vy = msg.vy || 0;
             prev.facing = msg.facing || 1;
+            prev.skinId = window.LavaSkins?.cleanId(msg.skinId) || "default";
             prev.last = time;
           } else {
             prev.last = time;
           }
           remotes.set(id, prev);
+          syncCoopCount();
         }
       }
 
@@ -713,8 +753,7 @@
           name: "蓝色玩家",
           onMessage: handleCoopMsg,
           onCount: (n) => {
-            coopCount = Math.max(1, Number(n) || 1);
-            statusEl.textContent = `联机中 · ${coopCount} 人 · 第 1 关`;
+            syncCoopCount();
           },
           onStatus: (st) => {
             if (st === "connecting") statusEl.textContent = "正在连接联机…";
@@ -742,33 +781,37 @@
           });
         }
         for (const [id, rp] of [...remotes]) {
-          if (time - (rp.last || 0) > 5) remotes.delete(id);
+          if (time - (rp.last || 0) > 5) { remotes.delete(id); syncCoopCount(); }
         }
       }
 
       function drawRemotes() {
         for (const rp of remotes.values()) {
           if (rp.x == null) continue;
-          const x = rp.x;
+          const x = rp.x - cameraX;
           const y = rp.y;
           ctx.fillStyle = "rgba(0,0,0,0.25)";
           ctx.beginPath();
           ctx.ellipse(x + 14, y + 44, 14, 4, 0, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillStyle = "#245a8a";
-          ctx.fillRect(x + 2, y + 26, 10, 14);
-          ctx.fillRect(x + 16, y + 26, 10, 14);
-          ctx.fillStyle = rp.color || "#7dffc8";
-          ctx.fillRect(x, y + 12, 28, 16);
-          ctx.fillStyle = "#ffe0b8";
-          ctx.fillRect(x + 5, y, 18, 14);
-          ctx.fillStyle = "#2a2118";
-          ctx.fillRect(x + ((rp.facing || 1) > 0 ? 15 : 8), y + 5, 4, 4);
-          ctx.fillStyle = "#e8f4ff";
-          ctx.font = "700 11px 'Noto Sans SC', sans-serif";
-          ctx.textAlign = "center";
-          ctx.fillText(rp.name || "玩家", x + 14, y - 8);
-          ctx.textAlign = "left";
+          if (!window.LavaSkins?.drawCanvas(ctx, {x,y,w:28,h:40,facing:rp.facing}, rp.skinId || "default")) {
+            ctx.fillStyle = "#245a8a";
+            ctx.fillRect(x + 2, y + 26, 10, 14);
+            ctx.fillRect(x + 16, y + 26, 10, 14);
+            ctx.fillStyle = rp.color || "#7dffc8";
+            ctx.fillRect(x, y + 12, 28, 16);
+            ctx.fillStyle = "#ffe0b8";
+            ctx.fillRect(x + 5, y, 18, 14);
+            ctx.fillStyle = "#2a2118";
+            ctx.fillRect(x + ((rp.facing || 1) > 0 ? 15 : 8), y + 5, 4, 4);
+          }
+          if (Math.abs(rp.x-player.x)>32 || Math.abs(rp.y-player.y)>44) {
+            ctx.fillStyle = "#e8f4ff";
+            ctx.font = "700 11px 'Noto Sans SC', sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(rp.name || "玩家", x + 14, y - 8);
+            ctx.textAlign = "left";
+          }
         }
       }
 
@@ -815,6 +858,14 @@
       startCoop();
       requestAnimationFrame(loop);
     })();
+  </script>
+  <script type="module">
+    import {playerSkins} from './lib/player-skins.mjs';
+    const label=document.getElementById('my-skin');
+    playerSkins.subscribe(skin=>{
+      label.textContent=skin.id==='default'?'我的皮肤：初始人物（未装备特殊皮肤）':`我的皮肤：${skin.name}`;
+      label.dataset.equippedSkin=skin.id;
+    });
   </script>
 </body>
 </html>

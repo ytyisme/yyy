@@ -287,7 +287,7 @@ window.installPipe27 = function (S) {
       if (player) {
         const x = player.x - cameraX;
         const flash = pipeScene.hurtCd > 0 && ((time * 20) | 0) % 2 === 0;
-        drawPipeBody(
+        if (!window.LavaSkins?.drawCanvas(ctx, {x, y:player.y, w:player.w, h:player.h, facing:player.facing})) drawPipeBody(
           x,
           player.y,
           player.w,

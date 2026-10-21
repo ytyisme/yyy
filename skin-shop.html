@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f5f0e6"><title>皮肤商场 · 岩浆跑酷</title>
+  <link rel="stylesheet" href="skin-shop.css"><script type="module" src="skin-shop.js"></script>
+
+<!-- Installable game application -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#152d36">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="岩浆跑酷">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="app-icons/icon-180.png">
+<link rel="icon" type="image/png" href="app-icons/icon-192.png">
+<link rel="stylesheet" href="pwa.css">
+<script defer src="pwa.js"></script>
+</head>
+<body class="skin-shop-page">
+  <header class="shop-header"><a class="brand" href="app.html"><img src="app-icons/icon-192.png" width="34" height="34" alt="">岩浆跑酷<span> / 皮肤商场</span></a><a class="back" href="app.html">返回主页 ↗</a></header>
+  <main>
+    <section class="shop-heading"><div><p class="eyebrow">THE SKIN COLLECTION · 01</p><h1>换个模样，<em>继续冒险。</em></h1><p class="intro">把路上的岩浆币，变成喜欢的样子。</p></div><aside class="wallet"><span class="ingot" aria-hidden="true"></span><div><small>我的岩浆币</small><strong id="balance">0</strong><a href="season2-lv21.html">去第21关收集 ↗</a></div></aside></section>
+    <div class="shop-layout">
+      <section class="fitting" aria-label="皮肤试穿"><div class="fitting-top"><span>人物皮肤预览</span><span class="live-dot">与游戏外观一致</span></div><div id="preview" class="preview" aria-label="皮肤人物"><p id="preview-error" hidden>当前设备无法显示初始角色的3D预览，仍可查看人物皮肤并购买。</p></div><div class="preview-tools"><button id="turn-left" aria-label="向左旋转角色">↶</button><button id="pose" aria-pressed="false">跑起来</button><button id="turn-right" aria-label="向右旋转角色">↷</button></div><div class="fitting-info"><p id="preview-tier" class="eyebrow"></p><h2 id="preview-name"></h2><p id="preview-description"></p><div class="equipped-note" id="equipped-note"></div><button id="preview-action" class="action"></button></div><p class="fit-note">第一季与第二季人物关卡通用 · 联机好友可见 · 外观不改变跑酷能力</p></section>
+      <section class="collection" aria-label="皮肤系列"><div class="collection-bar"><div class="filters" role="group" aria-label="筛选皮肤"><button data-filter="all" aria-pressed="true">全部皮肤 <span>4</span></button><button data-filter="owned" aria-pressed="false">我的衣橱 <span id="owned-count">0</span></button></div><span class="collection-label">用岩浆币解锁</span></div><div id="skin-grid" class="skin-grid"></div><p id="empty" class="empty" hidden>衣橱还空着。去收集岩浆币，带一款喜欢的皮肤回来吧。</p><button id="default-skin" class="default-skin"><span class="default-icon">↺</span><span><strong>城市跑者</strong><small>初始皮肤 · 永久免费</small></span><span class="default-status">试穿 →</span></button><div class="collection-foot"><span>购买后永久解锁，可随时换装。</span><span title="不同浏览器、设备或网址的购买记录暂不互通。请从原来购买皮肤的网址进入游戏。">保存在当前浏览器的此网址下</span></div></section>
+    </div>
+    <p id="message" class="message" role="status" aria-live="polite"></p>
+    <footer class="shop-footer"><span>每一次奔跑，都离喜欢的皮肤更近一点。</span><a href="season2-lv21.html">穿上新皮肤出发 →</a></footer>
+  </main>
+</body>
+</html>

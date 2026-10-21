@@ -1,4 +1,6 @@
 import * as THREE from './lib/three.module.js';
+import {attachPlayerSkin} from './lib/skin-visuals.mjs';
+import {playerSkins} from './lib/player-skins.mjs';
 import {createChase,RUN_LENGTH,PLAYER_SPEED,MONSTER_SPEED,LANE_WIDTH} from './lib/chase-run.mjs';
 import {batchCityChunk} from './lib/city-batch.mjs';
 import {createHazmatAvatar} from './lib/chase-avatar.mjs';
@@ -45,14 +47,15 @@ new THREE.TextureLoader().load('assets/chase/smiler.png',texture=>{texture.color
 const music=$('music');music.volume=.6;let musicEnabled=true,rear=false,last=performance.now(),lastHit=null,saveDone=false;
 let thirdPerson=false;
 const localAvatar=createHazmatAvatar(THREE,'我');localAvatar.children.at(-1).visible=false;scene.add(localAvatar);
-const remoteAvatars=new Map(),hands=new THREE.Group();camera.add(hands);scene.add(camera);
+const playerSkin=attachPlayerSkin(localAvatar,{height:1.8,maxWidth:1.7});
+const remoteAvatars=new Map(),remoteSkins=new Map(),hands=new THREE.Group();camera.add(hands);scene.add(camera);
 for(const side of [-1,1]){const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.065,.27,4,10),mat(0xe1c72c));arm.position.set(side*.32,-.37,-.47);arm.rotation.x=.8;hands.add(arm);const glove=new THREE.Mesh(new THREE.SphereGeometry(.065,12,8),mat(0x101714));glove.position.set(side*.32,-.28,-.56);hands.add(glove);}
-function pose(){return {distance:s.distance,x:s.x,jump:s.jumpHeight,elapsed:s.elapsed,phase:s.phase};}
+function pose(){return {distance:s.distance,x:s.x,jump:s.jumpHeight,elapsed:s.elapsed,phase:s.phase,skinId:playerSkins.equipped().id};}
 function resetRun(){game.reset();lastHit=null;saveDone=false;music.currentTime=0;last=performance.now();}
 const online=setupChaseOnline({onPause:pause,onLeave:()=>{resetRun();syncPhase();},onStart:({lateSeconds,index})=>{resetRun();game.start();game.lane(index%3-1);for(let age=Math.min(lateSeconds,3);age>0;age-=.1)game.step(Math.min(age,.1));syncPhase();$('status').textContent='和朋友一起逃离 · 3,000米出口';}});
-function updateAvatars(dt){const members=online.members;for(const [id,avatar] of remoteAvatars)if(!members.has(id)){scene.remove(avatar);avatar.userData.dispose();remoteAvatars.delete(id);}
-  for(const p of members.values()){if(p.id===online.id)continue;let avatar=remoteAvatars.get(p.id);if(!avatar){avatar=createHazmatAvatar(THREE,p.name);avatar.position.set(p.pose.x,p.pose.jump,-p.pose.distance);scene.add(avatar);remoteAvatars.set(p.id,avatar);}const age=Math.max(0,(Date.now()-p.last)/1000),advance=p.pose.phase==='running'?Math.min(.18,age)*PLAYER_SPEED:0;const target=-Math.min(RUN_LENGTH,p.pose.distance+advance);avatar.position.x+=(p.pose.x-avatar.position.x)*Math.min(1,dt*16);avatar.position.y+=(p.pose.jump-avatar.position.y)*Math.min(1,dt*16);avatar.position.z+=(target-avatar.position.z)*Math.min(1,dt*16);avatar.visible=Math.abs(p.pose.distance-s.distance)<180&&p.pose.phase!=='caught';avatar.userData.animate(p.pose.elapsed+Math.min(age,.2),p.pose.phase==='running');}
-  localAvatar.position.set(s.x,s.jumpHeight,-s.distance);localAvatar.visible=thirdPerson;localAvatar.userData.animate(s.elapsed,s.phase==='running');hands.visible=!thirdPerson;hands.position.y=s.phase==='running'?Math.sin(s.elapsed*13)*.022:0;
+function updateAvatars(dt){const members=online.members;for(const [id,avatar] of remoteAvatars)if(!members.has(id)){scene.remove(avatar);remoteSkins.get(id)?.dispose();remoteSkins.delete(id);avatar.userData.dispose();remoteAvatars.delete(id);}
+  for(const p of members.values()){if(p.id===online.id)continue;let avatar=remoteAvatars.get(p.id);if(!avatar){avatar=createHazmatAvatar(THREE,p.name);remoteSkins.set(p.id,attachPlayerSkin(avatar,{skinId:'default',height:1.8,maxWidth:1.7,parts:avatar.children.filter(part=>!part.isSprite)}));avatar.position.set(p.pose.x,p.pose.jump,-p.pose.distance);scene.add(avatar);remoteAvatars.set(p.id,avatar);}const skin=remoteSkins.get(p.id);skin.setSkin(p.pose.skinId);skin.update(p.pose.elapsed,{running:p.pose.phase==='running',jump:p.pose.jump>0});const age=Math.max(0,(Date.now()-p.last)/1000),advance=p.pose.phase==='running'?Math.min(.18,age)*PLAYER_SPEED:0;const target=-Math.min(RUN_LENGTH,p.pose.distance+advance);avatar.position.x+=(p.pose.x-avatar.position.x)*Math.min(1,dt*16);avatar.position.y+=(p.pose.jump-avatar.position.y)*Math.min(1,dt*16);avatar.position.z+=(target-avatar.position.z)*Math.min(1,dt*16);avatar.visible=Math.abs(p.pose.distance-s.distance)<180&&p.pose.phase!=='caught';avatar.userData.animate(p.pose.elapsed+Math.min(age,.2),p.pose.phase==='running');}
+  localAvatar.position.set(s.x,s.jumpHeight,-s.distance);localAvatar.visible=thirdPerson;localAvatar.userData.animate(s.elapsed,s.phase==='running');playerSkin.update(s.elapsed,{running:s.phase==='running',jump:s.jumpHeight>0});hands.visible=!thirdPerson;hands.position.y=s.phase==='running'?Math.sin(s.elapsed*13)*.022:0;
 }
 $('view-mode').onclick=()=>{thirdPerson=!thirdPerson;$('view-mode').textContent=thirdPerson?'第一人称':'第三人称';};
 document.addEventListener('click',event=>{if(['multiplayer','room-ready','room-start','start','resume'].includes(event.target.closest('button')?.id)&&musicEnabled){music.play().then(()=>{if(s.phase!=='running')music.pause();}).catch(()=>{});}},true);

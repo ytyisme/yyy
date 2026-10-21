@@ -147,6 +147,7 @@
 <link rel="icon" type="image/png" href="app-icons/icon-192.png">
 <link rel="stylesheet" href="pwa.css">
 <script defer src="pwa.js"></script>
+  <script type="module" src="lib/player-skins.mjs"></script>
 </head>
 <body>
   <div class="wrap">
@@ -180,7 +181,7 @@
   </div>
 
   <script src="audio.js"></script>
-  <script src="coop.js"></script>
+  <script src="coop.js?v=skins-1"></script>
   <script src="lib/paradise-sky.js?v=1"></script>
   <script>
     (() => {
@@ -501,6 +502,8 @@
       function drawPlayer(p, color) {
         const x = p.x - cameraX;
         const y = p.y;
+        const skinId=p===player?window.LavaSkins?.equipped().id:p.skinId||"default";
+        if (window.LavaSkins?.drawCanvas(ctx, {...p,x,y,w:p.w||28,h:p.h||40},skinId||"default")) return;
         ctx.fillStyle = "#245a8a";
         ctx.fillRect(x + 2, y + 26, 10, 14);
         ctx.fillRect(x + 16, y + 26, 10, 14);
@@ -879,6 +882,7 @@
             prev.x = msg.x;
             prev.y = msg.y;
             prev.facing = msg.facing || 1;
+            prev.skinId = window.LavaSkins?.cleanId(msg.skinId) || "default";
             prev.last = time;
           } else prev.last = time;
           remotes.set(id, prev);

@@ -568,7 +568,7 @@ window.installRider33 = function (S) {
       const y = sc.laneY;
       drawBikeAndBox(sx, y);
       // 袋鼠坐在车上
-      drawKangaroo(sx + 18, y + 2, 1);
+      if (!window.LavaSkins?.drawCanvas(ctx, {x:sx+4, y:y-42, w:28, h:40, facing:1})) drawKangaroo(sx + 18, y + 2, 1);
       if (sc.ghost) {
         ctx.save();
         ctx.strokeStyle = "rgba(125,255,176,0.7)";

@@ -332,6 +332,7 @@
 <link rel="icon" type="image/png" href="app-icons/icon-192.png">
 <link rel="stylesheet" href="pwa.css">
 <script defer src="pwa.js"></script>
+  <script type="module" src="lib/player-skins.mjs"></script>
 </head>
 <body>
   <div class="wrap">
@@ -359,7 +360,7 @@
         </div>
         <div class="door left"><div class="seam"></div><div class="handle"></div></div>
         <div class="door right"><div class="seam"></div><div class="handle"></div></div>
-        <div class="person" style="left: 28px">
+        <div class="person" style="left: 28px" data-player-skin aria-label="你">
           <div class="bubble" id="b0"></div>
           <div class="head"></div>
           <div class="body" style="background:#3ec6ff"></div>

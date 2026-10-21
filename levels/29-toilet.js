@@ -411,7 +411,7 @@ window.installToilet29 = function (S) {
       // 玩家造型（分性别）
       if (player && toiletScene.gender) {
         const x = player.x - cameraX;
-        drawPerson(x, player.y, player.w, player.h, player.facing || 1, {
+        if (!window.LavaSkins?.drawCanvas(ctx, {x, y:player.y, w:player.w, h:player.h, facing:player.facing})) drawPerson(x, player.y, player.w, player.h, player.facing || 1, {
           female: toiletScene.gender === "female",
           shirt: toiletScene.gender === "female" ? "#ff9ad8" : "#6ec8ff",
         });

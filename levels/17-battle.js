@@ -2182,15 +2182,17 @@ window.installBattle17 = function (S) {
       ctx.ellipse(sx + 14, sy + u.h + 3, 12, 3, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = shirt;
-      ctx.fillRect(sx + 6, sy + 10 + hop, 16, 22);
-      ctx.fillStyle = "#ffe0b8";
-      ctx.fillRect(sx + 6, sy + hop, 16, 14);
-      ctx.fillStyle = "#1a0c08";
-      ctx.fillRect(sx + (u.facing >= 0 ? 14 : 8), sy + 5 + hop, 3, 3);
-      ctx.fillStyle = pants;
-      ctx.fillRect(sx + 7, sy + 30 + hop, 5, 10);
-      ctx.fillRect(sx + 16, sy + 30 + hop, 5, 10);
+      if (!(isPlayer && window.LavaSkins?.drawCanvas(ctx, {x:sx, y:sy+hop, w:u.w, h:u.h, facing:u.facing}))) {
+        ctx.fillStyle = shirt;
+        ctx.fillRect(sx + 6, sy + 10 + hop, 16, 22);
+        ctx.fillStyle = "#ffe0b8";
+        ctx.fillRect(sx + 6, sy + hop, 16, 14);
+        ctx.fillStyle = "#1a0c08";
+        ctx.fillRect(sx + (u.facing >= 0 ? 14 : 8), sy + 5 + hop, 3, 3);
+        ctx.fillStyle = pants;
+        ctx.fillRect(sx + 7, sy + 30 + hop, 5, 10);
+        ctx.fillRect(sx + 16, sy + 30 + hop, 5, 10);
+      }
 
       // 武器示意
       const wpn = isPlayer ? battleScene.weapon : u.weapon;

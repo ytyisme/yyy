@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f5eddb"><title>第二季 · 第22关 · 岩浆币雨</title>
+  <meta name="description" content="来自岩浆跑酷总部的岩浆币雨。倒计时3、2、1后，点击下落的红色元宝，30秒结束，点到的岩浆币加入你的余额。">
+  <link rel="stylesheet" href="season2-lv22.css"><script type="module" src="season2-lv22.js"></script>
+
+<!-- Installable game application -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#152d36">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="岩浆跑酷">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="app-icons/icon-180.png">
+<link rel="icon" type="image/png" href="app-icons/icon-192.png">
+<link rel="stylesheet" href="pwa.css">
+<script defer src="pwa.js"></script>
+</head>
+<body data-phase="ready">
+  <svg class="svg-library" aria-hidden="true"><defs><symbol id="rain-ingot" viewBox="0 0 64 48"><path d="M4 10Q12 29 32 21Q52 29 60 10Q65 40 32 44Q-1 40 4 10Z" fill="#c93528"/><path d="M4 10Q12 29 32 21Q52 29 60 10L53 30Q32 46 11 30Z" fill="#ec6040"/><ellipse cx="32" cy="22" rx="14" ry="11" fill="#f34932"/><path d="M23 17Q32 8 41 17" fill="none" stroke="#ffd38c" stroke-width="3" stroke-linecap="round"/><path d="M14 31Q21 37 29 37" fill="none" stroke="#ffae72" stroke-width="2" stroke-linecap="round"/></symbol></defs></svg>
+  <header class="rain-header"><a class="back-link" href="season2.html">← 第二季</a><a class="rain-brand" href="app.html"><span class="brand-mark"><svg aria-hidden="true"><use href="#rain-ingot"/></svg></span><span>岩浆币雨<small>LEVEL 22 / A LITTLE LUCK</small></span></a><a class="shop-link" href="skin-shop.html">皮肤商场 ↗</a></header>
+  <main class="rain-game">
+    <div class="scoreboard" aria-label="本局成绩"><div class="time-stat"><span>本局剩余</span><strong id="time-left" role="timer" aria-label="剩余30秒">30<small>秒</small></strong></div><div class="round-stat"><span>本局收取</span><strong><b id="round-coins">0</b><small>枚</small></strong></div><a class="wallet-stat" href="skin-shop.html"><svg aria-hidden="true"><use href="#rain-ingot"/></svg><span><small>我的岩浆币</small><strong id="wallet-balance">0</strong></span></a></div>
+    <section class="rain-world" aria-label="岩浆币雨游戏区域">
+      <div class="sun" aria-hidden="true"></div><div class="cloud cloud-one" aria-hidden="true"></div><div class="cloud cloud-two" aria-hidden="true"></div><div class="cloud cloud-three" aria-hidden="true"></div>
+      <div class="sky-caption" id="sky-caption" aria-hidden="true"><span>好事，正在从天而降。</span><small>每枚岩浆币 +1</small></div>
+      <div id="rain-sky" class="rain-sky" role="group" aria-label="点击下落的岩浆币"></div><div id="collect-effects" class="collect-effects" aria-hidden="true"></div>
+      <div class="horizon" aria-hidden="true"><div class="far-building b-one"></div><div class="far-building b-two"></div><div class="far-building b-three"></div><div class="tree t-one"></div><div class="tree t-two"></div><div class="headquarters"><span class="hq-flag"></span><div class="hq-roof"></div><div class="hq-sign">岩浆跑酷总部</div><div class="hq-columns"><i></i><i></i><i></i><i></i></div><div class="hq-door"></div><div class="hq-step"></div></div></div>
+      <div class="ground" aria-hidden="true"><span>落地的岩浆币会消失，记得在空中点它。</span><i></i><i></i><i></i></div>
+      <section id="rain-welcome" class="letter" aria-labelledby="welcome-title"><div class="letter-top"><p>来自总部的一封信</p><span>NO. 022</span></div><div class="letter-stamp" aria-hidden="true"><svg><use href="#rain-ingot"/></svg></div><h1 id="welcome-title">岩浆币雨</h1><div class="instructions"><p>1.点击天上的落下来的我可以收取</p><p>2.我一旦落到地上就会消失</p><p>3.祝你玩的开心！</p></div><p class="signature">——岩浆跑酷总部</p><button id="rain-start" class="primary" type="button">开始 <span>→</span></button><p class="letter-note">倒计时 3、2、1 后开始 · 一局 30 秒</p></section>
+      <section id="rain-countdown" class="countdown" aria-label="开始倒计时" hidden><span>准备好，接住岩浆币！</span><strong id="countdown-number" role="status" aria-live="assertive">3</strong><small>点中就收下 · 每枚 +1</small></section>
+      <section id="rain-result" class="result" aria-labelledby="result-title" hidden><div class="result-icon" aria-hidden="true"><svg><use href="#rain-ingot"/></svg></div><p class="eyebrow">30秒的好运，收到了。</p><h2 id="result-title">岩浆币雨结束啦！</h2><p class="result-copy">这次，你成功接住了</p><div class="result-count"><strong id="result-count">0</strong><span>枚岩浆币</span></div><p id="result-saved" class="result-saved">全部存入余额，可以去换喜欢的皮肤。</p><button id="rain-retry" class="primary" type="button">再玩一次 <span>↻</span></button><div class="result-links"><a href="skin-shop.html">去皮肤商场 ↗</a><a href="app.html">返回主页 →</a></div></section>
+    </section>
+    <p id="save-warning" class="save-warning" role="alert" hidden>岩浆币还没保存成功，请保持页面打开。<button id="retry-save" type="button">重试保存</button></p>
+    <footer class="rain-footer"><span id="rain-tip">来自岩浆跑酷总部的一场小惊喜</span><a href="app.html">游戏主页 ↗</a></footer>
+    <p id="rain-announcement" class="sr-only" role="status" aria-live="polite"></p>
+  </main>
+</body>
+</html>

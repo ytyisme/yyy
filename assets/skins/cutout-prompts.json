@@ -1,0 +1,27 @@
+{
+  "mode": "built-in image_gen",
+  "use_case": "background-extraction",
+  "transparent_background": true,
+  "assets": [
+    {
+      "original": "assets/skins/yellow-egg.png",
+      "output": "assets/skins/yellow-egg-cutout.png",
+      "prompt": "Use case: background-extraction.\nAsset type: transparent PNG game character cutout.\nInput image 1: edit target, not a style reference.\nPrimary request: Extract only the entire yellow round character, including antenna, arms, hands, short legs and white striped boots. Remove the purple scene, floor, patterned mat and every ground shadow. Keep the exact existing happy facial expression and body silhouette. Keep the original 4:3 canvas, composition and subject placement.\nConstraints: This is precise background removal only. Preserve the existing subject as faithfully as possible; do not redraw, restyle, relight, smooth, reconstruct, change pose or alter facial features. Change only the alpha outside the subject. Retain clean antialiased edges and fine hair/whiskers without background halos. No new text, props, frames, outline, drop shadow or invented content. Output real RGBA transparency with zero alpha outside the subject, not a painted checkerboard or solid background."
+    },
+    {
+      "original": "assets/skins/jawline.jpg",
+      "output": "assets/skins/jawline-cutout.png",
+      "prompt": "Use case: background-extraction.\nAsset type: transparent PNG game character cutout.\nInput image 1: edit target, not a style reference.\nPrimary request: Extract only this exact orange meme cat: both ears, head, highly defined jawline, neck and all visible chest fur, including fine whiskers. Remove the gray wall and outer black border. Keep the photo grain, eyes, muzzle, exaggerated chin, expression and fur detail exactly as supplied. The chest is already cropped by the bottom; retain that crop, do not invent a body. Keep the original portrait aspect ratio and placement.\nConstraints: This is precise background removal only. Preserve the existing subject as faithfully as possible; do not redraw, restyle, relight, smooth, reconstruct, change pose or alter facial features. Change only the alpha outside the subject. Retain clean antialiased edges and fine hair/whiskers without background halos. No new text, props, frames, outline, drop shadow or invented content. Output real RGBA transparency with zero alpha outside the subject, not a painted checkerboard or solid background."
+    },
+    {
+      "original": "assets/skins/jawline-plus.jpg",
+      "output": "assets/skins/jawline-plus-cutout.png",
+      "prompt": "Use case: background-extraction.\nAsset type: transparent PNG game character cutout.\nInput image 1: edit target, not a style reference.\nPrimary request: Extract only this exact low-resolution smiling meme cat, including its visible ears, broad face, chin, neck and chest. Remove the off-white surrounding background. Preserve the deliberately funny wide facial proportions, the exact dark eyes and mouth expression, fur colors and original low-resolution texture; do not beautify, sharpen or turn it into a different cat. Keep the original square canvas and framing. Leave any markings overlapping the subject untouched.\nConstraints: This is precise background removal only. Preserve the existing subject as faithfully as possible; do not redraw, restyle, relight, smooth, reconstruct, change pose or alter facial features. Change only the alpha outside the subject. Retain clean antialiased edges and fine hair/whiskers without background halos. No new text, props, frames, outline, drop shadow or invented content. Output real RGBA transparency with zero alpha outside the subject, not a painted checkerboard or solid background."
+    },
+    {
+      "original": "assets/skins/makima.jpg",
+      "output": "assets/skins/makima-cutout.png",
+      "prompt": "Use case: background-extraction.\nAsset type: transparent PNG game character cutout.\nInput image 1: edit target, not a style reference.\nPrimary request: Extract only the existing red-haired anime woman, including every visible hair strand, face, golden concentric eyes, hand and forearm covering her mouth, white blouse and black tie. Remove the red background, glowing chain and every background mark. Preserve the exact original illustration, linework, colors, face, expression, gesture and cropped body. Do not invent extra hair or body. Keep the original landscape aspect ratio, framing and placement.\nConstraints: This is precise background removal only. Preserve the existing subject as faithfully as possible; do not redraw, restyle, relight, smooth, reconstruct, change pose or alter facial features. Change only the alpha outside the subject. Retain clean antialiased edges and fine hair/whiskers without background halos. No new text, props, frames, outline, drop shadow or invented content. Output real RGBA transparency with zero alpha outside the subject, not a painted checkerboard or solid background."
+    }
+  ]
+}

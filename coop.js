@@ -403,6 +403,7 @@
   function send(msg) {
     if (!joined || !roomId) return;
     const packed = { room: roomId, id: myId, ...msg };
+    if (msg.type === "state") packed.skinId = window.LavaSkins?.equipped().id || "default";
     const text = JSON.stringify(packed);
     if (channel) {
       try {

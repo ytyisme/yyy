@@ -1,4 +1,6 @@
 import * as THREE from './lib/three.module.js';
+import {attachPlayerSkin} from './lib/skin-visuals.mjs';
+import {playerSkins} from './lib/player-skins.mjs';
 import {ITEMS,itemInfo,MAX_OBJECTS,WORLD_LIMIT,makeBuildObject,cleanBuildObject,cleanBuildPose,loadBuildScene,saveBuildScene,supportHeight,slidePoint,localPoint} from './lib/build-world.mjs';
 import {makeBuildView,disposeBuildView,makeBuilderAvatar,animateBuilder} from './lib/build-visuals.mjs';
 import {setupBuildOnline} from './lib/build-online.mjs';
@@ -21,6 +23,7 @@ function slab(x,y,z,w,h,d,color){const mesh=new THREE.Mesh(new THREE.BoxGeometry
 for(let i=0;i<24;i++){const side=i%2?-1:1,z=-100+Math.floor(i/2)*18,x=side*(60+(i*7%20));slab(x,2.6,z,.5,5.2,.5,0x92957a);const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(3.2,1),new THREE.MeshStandardMaterial({color:i%3?0x9db389:0xb6bf8e,roughness:1}));crown.position.set(x,6,z);crown.castShadow=true;scene.add(crown);}
 
 const player=makeBuilderAvatar('',0xe4a358);scene.add(player.root);player.root.position.set(0,0,17);
+const playerSkin=attachPlayerSkin(player.root,{height:2.1,maxWidth:2.1});
 let loading=null,online=null,coaster=null,selected=null,pending=null,ghost=null,previewPoint={x:0,z:8},orbit=.38,pitch=.7,zoom=24,heading=.38,verticalSpeed=0,grounded=true,riding=null,near=null,toastUntil=0,saveTimer=0,editTimer=0,editDraft=null,drag=null,lastPointer=null,elapsed=0;
 player.root.rotation.y=heading;
 const ray=new THREE.Raycaster(),pointer=new THREE.Vector2(),floor=new THREE.Plane(new THREE.Vector3(0,1,0),0),intersection=new THREE.Vector3();
@@ -164,7 +167,7 @@ window.addEventListener('keydown',event=>{
   if(!event.repeat){if(event.code==='Space')jump();if(event.code==='KeyE')interact();if(event.code==='KeyP'&&coaster?.riding)coaster.launch();if(event.code==='Escape'){cancelPlacement();selected=null;updateInspector();}if(event.code==='Enter'&&pending)place();}
 });
 window.addEventListener('keyup',event=>keys.delete(event.code));window.addEventListener('blur',()=>{keys.clear();drag=null;});document.addEventListener('visibilitychange',()=>{keys.clear();flushEdit();});
-function readPose(){const ride=coaster?.ridePose();if(ride)return ride;const p=player.root.position;return {x:p.x,y:p.y,z:p.z,heading,moving:keys.size>0||!!riding};}
+function readPose(){const ride=coaster?.ridePose(),skinId=playerSkins.equipped().id;if(ride)return {...ride,skinId};const p=player.root.position;return {x:p.x,y:p.y,z:p.z,heading,moving:keys.size>0||!!riding,skinId};}
 function updatePlayer(dt){
   if(coaster?.riding)return false;
   if($('bag').open||$('online').open)return false;
@@ -179,10 +182,11 @@ function updatePlayer(dt){
   return moving;
 }
 function updatePeers(dt){
-  const members=online?.members??new Map();for(const [id,avatar]of peers)if(!members.has(id)){disposeBuildView(avatar.root);peers.delete(id);}
+  const members=online?.members??new Map();for(const [id,avatar]of peers)if(!members.has(id)){avatar.skin.dispose();disposeBuildView(avatar.root);peers.delete(id);}
   for(const member of members.values()){
     if(member.id===online.id)continue;const pose=cleanBuildPose(member.pose);let avatar=peers.get(member.id);if(!pose){if(avatar)avatar.root.visible=false;continue;}
-    if(!avatar){avatar=makeBuilderAvatar(member.name,0x6d9d9e);avatar.root.name='builder-peer-'+member.id;scene.add(avatar.root);peers.set(member.id,avatar);avatar.root.position.set(pose.x,pose.y,pose.z);}
+    if(!avatar){avatar=makeBuilderAvatar(member.name,0x6d9d9e);avatar.skin=attachPlayerSkin(avatar.root,{skinId:'default',height:2.1,maxWidth:2.1,parts:avatar.root.children.filter(part=>!part.isSprite)});avatar.root.name='builder-peer-'+member.id;scene.add(avatar.root);peers.set(member.id,avatar);avatar.root.position.set(pose.x,pose.y,pose.z);}
+    avatar.skin.setSkin(pose.skinId);avatar.skin.update(elapsed,{running:pose.moving&&!pose.ride});
     avatar.root.visible=online.online&&online.synced;const seat=pose.ride?coaster?.fleet.find(p=>p.car.id===pose.ride):null,target=seat?new THREE.Vector3(seat.position.x,seat.position.y,seat.position.z).addScaledVector(new THREE.Vector3(seat.up.x,seat.up.y,seat.up.z),seat.car.h*.4+.16):new THREE.Vector3(pose.x,pose.y,pose.z);if(avatar.root.position.distanceTo(target)>30||seat)avatar.root.position.copy(target);else avatar.root.position.lerp(target,1-Math.exp(-12*dt));
     avatar.root.scale.setScalar(pose.ride ? .72 : 1);if(pose.ride){avatar.root.quaternion.fromArray(pose.quaternion);}else{avatar.root.rotation.x=avatar.root.rotation.z=0;avatar.root.rotation.y+=Math.atan2(Math.sin(pose.heading-avatar.root.rotation.y),Math.cos(pose.heading-avatar.root.rotation.y))*Math.min(1,dt*12);}animateBuilder(avatar,pose.moving&&!pose.ride,dt);if(pose.ride)for(const leg of avatar.legs)leg.rotation.x=-1.2;
   }
@@ -201,7 +205,7 @@ online=setupBuildOnline({readPose,readScene,replaceScene,saveSolo,toast,onOpen:(
 let last=performance.now();
 function frame(now){requestAnimationFrame(frame);const dt=Math.min(.06,Math.max(0,(now-last)/1000));last=now;if(document.hidden)return;elapsed+=dt;
   if(loading?.active){loading.update(now,dt);coaster.update(dt);renderer.render(scene,camera);return;}
-  const moving=updatePlayer(dt);animateBuilder(player,moving,dt);coaster.update(dt);if(coaster.riding){for(const leg of player.legs)leg.rotation.x=-1.2;for(const arm of player.arms)arm.rotation.x=-.7;}updatePeers(dt);updateNear();
+  const moving=updatePlayer(dt);animateBuilder(player,moving,dt);playerSkin.update(elapsed,{running:moving&&!coaster.riding,jump:!grounded});coaster.update(dt);if(coaster.riding){for(const leg of player.legs)leg.rotation.x=-1.2;for(const arm of player.arms)arm.rotation.x=-.7;}updatePeers(dt);updateNear();
   const p=player.root.position;if(!coaster.cameraUpdate(dt)){const distance=p.y<-1?7:zoom,height=p.y<-1?3:Math.sin(pitch)*zoom,desired=new THREE.Vector3(p.x+Math.sin(orbit)*distance*Math.cos(pitch),p.y+height,p.z+Math.cos(orbit)*distance*Math.cos(pitch));camera.position.lerp(desired,1-Math.exp(-8*dt));camera.up.set(0,1,0);camera.lookAt(p.x,p.y+1,p.z);}
   const selectedView=!pending&&selected?views.get(selected):ghost;outline.visible=!!selectedView;if(selectedView)outline.box.setFromObject(selectedView);
   $('coordinates').textContent=`X ${p.x.toFixed(0)} · Z ${p.z.toFixed(0)}`;$('toast').style.opacity=now>toastUntil?0:1;
