@@ -84,7 +84,8 @@ runtime = [p for p in ROOT.iterdir() if p.suffix in {'.html','.js','.css','.webm
 for directory in ['lib','levels','audio','assets','app-icons']:
     runtime.extend(p for p in (ROOT/directory).rglob('*') if p.is_file() and p.name != '.DS_Store')
 runtime.extend(ROOT/'phone-login'/name for name in ['index.html','login.css','login.js','demo-session.js'])
-offline_media = {'assets/flash-step/flash-step.mp4', 'assets/flash-step/poster.jpg'}
+offline_media = {'assets/flash-step/flash-step.mp4', 'assets/flash-step/poster.jpg',
+                 'assets/concert/song-1.m4a', 'assets/concert/song-4.m4a', 'assets/concert/song-9.m4a'}
 core = sorted('./'+str(p.relative_to(ROOT)) for p in runtime if (p.suffix in {'.html','.js','.mjs','.css','.webmanifest','.png','.jpg','.json'} or p.relative_to(ROOT).as_posix() in offline_media) and p.name!='sw.js')
 digest=hashlib.sha256()
 for path in sorted(runtime):

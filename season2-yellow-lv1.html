@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>找小岩 · 黄色第一关</title>
+<meta name="description" content="九个干草堆，一只躲猫猫的小岩。慢慢打乱十秒，跟住它，找出它。">
+<meta name="theme-color" content="#fff7d5">
+<link rel="stylesheet" href="season2-yellow-lv1.css">
+<script type="module" src="season2-yellow-lv1.js"></script>
+
+<!-- Installable game application -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#152d36">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="岩浆跑酷">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="app-icons/icon-180.png">
+<link rel="icon" type="image/png" href="app-icons/icon-192.png">
+<link rel="stylesheet" href="pwa.css">
+<script defer src="pwa.js"></script>
+</head>
+<body>
+<svg class="svg-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+ <linearGradient id="hay-gold" x2="0" y2="1"><stop stop-color="#f9dc83"/><stop offset="1" stop-color="#d7a54a"/></linearGradient>
+ <symbol id="hay-art" viewBox="0 0 160 130">
+  <ellipse cx="80" cy="115" rx="66" ry="9" fill="#98702d" opacity=".12"/>
+  <path d="M15 111 Q20 80 42 52 Q49 34 66 28 L72 14 L80 23 L89 12 L95 31 Q116 40 125 65 Q140 86 145 111 Q82 126 15 111Z" fill="url(#hay-gold)" stroke="#ba8836" stroke-width="2.5" stroke-linejoin="round"/>
+  <g fill="none" stroke-linecap="round" stroke-width="2.4">
+   <path d="M72 33 Q56 65 38 103 M82 35 L68 109 M93 38 Q106 70 119 105 M58 49 L29 99 M113 61 L136 104 M79 69 L82 114 M96 75 L101 110" stroke="#ba8735" opacity=".65"/>
+   <path d="M63 43 L49 75 M84 45 L77 61 M96 47 L107 80 M57 86 L50 106 M91 83 L91 108 M122 88 L128 106 M35 83 L28 97" stroke="#fff0ac"/>
+   <path d="M17 110 Q76 121 142 110" stroke="#e9be60"/>
+  </g>
+ </symbol>
+ <symbol id="little-yan" viewBox="0 0 90 100">
+  <ellipse cx="45" cy="88" rx="27" ry="6" fill="#99602c" opacity=".13"/>
+  <path d="M42 24 Q31 9 45 5 Q56 11 48 25" fill="#d99138" stroke="#aa642b" stroke-width="2"/>
+  <path d="M20 49 Q7 51 12 66 M70 49 Q82 50 78 65" fill="none" stroke="#b66d2f" stroke-width="8" stroke-linecap="round"/>
+  <rect x="17" y="24" width="57" height="59" rx="25" fill="#ffc776" stroke="#b46b2f" stroke-width="2.5"/>
+  <path d="M24 41 Q26 30 37 30" fill="none" stroke="#ffe5a6" stroke-width="4" stroke-linecap="round"/>
+  <ellipse cx="33" cy="49" rx="3" ry="5" fill="#684021"/><ellipse cx="58" cy="49" rx="3" ry="5" fill="#684021"/>
+  <ellipse cx="27" cy="59" rx="6" ry="3" fill="#ed9277"/><ellipse cx="64" cy="59" rx="6" ry="3" fill="#ed9277"/>
+  <path d="M40 59 Q45 68 51 59" fill="none" stroke="#814824" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M28 83 L25 88 M61 83 L65 88" stroke="#ac642f" stroke-width="7" stroke-linecap="round"/>
+ </symbol>
+</defs></svg>
+<main>
+ <nav><a href="season2.html">← 黄色主页</a><span>黄色限定 · 第一关</span></nav>
+ <header><div><p class="eyebrow">A LITTLE HIDE & SEEK</p><h1>小岩，藏好了吗<span>？</span></h1><p class="intro">九个干草堆，一场慢悠悠的躲猫猫。</p></div><span class="sun" aria-hidden="true">☀</span></header>
+ <fieldset id="difficulty" class="difficulty"><legend>选择难度</legend>
+ <label><input type="radio" name="difficulty" value="easy" checked><span><b>简单</b><small>2 秒一换</small><em>猜对 +20 岩浆币</em></span></label>
+ <label><input type="radio" name="difficulty" value="hard"><span><b>困难</b><small>1 秒一换</small><em>猜对 +60 岩浆币</em></span></label>
+ <label><input type="radio" name="difficulty" value="master"><span><b>大师</b><small>0.3 秒一换</small><em>猜对 +200 岩浆币</em></span></label>
+ <label><input type="radio" name="difficulty" value="s"><span><b>S级</b><small>0.1 秒一换</small><em>猜对 +500 岩浆币</em></span></label>
+ </fieldset>
+ <div class="wallet-row"><span>猜对奖励 <strong id="prize">20</strong> 岩浆币</span><a href="skin-shop.html"><svg viewBox="0 0 40 28" aria-hidden="true"><path d="M3 7 10 11Q20 19 30 11L37 7 32 23Q20 28 8 23Z" fill="#e65c3e" stroke="#b13d29" stroke-width="2"/><ellipse cx="20" cy="10" rx="9" ry="7" fill="#ff9b64" stroke="#b13d29" stroke-width="2"/></svg>我的岩浆币 <strong id="wallet-balance">0</strong> ↗</a></div>
+ <section class="game" aria-label="找小岩游戏">
+  <div class="game-top"><div><span class="tag" id="phase">准备躲猫猫</span><h2 id="message" role="status" aria-live="polite">先看它藏在哪，再跟住那堆干草。</h2></div><div class="timer" aria-label="打乱倒计时"><strong id="seconds">10</strong><span id="speed-label">秒 · 简单</span></div></div>
+  <div class="time-track" aria-hidden="true"><i id="time-fill"></i></div>
+  <div id="field" class="field" data-phase="idle"><div class="ground-slots" aria-hidden="true"></div><div id="piles"></div></div>
+  <p id="reward-note" class="reward-note" role="status" aria-live="polite" hidden></p>
+  <p id="save-warning" class="save-warning" hidden>奖励暂未保存，请先重试保存再离开。<button type="button" id="retry-save">重试保存</button></p>
+  <div class="game-bottom"><p id="hint">小岩钻进去 → 慢慢打乱 10 秒 → 点一堆猜猜看</p><button type="button" id="start">开始找小岩 <span aria-hidden="true">↗</span></button></div>
+ </section>
+ <footer><span>✦ 不用着急，仔细看就好。</span><span id="record">本次找到 0 次</span></footer>
+</main>
+</body></html>

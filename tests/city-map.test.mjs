@@ -14,7 +14,7 @@ test('all 694 cities have deterministic, distinct street, building and terrain l
   terrain.add(JSON.stringify([map.hills,map.river,map.lake,map.coast]));
   assert(map.buildings.every(b=>Number.isFinite(b.x)&&Number.isFinite(b.z)&&b.w>10&&b.d>10));
   for(const id of ['office','hotel','hospital','bank','school','airport','residence'])assert(map.buildings.some(b=>b.id===id),city.name+' '+id);
-  const route=departureRoute(map,{x:9,z:17});assert(route.length>8);assert.equal(route[0].x,9);assert.equal(route.at(-1).y,8);assert.equal(route.at(-1).z,-282);
+  const route=departureRoute(map,{x:9,z:17});assert(route.length>8);assert.equal(route[0].x,9);assert.equal(route.at(-1).y,8);assert.equal(route.at(-1).z,-1128);
   assert.equal(mapSurface(map,20,58),-3);assert.equal(mapSurface(map,20,85),-6);
  }
  assert.equal(streets.size,694);assert.equal(buildings.size,694);assert.equal(terrain.size,694);
@@ -32,12 +32,12 @@ test('street navigation and both highway ramps have a continuous driveable surfa
 test('mountains and waterfronts are part of the actual surface, with roads bridging water',()=>{
  const map=createCityMap(chinaCities.find(c=>c.name==='重庆市'));
  assert(map.hills.some(h=>mapTerrain(map,h.x,h.z)>3));
- let bridge=false;for(let z=-230;z<230;z+=4)for(let x=-190;x<-90;x+=2)if(waterAt(map,x,z)&&mapRoadAt(map,{x,z}).type==='street'){assert(mapSurface(map,x,z)>=.8);bridge=true;}
+ let bridge=false;for(let z=-920;z<920;z+=16)for(let x=-760;x<-360;x+=8)if(waterAt(map,x,z)&&mapRoadAt(map,{x,z}).type==='street'){assert(mapSurface(map,x,z)>=.8);bridge=true;}
  assert(bridge);
 });
 test('a highway trip retains its source and ends at a destination entrance ramp',()=>{
  const source=createCityMap(chinaCities[0]),trip=highwayTrip(source,chinaCities[2]),arrival=entryRoute();
- assert.equal(trip.source.name,'北京市');assert.equal(trip.destination.name,'上海市');assert(trip.length>=1200&&trip.length<2400);
+ assert.equal(trip.source.name,'北京市');assert.equal(trip.destination.name,'上海市');assert(trip.length>1060000&&trip.length<1080000);assert.equal(trip.distanceKind,'geographic');
  assert.equal(trip.points[0].y,8);assert.equal(trip.points.at(-1).z,trip.length);assert.equal(arrival[0].y,8);assert.equal(arrival.at(-1).y,0);
 });
 test('existing apartments remain owned after the original city layout changes',()=>{

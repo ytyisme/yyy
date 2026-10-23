@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#11141c">
+  <title>第二季 · 第23关 · 视频放映厅</title>
+  <meta name="description" content="在岩浆跑酷视频放映厅，看动画、科普、音乐和游戏视频。支持创作者搜索、分类、收藏和无水印原片播放。">
+  <!-- Installable game application -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="app-icons/icon-180.png">
+  <link rel="icon" href="app-icons/icon-192.png">
+  <link rel="stylesheet" href="pwa.css">
+  <link rel="stylesheet" href="season2-lv23.css?v=4">
+  <script defer src="pwa.js"></script>
+</head>
+<body>
+  <div class="cinema-shell">
+    <header class="cinema-header">
+      <a class="cinema-brand" href="season2.html" aria-label="返回第二季"><span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 32 26"><path d="M3 5Q7 15 16 11Q25 15 29 5Q32 24 16 25Q0 24 3 5Z" fill="currentColor"/><ellipse cx="16" cy="10" rx="7" ry="6" fill="#ffd1b1"/></svg></span><span>岩浆放映厅<small>第二季 · 第23关</small></span></a>
+      <nav class="collections" aria-label="视频片单"><button type="button" class="active" data-collection="all" aria-pressed="true">发现</button><button type="button" data-collection="favorites" aria-pressed="false">我的收藏</button><button type="button" data-collection="recent" aria-pressed="false">最近打开</button></nav>
+      <a class="back-link" href="season2.html">返回选关 <span>↗</span></a>
+    </header>
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy"><p class="eyebrow"><i></i> TAKE A LITTLE BREAK</p><h1 id="hero-title">换个频道，<br>继续<span>冒险。</span></h1><p class="hero-description">从像素世界，到浩瀚宇宙。<br>喜欢的故事，都在这里等你。</p><div class="hero-stats"><span><strong>24</strong> 部精选</span><span><strong>04</strong> 个频道</span><span class="quiet-label">随时播放<small>留一点时间给喜欢</small></span></div></div>
+        <button class="featured-video" id="featured-play" type="button" aria-label="播放精选：在地球，寻找火星"><span id="featured-cover" class="original-planet" aria-hidden="true"><i></i><b></b></span><span class="feature-shade"></span><span class="feature-tag"><i></i> 本期放映 · 科普</span><span class="feature-info"><span class="feature-kicker">给好奇心，一张去往宇宙的票。</span><strong>在地球，寻找火星</strong><span class="feature-author">星球研究所 <span id="featured-duration"></span></span></span><span class="feature-play" aria-hidden="true">▶</span><span class="feature-caption">点击开始放映 <span>↗</span></span></button>
+      </section>
+      <section class="library" aria-labelledby="library-title">
+        <div class="library-heading"><div><p class="eyebrow">THE NEXT GOOD STORY</p><h2 id="library-title">今天，想看点什么？</h2></div><button type="button" class="add-link" id="add-video">＋ 添加视频</button></div>
+        <div class="filter-row"><nav id="video-categories" class="categories" aria-label="视频分类"></nav><form id="creator-search-form" class="creator-search-form" role="search" aria-label="搜索创作者"><label class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="video-search" type="search" placeholder="输入创作者名字…" aria-label="搜索视频或创作者" aria-describedby="search-hint" maxlength="100" autocomplete="off" enterkeyhint="search"><kbd aria-hidden="true">↵</kbd></label><button id="search-up-submit" class="search-up-submit" type="submit">搜创作者 <span aria-hidden="true">⌕</span></button></form></div>
+        <p id="search-hint" class="search-hint">输入名字并按回车，在放映厅里查找创作者、打开作品。</p>
+        <section id="creator-section" class="creator-section" aria-label="创作者搜索结果" hidden><div class="creator-results-header"><div><h3 id="creator-results-title">创作者</h3><p id="creator-status" role="status" aria-live="polite"></p></div><button id="close-creator-search" type="button">返回片单 ×</button></div><div id="creator-grid" class="creator-grid"></div><button id="more-creators" class="more-results" type="button" hidden>更多创作者 ↓</button></section>
+        <div id="creator-works-heading" class="creator-works-heading" hidden><button id="back-to-creators" type="button">← 返回创作者</button><h3 id="creator-works-title"></h3><p id="creator-works-status" role="status" aria-live="polite"></p></div>
+        <div class="results-row" id="video-results-row"><p id="video-count" role="status" aria-live="polite"></p><span>好内容，慢慢看 <i>✦</i></span></div>
+        <div id="video-grid" class="video-grid" aria-label="视频列表"></div>
+        <section class="empty-state" id="empty-state" hidden><span aria-hidden="true">⌕</span><h3 id="empty-title">没有匹配的视频</h3><p id="empty-description">换个关键词，或者试试其他频道。</p><button id="empty-up-search" class="empty-up-search" type="button" hidden>搜索创作者</button><button type="button" id="reset-filters">看看全部视频 →</button></section>
+      </section>
+      <section class="more-stories"><span class="more-icon" aria-hidden="true">✳</span><div><h2>还有好多故事，等着被发现。</h2><p>带上喜欢的视频链接或无水印原片，放进自己的片单。</p></div><button type="button" id="more-add-video">加入我的视频 <span>↗</span></button></section>
+    </main>
+    <footer class="cinema-footer"><a href="season2-lv22.html">← 上一关 · 岩浆币雨</a><span>保留创作者信息 · 在线播放需要联网</span><a href="season2-lv24.html">下一关 · 音乐弹球 →</a></footer>
+  </div>
+  <dialog id="video-player" class="video-player" aria-labelledby="player-title">
+    <header class="player-header"><div><p class="eyebrow">NOW SHOWING</p><h2 id="player-title"></h2><p id="player-author"></p></div><button type="button" class="close-button" id="player-close" aria-label="关闭视频">×</button></header>
+    <div class="player-screen" id="player-screen"><video id="room-video" title="视频播放器" controls playsinline preload="metadata"></video><section id="media-empty" class="media-empty" hidden><span aria-hidden="true">▷</span><h3 id="media-empty-title">准备视频</h3><p id="media-error" role="status"></p><button id="media-attach" type="button" hidden>添加无水印原片</button></section></div>
+    <div class="player-toolbar"><div class="part-picker" id="part-picker" hidden><label for="video-part">分集</label><select id="video-part" aria-label="选择视频分集"></select></div><button type="button" id="previous-video">← 上一部</button><button type="button" id="next-video">下一部 →</button><button type="button" id="player-favorite" aria-pressed="false">♡ 收藏</button><span class="toolbar-spacer"></span><button type="button" id="player-add-source">添加原片</button><button type="button" id="player-fullscreen">全屏 ⛶</button></div>
+    <footer class="player-footer"><p id="player-status" role="status" aria-live="polite"></p><button type="button" id="player-retry">重新加载</button></footer>
+    <p class="player-note">使用放映厅播放器。需要彻底没有画面水印时，请添加创作者提供的无水印原片。</p>
+  </dialog>
+  <dialog id="link-dialog" class="link-dialog" aria-labelledby="link-title"><form id="link-form"><button type="button" class="close-button" id="link-close" aria-label="关闭添加视频">×</button><span class="link-mark" aria-hidden="true">↗</span><p class="eyebrow">BRING YOUR FAVORITES</p><h2 id="link-title">把喜欢的，带进来。</h2><p>添加视频链接，或选择无水印原片直接播放。</p><label for="video-link">视频链接或编号</label><input id="video-link" type="text" placeholder="粘贴完整的视频网址…" autocomplete="off" maxlength="2000" aria-describedby="link-help link-error"><label for="clean-media-url">无水印原片网址（可选）</label><input id="clean-media-url" type="text" inputmode="url" placeholder="https://…/video.mp4" autocomplete="off" maxlength="4000"><label for="video-file">或选择本地原片</label><input id="video-file" type="file" accept="video/mp4,video/webm"><p id="link-help">支持三个来源的完整视频链接、BV号和av号。短链接请先复制完整网址。本地文件不会上传；重新打开页面后需再次选择。画面中已经压入的水印需要无水印原片。</p><p id="link-error" class="link-error" role="alert" hidden></p><button class="link-submit" type="submit">加入并播放 <span>▶</span></button></form></dialog>
+  <div id="video-toast" class="video-toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="season2-lv23.js?v=4"></script>
+</body>
+</html>

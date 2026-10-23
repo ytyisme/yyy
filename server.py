@@ -20,7 +20,7 @@ CONTROL_TOKEN = secrets.token_urlsafe(32)
 def private_path(path):
     parts = [part for part in unquote(urlsplit(path).path).split("/") if part]
     return any(part.startswith(".") for part in parts) or any(
-        part in ("server-control", "server.py", "community_store.py", "__server-control__") for part in parts
+        part in ("server-control", "server.py", "community_store.py", "video_service.py", "xiaoyan_service.py", "__server-control__") for part in parts
     )
 
 
@@ -62,6 +62,10 @@ class Handler(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        if self.xiaoyan_request():
+            return
+        if self.video_request():
+            return
         if self.community_request():
             return
         if urlsplit(self.path).path == "/__server-control__/status":
@@ -95,6 +99,10 @@ class Handler(SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_HEAD(self):
+        if self.xiaoyan_request():
+            return
+        if self.video_request():
+            return
         if self.community_request():
             return
         if private_path(self.path):
@@ -108,6 +116,10 @@ class Handler(SimpleHTTPRequestHandler):
         )
 
     def do_POST(self):
+        if self.xiaoyan_request():
+            return
+        if self.video_request():
+            return
         if self.community_request():
             return
         if urlsplit(self.path).path != "/__server-control__/stop" or not self.control_authorized():
@@ -121,10 +133,22 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
         threading.Thread(target=self.server.shutdown, daemon=True).start()
 
+    def xiaoyan_request(self):
+        if not urlsplit(self.path).path.startswith('/api/xiaoyan/'):
+            return False
+        from xiaoyan_service import handle
+        return handle(self)
+
     def community_request(self):
         if not urlsplit(self.path).path.startswith('/api/community/'):
             return False
         from community_store import handle
+        return handle(self)
+
+    def video_request(self):
+        if not urlsplit(self.path).path.startswith('/api/video/'):
+            return False
+        from video_service import handle
         return handle(self)
 
     def list_directory(self, path):

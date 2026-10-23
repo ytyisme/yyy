@@ -3,3 +3,27 @@
 .preview .skin-photo{position:absolute;inset:18px;width:calc(100% - 36px);height:calc(100% - 36px);object-fit:contain}.skin-image img{object-fit:contain}.skin-card[data-skin=makima] img{object-position:center}.fitting[data-preview=image] .fitting-info{padding-top:12px}.fitting[data-preview=image] .preview{height:320px}.skin-card[data-skin=makima] .skin-image{background:#4b282c}.skin-card[data-skin=jawline-cat] .skin-image,.skin-card[data-skin=smile-cat] .skin-image{background:#e9e4db}@media(max-width:650px){.fitting[data-preview=image]{grid-template-columns:1fr}.fitting[data-preview=image] .preview{grid-row:2;grid-column:1;height:280px;margin-top:8px}.fitting[data-preview=image] .fitting-info{grid-row:3;grid-column:1;padding:5px 20px 18px}.fitting[data-preview=image] .fitting-info>p:not(.eyebrow){font-size:11px}.fitting[data-preview=image] .fitting-info h2{font-size:21px}.fitting[data-preview=image] .fit-note{grid-row:4;padding-top:0}.fitting[data-preview=image] .action{font-size:12px}.fitting[data-preview=image] .equipped-note{font-size:10px}.skin-card[data-skin=makima] img{object-position:center}}
 .skin-image:hover img{transform:none}
 .skin-card[data-skin] .skin-image{background:#e6e5d9}.skin-card[data-skin] .skin-image img{background:transparent}
+
+/* The user's original castle image is shared by the shop and fitting stage. */
+.skin-shop-page{--paper:#d9eff7;--ink:#203e4c;--muted:#516b78;--line:#ffffffa8;--green:#356b78;position:relative;isolation:isolate;min-height:100vh;background:#c5e9f4}
+.skin-shop-page::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,#eaf9ff18,#eaf9ff38),url('assets/skins/selection-background.png') center center/cover no-repeat}
+.skin-shop-page .shop-header{background:#f4fbffcc;border-color:#ffffffb3;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.skin-shop-page .shop-heading{background:#f5fbffe0;padding:22px 24px;border:1px solid #ffffffbd;border-radius:20px;box-shadow:0 12px 35px #193f5910}
+.skin-shop-page .wallet{background:#ffffffbf;border-color:#ffffffd9}
+.skin-shop-page .fitting{background:#f3faffdf;border-color:#ffffffd9;box-shadow:0 16px 45px #153c5d24}
+.skin-shop-page .fitting-top{padding:18px 22px;color:#3d6276;background:#f3faffde}
+.skin-shop-page .preview{background:linear-gradient(180deg,#d8f4ff08,#cceffc20),url('assets/skins/selection-background.png') 66% center/cover no-repeat}
+.skin-shop-page .preview-tools{margin-top:0;padding:11px 0 0}
+.skin-shop-page .preview-tools button{background:#f5fcfff0;border-color:#aacad9;color:#315d73}
+.skin-shop-page .fitting-info{background:#f3faffb8}
+.skin-shop-page .fitting-info>p:not(.eyebrow),.skin-shop-page .fit-note{color:#58717d}
+.skin-shop-page .collection{background:#f4fbffe3;border:1px solid #ffffffc9;border-radius:20px;padding:20px;box-shadow:0 16px 45px #153c5d20;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.skin-shop-page .skin-card{background:#ffffffd4;border-color:#c8dde7}
+.skin-shop-page .skin-card.selected{border-color:#4b8ba5;box-shadow:0 0 0 1px #4b8ba540}
+.skin-shop-page .skin-card[data-skin] .skin-image{background:#e8f3f8b3}
+.skin-shop-page .filters button{color:#607e8d}.skin-shop-page .filters button[aria-pressed=true]{color:#264b60}
+.skin-shop-page .skin-details p,.skin-shop-page .collection-label,.skin-shop-page .collection-foot,.skin-shop-page .default-skin small{color:#607988}
+.skin-shop-page .default-skin{background:#ffffff80;border-color:#9cbaca}
+.skin-shop-page .shop-footer{background:#f5fbffe0;border:1px solid #ffffffbd;border-radius:14px;padding:18px 22px;color:#526f7f;margin-bottom:20px}
+@media(max-width:900px){.skin-shop-page .collection{padding:15px}.skin-shop-page .shop-heading{padding:20px}}
+@media(max-width:650px){.skin-shop-page::before{background-position:72% center}.skin-shop-page .shop-heading{padding:17px 15px;border-radius:15px}.skin-shop-page .shop-heading .wallet{padding:10px;gap:5px}.skin-shop-page .shop-heading .wallet>.ingot{width:24px}.skin-shop-page .shop-heading h1{font-size:23px}.skin-shop-page .fitting-top{padding:14px 17px}.skin-shop-page .preview{border-radius:12px;margin-left:9px;align-self:stretch}.skin-shop-page .preview-tools{padding-top:5px}.skin-shop-page .collection{padding:14px;border-radius:17px}.skin-shop-page .shop-footer{padding:16px;font-size:9px}.skin-shop-page .fitting[data-preview=image] .preview{margin:0;border-radius:0}}

@@ -5,6 +5,8 @@ sites/
 
 # Private phone login configuration and persistent session data
 .env
+.xiaoyan-config.json
+.local-ai/
 .env.*
 !.env.example
 .phone-login-data/

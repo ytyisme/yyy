@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111313"><title>第二季 · 第24关 · 音乐弹球</title>
+  <meta name="description" content="小球跟着音乐穿行迷宫，留下彩虹轨迹。夜、萤火虫和你，稻香，Level!，三首歌曲随时切换。">
+  <!-- Installable game application -->
+  <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="app-icons/icon-180.png"><link rel="icon" href="app-icons/icon-192.png"><link rel="stylesheet" href="pwa.css"><script defer src="pwa.js"></script>
+  <link rel="stylesheet" href="season2-lv24.css?v=2">
+</head>
+<body>
+  <div class="music-shell">
+    <header class="topbar"><a href="season2.html" class="back" aria-label="返回第二季选关">↖ <span>第二季</span></a><a class="wordmark" href="app.html">岩浆跑酷<span> / MUSIC LAB</span></a><span class="chapter">LEVEL <b>24</b></span></header>
+    <main>
+      <div class="intro-heading"><div><p class="eyebrow"><i></i> FOLLOW THE SOUND</p><h1>让音乐，<span>弹起来。</span></h1><p class="description">一颗小球，一条彩虹，三段旋律。<br class="mobile-break">跟着节奏，穿过这座迷宫。</p></div><div class="chapter-art" aria-hidden="true"><span></span><i></i><b>♪</b></div></div>
+      <div class="experience">
+        <section class="stage-panel" aria-label="音乐弹球迷宫">
+          <div class="stage-top"><span><i id="live-dot"></i> <b id="stage-state">等待旋律</b></span><span id="hit-count">000 <small>次碰撞</small></span></div>
+          <div class="canvas-wrap" id="canvas-wrap"><canvas id="maze" width="1120" height="740" aria-label="小球跟随音乐，在灰色迷宫里弹跳并留下彩虹轨迹"></canvas><div class="stage-label"><span id="stage-track">01 / 夜、萤火虫和你</span><span>A LITTLE BALL. A WHOLE WORLD.</span></div><div class="start-curtain" id="start-curtain"><button id="stage-start" type="button" aria-label="开始音乐弹球"><span>▶</span>点击，唤醒这座迷宫</button></div></div>
+          <div class="transport"><div class="timeline"><span id="elapsed">0:00</span><input id="seek" type="range" min="0" max="180" value="0" step=".1" aria-label="歌曲进度"><span id="duration">--:--</span></div><div class="transport-row"><div class="play-controls"><button id="previous" class="icon-button" aria-label="上一首" title="上一首">Ⅰ◀</button><button id="play" class="main-play" aria-label="开始播放"><span id="play-icon">▶</span><b id="play-label">开始</b></button><button id="next" class="icon-button" aria-label="下一首" title="下一首">▶Ⅰ</button><button id="restart" class="icon-button restart" aria-label="重新开始" title="重新开始">↺</button></div><div class="extra-controls"><label class="volume-control"><button id="mute" type="button" class="icon-button" aria-label="静音" aria-pressed="false">♫</button><input id="volume" type="range" min="0" max="100" value="65" aria-label="音量"></label><button id="fullscreen" class="icon-button" aria-label="全屏迷宫" title="全屏迷宫">⛶</button></div></div></div>
+        </section>
+        <aside class="playlist"><div class="playlist-heading"><div><p class="eyebrow">THE PLAYLIST</p><h2>今天的三首歌</h2></div><span>03</span></div><div id="song-list" class="song-list" aria-label="选择歌曲"></div><div class="now-playing"><span class="equalizer" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><p id="audio-status" role="status" aria-live="polite">选择一首歌，点击开始。<br>小球会自己寻找节奏。</p></div><div class="how-to"><span>HOW IT WORKS</span><p>不需要操控小球。<br>它会跟着音乐自动弹跳，<br>每次相遇，都留下一点颜色。</p><div><kbd>空格</kbd> 播放 / 暂停 <span>·</span> <kbd>←</kbd> <kbd>→</kbd> 快退 / 快进</div></div><p id="completion" class="completion">听完三首，点亮第24关 <span>0 / 3</span></p></aside>
+      </div>
+      <p id="error" class="error" role="alert" hidden></p>
+      <div class="end-message" id="end-message" role="status" hidden><span>✦</span><div><h2>三首旋律，一段彩色旅程。</h2><p>第24关已完成。选一首喜欢的，还可以再听一次。</p></div><button id="replay-all" type="button">重新听一遍 ↗</button></div>
+      <footer><a href="season2-lv23.html">← 第23关 · 视频放映厅</a><span>戴上耳机，让世界安静一会儿。</span><a href="season2.html">返回选关 ↗</a></footer>
+    </main>
+  </div>
+  <script type="module" src="season2-lv24.js?v=2"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+City place names — verified 2026-10-22
+
+Bundled Beijing names are factual names transcribed from public primary sources:
+1. Beijing Housing Provident Fund Management Center, residential maintenance
+   fund disclosure, records dated 2024-01-29 through 2024-03-05. Pages 2–3 name
+   远洋山水、国美第一城（国美家园）、龙锦苑东区、芍药居北里、常青藤嘉园、
+   太阳宫金星园、西二旗燕尚园、天赐良园、怡海花园.
+   https://gjj.beijing.gov.cn/web/zwgk61/xwdt/wxzjxxgs/436382927/2025111117134614748.pdf
+2. Xicheng district government, 2025-10-20: 物美超市（新街口店）.
+   https://www.bjxch.gov.cn/xcdt/xxxq/pnidpv987546.html
+3. Beijing government service map: 便利蜂（瑞海二区店）.
+   https://map.beijing.gov.cn/bjdxmap/category?categoryId=dxlsbld
+4. Dongcheng district newspaper, 2025-05-27: 北京市百货大楼、北京apm.
+   https://www.bjdch.gov.cn/ywdt/xdcb/202505/P020250527419006839241.pdf
+
+Other Chinese cities query named residential areas and retail POIs within an
+administrative boundary that contains their public city centre and matches the
+city name. Provider: Private.coffee Overpass, listed by OpenStreetMap:
+https://wiki.openstreetmap.org/wiki/Overpass_API#Public_Overpass_API_instances
+https://overpass.private.coffee/api/interpreter
+OpenStreetMap data © OpenStreetMap contributors, ODbL:
+https://www.openstreetmap.org/copyright
+Results are cached for 90 days, queries serialized, duplicate requests shared.
+Unknown names are explicitly labelled 名称未收录, never replaced by another
+city's names. No user location or other private information is sent.
+
+Only names are taken from the sources. In-game positions, floors, prices,
+interiors and available activities are fictional game content. A real name
+does not imply the depicted building matches the real business or residence.
+
+石家庄补充（2026-10-22）：用户指定“国瑞园小区，对面是义堂小区”。名称和隔街相对关系来自用户；游戏中安排相向大门，不表示已核实真实经纬度或门间距离。此固定配置不被在线查询或本机旧缓存覆盖。
