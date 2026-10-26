@@ -1,0 +1,13 @@
+/* Photographic sky keeps the 2D signs and long bench in a real outdoor view. */
+.scene{background:linear-gradient(#ffffff16,#ffffff16),url("assets/checkin-sky.png") center top/cover no-repeat}
+.clouds,.sun,.mountains{display:none}
+.ground{background:linear-gradient(#d0ad7cdd 0 14%,#ae784fee 15% 100%)}
+.sign:after{display:none}.sign-post{position:absolute;z-index:0;top:80%;left:48%;width:17px;height:170px;border-radius:3px;background:repeating-linear-gradient(90deg,#6a432b 0 13px,#865534 13px 25px);box-shadow:7px 4px 4px #4a261844;pointer-events:none}.sign>span,.sign>strong,.sign>small{position:relative;z-index:1}.sign-love .sign-post{top:91%;height:132px;background:repeating-linear-gradient(90deg,#6a432b 0 10px,#855333 10px 19px)}
+
+/* The red wayfinding sign gets its own clear spot to the left of the bench. */
+.sign-main{left:clamp(3%,8vw,10%)}
+@media(max-width:700px){.sign-main{left:2%;bottom:34%}}
+
+.player{position:absolute;z-index:4;left:88px;bottom:43px;width:128px;filter:drop-shadow(3px 8px 5px #442a1f66);pointer-events:none}.player .pose{display:block;width:100%;height:auto}.player .stand{display:none}.scene[data-pose="stand"] .player{left:117px;bottom:4px;width:134px}.scene[data-pose="stand"] .player .sit{display:none}.scene[data-pose="stand"] .player .stand{display:block}.scene[data-pose="stand"] .bench{filter:brightness(.96)}#pose-toggle{border:1px solid #f7d7a4;background:#f4e7c9;color:#4c321f;border-radius:99px;padding:9px 15px;font-weight:800}@media(max-width:700px){.player{left:91px;bottom:39px;width:117px}.scene[data-pose="stand"] .player{left:116px;bottom:3px;width:121px}}
+
+.photo-card{width:min(760px,calc(100vw - 32px));border:0;border-radius:20px;padding:20px;background:#fffaf0;color:#254658;box-shadow:0 26px 90px #122b3a88;text-align:center}.photo-card::backdrop{background:#122b3a99;backdrop-filter:blur(4px)}.photo-card h2{margin:2px 0 13px;font-size:20px}.photo-card canvas{display:block;width:100%;max-height:58vh;object-fit:contain;border-radius:11px;background:#82caea}.photo-card p{margin:12px 0;font-size:13px;color:#59717d}.photo-card #save-photo{border:0;border-radius:999px;background:#e95f3b;color:#fff;padding:11px 22px;font-weight:800;cursor:pointer}.photo-close{position:absolute;right:10px;top:8px;border:0;background:transparent;font-size:25px;color:#577080;cursor:pointer}

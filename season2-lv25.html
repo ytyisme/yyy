@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#72bfe8"><title>第二季 · 第25关 · 岩浆跑酷打卡点</title>
+  <meta name="description" content="在写实天空下，和岩浆跑酷的专属打卡牌合张影。">
+  <!-- Installable game application -->
+  <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="app-icons/icon-180.png"><link rel="icon" href="app-icons/icon-192.png"><link rel="stylesheet" href="pwa.css"><script defer src="pwa.js"></script>
+  <link rel="stylesheet" href="season2-lv25.css"><link rel="stylesheet" href="season2-lv25-sky.css">
+</head>
+<body>
+  <main class="scene">
+    <div class="clouds" aria-hidden="true"><i></i><i></i><i></i></div>
+    <header class="topbar"><a href="season2.html">← <span>第二季</span></a><p>MAGMA PARK · CHECK IN</p><span>第 <b>25</b> 关</span></header>
+    <section class="intro"><p>WELCOME TO THE VIEW</p><h1>岩浆跑酷，<em>很想你。</em></h1><span>点击打卡牌或长椅，留下一张属于你的照片。</span></section>
+    <section class="view" aria-label="岩浆跑酷打卡点">
+      <div class="sun" aria-hidden="true"></div><div class="mountains back" aria-hidden="true"></div><div class="mountains front" aria-hidden="true"></div>
+      <div class="ground" aria-hidden="true"></div>
+      <button class="sign sign-main" data-photo="我在岩浆跑酷很想你" aria-label="点击岩浆跑酷很想你打卡牌"><i class="sign-post" aria-hidden="true"></i><span class="sign-arrow">←</span><strong>我在岩浆跑酷<br>很想你</strong><small>MAGMA PARK</small></button>
+      <div class="bench-wrap">
+        <button class="bench" data-photo="在岩浆跑酷等你很久了" aria-label="点击长椅打卡"><i></i><i></i><i></i><b></b><b></b></button>
+        <div class="player" id="player" aria-label="现实人类玩家正在坐在椅子上比耶">
+          <img class="pose sit" src="assets/checkin-player-sit.png" alt="玩家坐在椅子上比耶">
+          <img class="pose stand" src="assets/checkin-player-stand.png" alt="玩家站在椅子旁比耶">
+        </div>
+        <button class="sign sign-love" data-photo="I LOVE 岩浆跑酷" aria-label="点击爱心岩浆跑酷打卡牌"><i class="sign-post" aria-hidden="true"></i><strong>I L<i>♥</i>VE<br>岩浆跑酷</strong><small>我在岩浆跑酷<br>等你很久了</small></button>
+      </div>
+      <p class="hint" id="hint">点一下喜欢的地方，开始打卡。</p>
+    </section>
+    <footer><a href="season2.html">返回选关</a><span>天空很大，岩浆跑酷等你来。</span><button id="pose-toggle" type="button" aria-pressed="false">站起来比耶 ✌</button><button id="photo" type="button">📷 打卡留影</button></footer>
+  </main>
+  <div class="flash" id="flash" hidden></div><div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <dialog class="photo-card" id="photo-card" aria-labelledby="photo-title"><button class="photo-close" id="photo-close" type="button" aria-label="关闭照片预览">×</button><h2 id="photo-title">你的岩浆跑酷打卡照</h2><canvas id="photo-canvas" width="1280" height="720" aria-label="岩浆跑酷打卡照预览"></canvas><p id="photo-caption"></p><button id="save-photo" type="button">↓ 保存照片</button></dialog>
+  <script src="lib/vendor/html2canvas.min.js"></script><script src="season2-lv25.js"></script>
+</body>
+</html>

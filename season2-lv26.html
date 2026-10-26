@@ -1,0 +1,19 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b111d"><title>第二季 · 第26关 · 蓝红战场</title><link rel="stylesheet" href="season2-lv26.css">
+<!-- Installable game application -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#152d36">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="岩浆跑酷">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="app-icons/icon-180.png">
+<link rel="icon" type="image/png" href="app-icons/icon-192.png">
+<link rel="stylesheet" href="pwa.css">
+<script defer src="pwa.js"></script>
+</head><body>
+<main id="battle"><canvas id="arena" aria-label="3D 蓝红队战场"></canvas><header><a href="season2.html">← 第二季</a><div class="objective"><b>蓝红战场</b><span id="objective">守住蓝队阵地</span></div><button id="pause" type="button">Ⅱ 暂停</button></header>
+<aside class="hud"><div class="team-line"><span class="blue">蓝队 10</span><b>VS</b><span class="red">红队 10</span></div><div class="loadout"><b>玩家 · 蓝队</b><span>制式步枪 · 匕首</span><span id="ammo">900000 发子弹</span><span id="gear">1级甲全套 · 防弹衣</span></div><div class="health"><i><b id="hp"></b></i><span id="hp-number">100</span></div><div class="usable"><button id="use-grenade" type="button">💣 手榴弹 <b id="grenade-count">0</b><small>1</small></button><button id="use-medkit" type="button">✚ 医疗包 <b id="medkit-count">0</b><small>2</small></button><button id="use-dagger" type="button">🗡 匕首 <small>V</small></button></div></aside>
+<section class="feed" id="feed" aria-live="polite"></section><section class="squad" id="squad"><h2>蓝队小队</h2><div id="squad-list"></div><div class="commands"><button data-command="follow">跟着我</button><button data-command="cover">掩护我</button><button id="voice" type="button">🎙 说指令</button></div><p>也可以按 <kbd>F</kbd> 跟着我 / <kbd>G</kbd> 掩护我</p></section>
+<section class="chest-notice" id="chest-notice" hidden><b>发现补给箱</b><p id="chest-items"></p><button id="take" type="button">打开并拿取</button></section><div class="crosshair" aria-hidden="true"></div><div class="help">W A S D 移动 · 按住拖动或 ← → 转向 · 点击/空格开火 · 1 手榴弹 · 2 医疗包 · V/右键 匕首 · E 开箱</div>
+<section class="victory" id="victory" hidden><div class="confetti" aria-hidden="true"></div><div class="victory-particles" id="victory-particles" aria-hidden="true"></div><p>战 场 荣 耀</p><h2>蓝队胜利！</h2><div class="podium" id="podium-row"></div><div class="presenter" id="presenter" hidden><div class="host-figure"><i></i><b></b><em></em></div><span>岩浆币</span></div><strong id="reward-copy"></strong><button id="continue-battle" type="button">继续</button></section><section class="intro" id="intro"><p>TEAM BATTLE · 3D ARENA</p><h1><span id="red-match"></span><i>VS</i><span id="blue-match"></span></h1><p class="brief">你和 9 名蓝队队友从同一出生点出发；红队从战场另一端进攻。搜索拐角补给，带领队友拿下战场。</p><button id="start" type="button">进入战场 ↗</button></section>
+</main><script src="lib/vendor/three.min.js"></script><script src="season2-lv26.js"></script></body></html>

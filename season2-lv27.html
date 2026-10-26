@@ -1,0 +1,19 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>第二季 · 第27关 · 末日生存</title><link rel="stylesheet" href="season2-lv27.css"><link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="pwa.css"><script defer src="pwa.js"></script>
+<!-- Installable game application -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#152d36">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="岩浆跑酷">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="app-icons/icon-180.png">
+<link rel="icon" type="image/png" href="app-icons/icon-192.png">
+<link rel="stylesheet" href="pwa.css">
+<script defer src="pwa.js"></script>
+</head><body><main class="survival" id="game">
+<header><a href="season2.html">← 第二季</a><div><b>第 27 关 · 末日生存</b><span id="status">寻找避难所</span></div><strong>资金 ¥<i id="money">10,000,000</i></strong></header>
+<section class="city" id="city"><div class="sky"></div><div class="buildings" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><div class="street"><span></span><span></span><span></span></div><button class="shop" id="shop" type="button"><b>生存商店</b><small>SUPPLY SHOP</small><em>点击采购</em></button><button class="shelter" id="shelter" type="button" disabled><span>☢</span><b>深层避难所</b><small>需要购买</small></button><div class="lava" id="lava" aria-hidden="true"></div><div class="player" id="player" aria-label="玩家站在城市街道上"><i></i><b></b><em></em></div><p class="goal" id="goal">末日警报：前往生存商店，购买强化地砖和避难所。</p></section>
+<section class="shop-panel" id="shop-panel" hidden><button class="close" id="close-shop">×</button><p>LAST DAY SURVIVAL MART</p><h1>生存商店</h1><article><span>▦</span><div><b>强化地砖</b><small>隔热防熔，让避难所入口安全。</small></div><button id="buy-tile">购买 ¥300,000</button></article><article><span>☢</span><div><b>深层避难所</b><small>末日岩浆中唯一能住进去的地方。</small></div><button id="buy-shelter" disabled>购买 ¥9,300,000</button></article><p class="shop-note" id="shop-note">先购买强化地砖，才能安装避难所。</p></section>
+<section class="inside" id="inside" hidden><div class="room"><h1>避难所已密封</h1><p id="survive-text">正在启动隔热系统…</p><div class="window"><div class="lava-window" id="lava-window"></div><div class="city-window">末日城市</div></div><div class="console"><i></i><i></i><i></i><b>外部岩浆水位</b></div></div></section>
+<section class="finish" id="finish" hidden><p>YOU SURVIVED</p><h1>末日生存成功</h1><span>避难所隔绝了窗外的岩浆。</span><a href="season2.html">继续第二季</a></section>
+</main><script src="season2-lv27.js"></script></body></html>

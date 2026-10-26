@@ -556,7 +556,7 @@
 <link rel="icon" type="image/png" href="app-icons/icon-192.png">
 <link rel="stylesheet" href="pwa.css">
 <script defer src="pwa.js"></script>
-<link rel="stylesheet" href="login-agreement.css?v=265">
+<link rel="stylesheet" href="login-agreement.css?v=275">
 <link rel="stylesheet" href="lava-wallet.css">
 <script type="module" src="lava-wallet.js"></script>
 <script defer src="phone-login/demo-session.js"></script>
@@ -655,7 +655,7 @@
       <div class="level-select-card">
         <div class="lava-wallet-home" data-lava-wallet></div>
         <h2>选择关卡</h2>
-        <p class="level-select-desc">共 35 关 · 第二季 · 已开放第 1–24 关</p>
+        <p class="level-select-desc">共 35 关 · 第二季 · 已开放第 1–27 关</p>
         <p class="phone-join">第二季已正式上线 · 蓝色世界等你来玩</p>
 
         <div id="level-grid" class="level-grid"></div>
@@ -717,7 +717,7 @@
 
   <script src="audio.js"></script>
   <script src="coop.js"></script>
-  <script src="login-agreement.js?v=265"></script>
+  <script src="login-agreement.js?v=275"></script>
   <script>
     (function () {
 
@@ -881,7 +881,7 @@
       });
 
       const TOTAL = 35;
-      const OPEN_LEVELS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]);
+      const OPEN_LEVELS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]);
       const LEVEL_TITLES = {
         1: "蓝色跑酷",
         2: "找黄方块",
@@ -907,6 +907,9 @@
         22: "岩浆币雨",
         23: "视频放映厅",
         24: "音乐弹球",
+        25: "岩浆跑酷打卡点",
+        26: "蓝红战场",
+        27: "末日生存",
       };
       const LEVEL_HREF = {
         1: "season2-lv1.html",
@@ -933,6 +936,9 @@
         22: "season2-lv22.html",
         23: "season2-lv23.html",
         24: "season2-lv24.html",
+        25: "season2-lv25.html",
+        26: "season2-lv26.html",
+        27: "season2-lv27.html",
       };
 
       function showTip(text) {
@@ -969,7 +975,7 @@
             if (OPEN_LEVELS.has(i)) {
               location.href = LEVEL_HREF[i] || "season2-lv1.html";
             } else {
-              showTip("第 " + i + " 关还在制作，第二季已上线 1–24 关");
+              showTip("第 " + i + " 关还在制作，第二季已上线 1–27 关");
             }
           });
           grid.appendChild(btn);
@@ -1288,6 +1294,6 @@
       renderFriends();
     })();
   </script>
-  <script type="module" src="season2-yellow.js?v=1"></script>
+  <script type="module" src="season2-yellow.js?v=27"></script>
 </body>
 </html>
