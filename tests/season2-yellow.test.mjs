@@ -37,7 +37,7 @@ test('Xiaoyan sleeps from Beijing 23:30 until midnight only on yellow evenings',
  assert.equal(state(Date.parse('2026-10-23T16:00:00Z')).sleeping,false);
 });
 test('yellow first level is find Xiaoyan and unsafe navigation cannot be configured',()=>{
- assert.equal(yellowLevels.length,5);
+ assert.equal(yellowLevels.length,6);
  assert.equal(yellowLevels[0].title,'找小岩');
  assert.equal(safeLevelHref(yellowLevels[0].href),'season2-yellow-lv1.html');
  assert.equal(yellowLevels[1].title,'岩浆跑酷打卡点');
@@ -48,6 +48,10 @@ test('yellow first level is find Xiaoyan and unsafe navigation cannot be configu
  assert.equal(safeLevelHref(yellowLevels[3].href),'season2-lv27.html');
  assert.equal(yellowLevels[4].title,'伤心消消乐');
  assert.equal(safeLevelHref(yellowLevels[4].href),'season2-lv28.html');
+ const bookLevel=yellowLevels.find(level=>level.href==='season2-lv29.html');
+ assert.ok(bookLevel,'book obstacle course must be reachable from yellow mode');
+ assert.equal(safeLevelHref(bookLevel.href),bookLevel.href);
+ assert.ok(fs.statSync(new URL('../'+bookLevel.href,import.meta.url)).isFile(),'configured new level has a real entry page');
  assert.equal(safeLevelHref('my-yellow-level.html'),'my-yellow-level.html');
  for(const url of ['javascript:alert(1)','https://elsewhere.com','../file.html','//x/x.html','<img>.html'])assert.equal(safeLevelHref(url),null);
 });

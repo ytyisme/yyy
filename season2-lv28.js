@@ -58,7 +58,7 @@ function start() {
   sound.stop();
   round++; busy = false; finished = false; selected = null;
   board = freshBoard(); score = 0; moves = MOVES;
-  $('result').hidden = true; $('effects').replaceChildren();
+  $('result').hidden = true; $('next-level-row').hidden = true; $('effects').replaceChildren();
   status.textContent = '点击两个相邻哭脸，或按住滑动交换。';
   render();
 }
@@ -99,6 +99,7 @@ function praise(chain) {
 function end(rating) {
   finished = true;
   const won = score >= TARGET;
+  $('next-level-row').hidden = !won;
   $('result-icon').textContent = won ? '🌈' : '☔';
   $('result-title').textContent = won ? '雨停了，通关成功！' : '差一点，再试试！';
   $('result-text').textContent = `${rating.label} 本局得分 ${score.toLocaleString()} / ${TARGET.toLocaleString()}。${won ? '你把伤心都变成了小星星。' : '多寻找连消的机会，就能得到更多分数。'}`;
