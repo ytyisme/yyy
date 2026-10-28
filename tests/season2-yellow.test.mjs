@@ -8,7 +8,7 @@ const {isYellow,state}=createRequire(import.meta.url)('../lib/season2-clock.js')
 const time=s=>Date.parse(s+'+08:00');
 const knowledge=JSON.parse(fs.readFileSync(new URL('../lib/xiaoyan-knowledge.json',import.meta.url)));
 test('Beijing opening follows all seven weekdays, exact 18:00 and midnight boundaries',()=>{
- for(const [day,active] of [[19,true],[20,false],[21,false],[22,false],[23,true],[24,true],[25,true]]){
+ for(const [day,active] of [[19,false],[20,false],[21,false],[22,false],[23,true],[24,true],[25,true]]){
   assert.equal(isYellow(time(`2026-10-${day}T17:59:59.999`)),false);
   assert.equal(isYellow(time(`2026-10-${day}T18:00:00`)),active);
   assert.equal(isYellow(time(`2026-10-${day}T23:59:59.999`)),active);
@@ -18,13 +18,16 @@ test('Beijing opening follows all seven weekdays, exact 18:00 and midnight bound
  assert.equal(isYellow(Date.parse('2026-10-23T16:00:00Z')),false);
 });
 test('next switch skips closed days and includes month/year boundaries',()=>{
- assert.equal(state(time('2026-10-19T23:59:59')).next,time('2026-10-20T00:00:00'));
+ assert.equal(state(time('2026-10-25T23:59:59')).next,time('2026-10-26T00:00:00'));
+ assert.equal(state(time('2026-10-26T00:00:00')).next,time('2026-10-30T18:00:00'));
+ assert.equal(isYellow(time('2026-10-26T21:00:00')),false);
+ assert.equal(state(time('2026-10-19T23:59:59')).next,time('2026-10-23T18:00:00'));
  assert.equal(state(time('2026-10-20T00:00:00')).next,time('2026-10-23T18:00:00'));
  assert.equal(state(time('2026-10-24T00:00:00')).next,time('2026-10-24T18:00:00'));
  assert.equal(state(time('2026-12-31T23:00:00')).next,time('2027-01-01T18:00:00'));
 });
 test('Xiaoyan sleeps from Beijing 23:30 until midnight only on yellow evenings',()=>{
- for(const [day,open] of [[19,true],[20,false],[21,false],[22,false],[23,true],[24,true],[25,true]]){
+ for(const [day,open] of [[19,false],[20,false],[21,false],[22,false],[23,true],[24,true],[25,true]]){
   assert.equal(state(time(`2026-10-${day}T23:29:59.999`)).sleeping,false);
   assert.equal(state(time(`2026-10-${day}T23:30:00`)).sleeping,open);
   assert.equal(state(time(`2026-10-${day}T23:59:59.999`)).sleeping,open);
@@ -34,7 +37,7 @@ test('Xiaoyan sleeps from Beijing 23:30 until midnight only on yellow evenings',
  assert.equal(state(Date.parse('2026-10-23T16:00:00Z')).sleeping,false);
 });
 test('yellow first level is find Xiaoyan and unsafe navigation cannot be configured',()=>{
- assert.equal(yellowLevels.length,4);
+ assert.equal(yellowLevels.length,5);
  assert.equal(yellowLevels[0].title,'找小岩');
  assert.equal(safeLevelHref(yellowLevels[0].href),'season2-yellow-lv1.html');
  assert.equal(yellowLevels[1].title,'岩浆跑酷打卡点');
@@ -43,6 +46,8 @@ test('yellow first level is find Xiaoyan and unsafe navigation cannot be configu
  assert.equal(safeLevelHref(yellowLevels[2].href),'season2-lv26.html');
  assert.equal(yellowLevels[3].title,'末日生存');
  assert.equal(safeLevelHref(yellowLevels[3].href),'season2-lv27.html');
+ assert.equal(yellowLevels[4].title,'伤心消消乐');
+ assert.equal(safeLevelHref(yellowLevels[4].href),'season2-lv28.html');
  assert.equal(safeLevelHref('my-yellow-level.html'),'my-yellow-level.html');
  for(const url of ['javascript:alert(1)','https://elsewhere.com','../file.html','//x/x.html','<img>.html'])assert.equal(safeLevelHref(url),null);
 });

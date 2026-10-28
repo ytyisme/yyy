@@ -6,7 +6,7 @@
   <title>岩浆跑酷·全关联机2 - 选择关卡</title>
   <meta name="description" content="岩浆跑酷·全关联机2 第二季，共 35 关。搜索「岩浆跑酷·全关联机2」即可游玩。" />
   <link rel="canonical" href="./season2.html" />
-  <script src="lib/season2-clock.js?v=1"></script>
+  <script src="lib/season2-clock.js?v=2"></script>
   <link rel="stylesheet" href="season2-yellow.css?v=1">
   <style>
     * { box-sizing: border-box; }
@@ -615,7 +615,7 @@
         <p class="sun-eyebrow">THE GOLDEN HOURS · 黄昏特别版</p>
         <h1 data-xiaoyan-perch>把今晚，<br>染成暖黄色。</h1>
         <p class="sun-intro">慢一点也没关系。<br>小岩陪你，等一场新的冒险。</p>
-        <div class="sun-hours"><span class="sun-dot"></span>周五 · 六 · 日 · 一　18:00—24:00 <small>北京时间</small></div>
+        <div class="sun-hours"><span class="sun-dot"></span>周五 · 六 · 日　18:00—24:00 <small>北京时间</small></div>
       </header>
       <section class="sun-levels" aria-labelledby="yellow-level-title">
         <div class="sun-section-title"><div><p class="sun-eyebrow">YOUR NEXT ADVENTURE</p><h2 id="yellow-level-title" data-xiaoyan-perch>黄色版 · 专属关卡</h2></div><span id="yellow-count">等待新的故事</span></div>
@@ -655,7 +655,7 @@
       <div class="level-select-card">
         <div class="lava-wallet-home" data-lava-wallet></div>
         <h2>选择关卡</h2>
-        <p class="level-select-desc">共 35 关 · 第二季 · 已开放第 1–27 关</p>
+        <p class="level-select-desc">共 35 关 · 第二季 · 已开放第 1–28 关</p>
         <p class="phone-join">第二季已正式上线 · 蓝色世界等你来玩</p>
 
         <div id="level-grid" class="level-grid"></div>
@@ -881,7 +881,7 @@
       });
 
       const TOTAL = 35;
-      const OPEN_LEVELS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]);
+      const OPEN_LEVELS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28]);
       const LEVEL_TITLES = {
         1: "蓝色跑酷",
         2: "找黄方块",
@@ -910,6 +910,7 @@
         25: "岩浆跑酷打卡点",
         26: "蓝红战场",
         27: "末日生存",
+        28: "伤心消消乐",
       };
       const LEVEL_HREF = {
         1: "season2-lv1.html",
@@ -939,6 +940,7 @@
         25: "season2-lv25.html",
         26: "season2-lv26.html",
         27: "season2-lv27.html",
+        28: "season2-lv28.html",
       };
 
       function showTip(text) {
@@ -975,7 +977,7 @@
             if (OPEN_LEVELS.has(i)) {
               location.href = LEVEL_HREF[i] || "season2-lv1.html";
             } else {
-              showTip("第 " + i + " 关还在制作，第二季已上线 1–27 关");
+              showTip("第 " + i + " 关还在制作，第二季已上线 1–28 关");
             }
           });
           grid.appendChild(btn);
@@ -1294,6 +1296,6 @@
       renderFriends();
     })();
   </script>
-  <script type="module" src="season2-yellow.js?v=27"></script>
+  <script type="module" src="season2-yellow.js?v=28"></script>
 </body>
 </html>

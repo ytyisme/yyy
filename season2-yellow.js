@@ -1,4 +1,4 @@
-import {yellowLevels} from './lib/season2-yellow-levels.mjs?v=27';
+import {yellowLevels} from './lib/season2-yellow-levels.mjs?v=28';
 import {tickleLines,safeLevelHref} from './lib/xiaoyan.mjs';
 import {XiaoyanChat} from './lib/xiaoyan-chat.mjs';
 const ai=new XiaoyanChat();

@@ -1,0 +1,48 @@
+{
+  "source": "https://www.bilibili.com/video/BV1djmwYdEhV/",
+  "title": "【游戏声音设计】消消乐音效设计",
+  "clips": [
+    {
+      "file": "clear.mp3",
+      "startSeconds": 6.3,
+      "durationSeconds": 0.56
+    },
+    {
+      "file": "combo.mp3",
+      "startSeconds": 2.65,
+      "durationSeconds": 1.18
+    },
+    {
+      "file": "cascade.mp3",
+      "startSeconds": 12.35,
+      "durationSeconds": 1.88
+    }
+  ],
+  "theme": {
+    "file": "look-busy.mp3",
+    "source": "https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100172",
+    "title": "Look Busy",
+    "artist": "Kevin MacLeod",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "changes": "Original audio; playback volume adjusted to 30% in game",
+    "usage": "Looping background theme"
+  },
+  "ratings": [
+    {
+      "file": "good.mp3",
+      "startSeconds": 3.29,
+      "durationSeconds": 0.48
+    },
+    {
+      "file": "great.mp3",
+      "startSeconds": 9.23,
+      "durationSeconds": 0.64
+    },
+    {
+      "file": "excellent.mp3",
+      "startSeconds": 39.55,
+      "durationSeconds": 1.17
+    }
+  ]
+}

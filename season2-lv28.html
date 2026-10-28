@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>第28关 · 伤心消消乐</title><link rel="stylesheet" href="season2-lv28.css?v=look-busy">
+<!-- Installable game application -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#152d36">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="岩浆跑酷">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="app-icons/icon-180.png">
+<link rel="icon" type="image/png" href="app-icons/icon-192.png">
+<link rel="stylesheet" href="pwa.css">
+<script defer src="pwa.js"></script>
+</head>
+<body><div class="cloud cloud-one" aria-hidden="true">☁</div><div class="cloud cloud-two" aria-hidden="true">☁</div>
+<main class="game"><header><a href="season2.html">← 第二季</a><span>第 28 关</span><button id="restart">重新开始</button></header>
+<div class="title"><span>雨过之后，会有彩虹</span><h1>伤心<span>消消乐</span><i>💧</i></h1><p>把眼泪消掉，把快乐留下。</p></div>
+<section class="scoreboard" aria-label="游戏进度"><div><small>当前得分</small><strong id="score">0</strong></div><div class="goal"><small>目标 <b>2,400</b> 分</small><progress id="progress" max="2400" value="0"></progress></div><div><small>剩余步数</small><strong id="moves">50</strong></div></section>
+<div class="board-wrap"><div id="board" class="board" aria-label="哭脸消除棋盘"></div><div id="effects" aria-hidden="true"></div></div>
+<p id="status" role="status">点击两个相邻哭脸，或按住滑动交换。</p>
+<div class="tools"><button id="hint">✧ 给我提示</button><button id="sound" type="button" aria-pressed="true" title="切换消除音效">音效：开</button><button id="music" type="button" aria-pressed="true" title="切换背景主题曲">音乐：开</button><span>三连消除 · 连消加倍</span></div>
+<audio id="theme" src="assets/sad-match/audio/look-busy.mp3" loop preload="metadata" hidden></audio>
+<section class="guide"><img src="assets/sad-match/chick-cutout.png" alt="哭哭小黄鸡"><p><b>今天也要开心呀</b><br>六种哭脸，横着或竖着连成至少 3 个同种人物即可消除。每个 30 分；1次消除 Good，2连消 Great，3连消及以上 Excellent。无效交换不扣步数。</p><img src="assets/sad-match/fox-cutout.png" alt="哭哭小狐狸"></section>
+<p class="music-credit">背景音乐：<a href="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100172" target="_blank" rel="noopener">Look Busy — Kevin MacLeod</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a></p>
+</main>
+<section id="result" class="overlay" hidden aria-label="本局结果"><div class="result-card"><span id="result-icon">🌈</span><h2 id="result-title"></h2><p id="result-text"></p><button id="again">再玩一次</button><a href="season2.html">返回第二季</a></div></section>
+<script type="module" src="season2-lv28.js?v=look-busy"></script></body></html>

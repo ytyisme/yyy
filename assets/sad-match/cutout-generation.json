@@ -1,0 +1,36 @@
+{
+  "tool": "built-in image_gen",
+  "transparent_background": true,
+  "assets": [
+    {
+      "id": "chick",
+      "prompt": "Use case: background-extraction. Input image is the exact edit target, a small game icon of a crying yellow chick with red crest. Remove ONLY all background around the character to genuine alpha transparency. Preserve this exact character's silhouette, colors, face, eyes, expression, proportions, glossy shading, ears/crest and especially both long bright cyan tears. No redesign, no extra body or limbs, no text, no checkerboard painted into the image, no ground or backdrop, no shadow outside silhouette. Output a single isolated character centered in a square transparent PNG, nearly filling canvas with 5% transparent padding, suitable as a match-three tile. Faithful extraction from source, not a new illustration.",
+      "output": "assets/sad-match/chick-cutout.png"
+    },
+    {
+      "id": "fox",
+      "prompt": "Use case: background-extraction. Input image is the exact edit target, a small game icon of a crying red fox. Remove ONLY all background around the character to genuine alpha transparency. Preserve this exact character's silhouette, colors, face, eyes, expression, proportions, glossy shading, ears/crest and especially both long bright cyan tears. No redesign, no extra body or limbs, no text, no checkerboard painted into the image, no ground or backdrop, no shadow outside silhouette. Output a single isolated character centered in a square transparent PNG, nearly filling canvas with 5% transparent padding, suitable as a match-three tile. Faithful extraction from source, not a new illustration.",
+      "output": "assets/sad-match/fox-cutout.png"
+    },
+    {
+      "id": "bear",
+      "prompt": "Use case: background-extraction. Input image is the exact edit target, a small game icon of a crying brown bear. Remove ONLY all background around the character to genuine alpha transparency. Preserve this exact character's silhouette, colors, face, eyes, expression, proportions, glossy shading, ears/crest and especially both long bright cyan tears. No redesign, no extra body or limbs, no text, no checkerboard painted into the image, no ground or backdrop, no shadow outside silhouette. Output a single isolated character centered in a square transparent PNG, nearly filling canvas with 5% transparent padding, suitable as a match-three tile. Faithful extraction from source, not a new illustration.",
+      "output": "assets/sad-match/bear-cutout.png"
+    },
+    {
+      "id": "owl",
+      "prompt": "Use case: background-extraction. Input image is the exact edit target, a small game icon of a crying purple owl. Remove ONLY all background around the character to genuine alpha transparency. Preserve this exact character's silhouette, colors, face, eyes, expression, proportions, glossy shading, ears/crest and especially both long bright cyan tears. No redesign, no extra body or limbs, no text, no checkerboard painted into the image, no ground or backdrop, no shadow outside silhouette. Output a single isolated character centered in a square transparent PNG, nearly filling canvas with 5% transparent padding, suitable as a match-three tile. Faithful extraction from source, not a new illustration.",
+      "output": "assets/sad-match/owl-cutout.png"
+    },
+    {
+      "id": "hippo",
+      "prompt": "Use case: background-extraction. Input image is the exact edit target, a small game icon of a crying blue hippo. Remove ONLY all background around the character to genuine alpha transparency. Preserve this exact character's silhouette, colors, face, eyes, expression, proportions, glossy shading, ears/crest and especially both long bright cyan tears. No redesign, no extra body or limbs, no text, no checkerboard painted into the image, no ground or backdrop, no shadow outside silhouette. Output a single isolated character centered in a square transparent PNG, nearly filling canvas with 5% transparent padding, suitable as a match-three tile. Faithful extraction from source, not a new illustration.",
+      "output": "assets/sad-match/hippo-cutout.png"
+    },
+    {
+      "id": "frog",
+      "prompt": "Use case: background-extraction. Input image is the exact edit target, a small game icon of a crying green frog. Remove ONLY all background around the character to genuine alpha transparency. Preserve this exact character's silhouette, colors, face, eyes, expression, proportions, glossy shading, ears/crest and especially both long bright cyan tears. No redesign, no extra body or limbs, no text, no checkerboard painted into the image, no ground or backdrop, no shadow outside silhouette. Output a single isolated character centered in a square transparent PNG, nearly filling canvas with 5% transparent padding, suitable as a match-three tile. Faithful extraction from source, not a new illustration.",
+      "output": "assets/sad-match/frog-cutout.png"
+    }
+  ]
+}
