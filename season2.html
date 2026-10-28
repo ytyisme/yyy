@@ -655,7 +655,7 @@
       <div class="level-select-card">
         <div class="lava-wallet-home" data-lava-wallet></div>
         <h2>选择关卡</h2>
-        <p class="level-select-desc">共 35 关 · 第二季 · 已开放第 1–28 关</p>
+        <p class="level-select-desc">共 35 关 · 第二季 · 已开放第 1–29 关</p>
         <p class="phone-join">第二季已正式上线 · 蓝色世界等你来玩</p>
 
         <div id="level-grid" class="level-grid"></div>
@@ -881,7 +881,7 @@
       });
 
       const TOTAL = 35;
-      const OPEN_LEVELS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28]);
+      const OPEN_LEVELS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]);
       const LEVEL_TITLES = {
         1: "蓝色跑酷",
         2: "找黄方块",
@@ -911,6 +911,7 @@
         26: "蓝红战场",
         27: "末日生存",
         28: "伤心消消乐",
+        29: "别跑了 兄弟",
       };
       const LEVEL_HREF = {
         1: "season2-lv1.html",
@@ -941,6 +942,7 @@
         26: "season2-lv26.html",
         27: "season2-lv27.html",
         28: "season2-lv28.html",
+        29: "season2-lv29.html",
       };
 
       function showTip(text) {
@@ -977,7 +979,7 @@
             if (OPEN_LEVELS.has(i)) {
               location.href = LEVEL_HREF[i] || "season2-lv1.html";
             } else {
-              showTip("第 " + i + " 关还在制作，第二季已上线 1–28 关");
+              showTip("第 " + i + " 关还在制作，第二季已上线 1–29 关");
             }
           });
           grid.appendChild(btn);
@@ -1296,6 +1298,6 @@
       renderFriends();
     })();
   </script>
-  <script type="module" src="season2-yellow.js?v=28"></script>
+  <script type="module" src="season2-yellow.js?v=29"></script>
 </body>
 </html>

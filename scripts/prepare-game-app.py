@@ -89,7 +89,7 @@ offline_media = {'assets/flash-step/flash-step.mp4', 'assets/flash-step/poster.j
                  'assets/sad-match/audio/look-busy.mp3',
                  'assets/sad-match/audio/good.mp3', 'assets/sad-match/audio/great.mp3', 'assets/sad-match/audio/excellent.mp3',
                  'assets/concert/song-1.m4a', 'assets/concert/song-4.m4a', 'assets/concert/song-9.m4a'}
-core = sorted('./'+str(p.relative_to(ROOT)) for p in runtime if (p.suffix in {'.html','.js','.mjs','.css','.webmanifest','.png','.jpg','.json'} or p.relative_to(ROOT).as_posix() in offline_media) and p.name!='sw.js')
+core = sorted('./'+str(p.relative_to(ROOT)) for p in runtime if (p.suffix in {'.html','.js','.mjs','.css','.webmanifest','.png','.jpg','.webp','.json'} or p.relative_to(ROOT).as_posix() in offline_media) and p.name!='sw.js')
 digest=hashlib.sha256()
 for path in sorted(runtime):
     if path.suffix in {'.html','.js','.mjs','.css','.webmanifest'}:
