@@ -1,0 +1,13 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>一起学画画</title><link rel="stylesheet" href="season2-lv30.css">
+<!-- Installable game application -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#152d36">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="岩浆跑酷">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="app-icons/icon-180.png">
+<link rel="icon" type="image/png" href="app-icons/icon-192.png">
+<link rel="stylesheet" href="pwa.css">
+<script defer src="pwa.js"></script>
+</head><body><main><header><a href="season2.html">← 第二季主页</a><button id="create">＋ 创造房间</button></header><h1>🎨 一起学画画</h1><p>和朋友在同一张画纸上画画，一起分享想象力。</p><p id="notice" role="status">正在连接房间大厅…</p><section id="lobby"><h2>画画房间</h2><div id="rooms">正在寻找房间…</div></section><section id="room" hidden><h2 id="room-title"></h2><p id="room-status"></p><div class="tools"><label>颜色 <input id="color" type="color" value="#274c85"></label><label>粗细 <input id="width" type="range" min="1" max="16" value="4"></label><button id="leave">退出房间</button></div><canvas id="board" width="1200" height="750" aria-label="共享画纸"></canvas><p>画完一笔后会同步给大家。房主离开后房间关闭，请及时保存画作。</p><button id="save">保存画作</button></section><section class="music"><h2>🎵 画画音乐</h2><p>在线播放需要网络，视频能否播放由来源平台决定。</p><select id="song"><option value="">选择歌曲</option><option value="BV1Hb411771q">梦的翅膀受了伤（视频版）</option><option value="BV1i2h96bEwj">雨爱（司凤版）</option><option value="BV1hcH96ZERe">你分享的视频（BV1hcH96ZERe）</option><option value="BV1e9gx6tEqp">忘情牛肉面（视频版）</option></select><button id="play">播放</button><button id="stop">关闭音乐</button><div id="player"></div></section></main><dialog id="dialog"><form method="dialog" id="create-form"><h2>创造房间</h2><label>房间名字 <input id="name" maxlength="20" value="一起画画" required></label><label>最多人数 <input id="limit" type="number" min="2" max="6" value="4" required></label><div><button value="cancel">取消</button> <button id="confirm" value="create">创造</button></div></form></dialog><script type="module" src="season2-lv30.js"></script></body></html>
