@@ -13,6 +13,8 @@ test("third-season music level has no home entry and only local audio", () => {
   assert.doesNotMatch(page, /<iframe\b/i);
   assert.doesNotMatch(page, /打开原游戏/);
   assert.doesNotMatch(page, /bilibili\.com/i);
+  assert.match(page, /background: #fff5c5/);
+  assert.match(page, /height: min\(78vh, 850px\); min-height: 430px/);
   assert.match(page, /<canvas\b[^>]*id="beatline"/);
   assert.match(page, /<audio\b[^>]*src="assets\/season3\/dream-wings\.m4a"/);
   assert.match(page, /<script src="season3-lv2\.js"><\/script>/);
