@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第三季第2关 · 折线节拍</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #fff5c5; color: #563609; font-family: system-ui, -apple-system, "Microsoft YaHei", sans-serif; }
+    main { max-width: 1440px; margin: auto; padding: 16px; }
+    header { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    h1 { margin: 0; font-size: clamp(22px, 3vw, 32px); }
+    .back { display: inline-block; color: #563609; border: 1px solid #c48a1c; border-radius: 10px; padding: 10px 13px; text-decoration: none; background: #fff9dd; }
+    .hint { line-height: 1.6; margin: 14px 0; }
+    .game-frame { width: 100%; min-height: min(78vh, 850px); overflow: hidden; padding: clamp(12px, 2vw, 24px); background: linear-gradient(145deg, #fff9df, #ffe8a0); border: 2px solid #dbaf46; border-radius: 14px; }
+    .beatline-card { overflow: hidden; border: 1px solid #d5a23d; border-radius: 16px; background: #2a1b0b; box-shadow: 0 18px 50px rgba(111, 69, 5, .25); }
+    .stage { position: relative; min-height: min(60vh, 640px); background: radial-gradient(circle at 50% 50%, #54391a, #211506 72%); }
+    canvas { display: block; width: 100%; height: min(60vh, 640px); min-height: 360px; }
+    .stage-copy { position: absolute; top: 18px; left: 20px; color: #fff1b5; pointer-events: none; }
+    .stage-copy strong { display: block; font-size: clamp(18px, 3vw, 28px); letter-spacing: .06em; }
+    .stage-copy span { color: #e9bd54; font-size: 12px; }
+    .stage-state { position: absolute; right: 20px; top: 18px; color: #fff8d8; font-size: 13px; }
+    .start-curtain { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(25, 14, 3, .28); }
+    .start-curtain[hidden] { display: none; }
+    .start { border: 1px solid #ffe18b; border-radius: 999px; padding: 13px 22px; color: #6b4000; background: #ffd34d; box-shadow: 0 5px 0 #bd7d11; font: 700 16px system-ui, sans-serif; cursor: pointer; }
+    .start:active { transform: translateY(3px); box-shadow: 0 2px 0 #bd7d11; }
+    .transport { display: grid; gap: 8px; padding: 14px 16px 16px; background: #2a1b0b; }
+    audio { width: 100%; min-width: 0; accent-color: #ffd34d; }
+    .timeline { display: flex; align-items: center; gap: 10px; color: #e9bd54; font-size: 12px; }
+    input[type="range"] { flex: 1; accent-color: #ffd34d; }
+    .source { margin: 0; color: #a9884e; font-size: 12px; }
+    @media (max-width: 600px) { main { padding: 10px; } header { gap: 10px; } .game-frame { min-height: 0; padding: 8px; } .stage, canvas { min-height: 360px; height: 62vh; } .stage-copy { top: 12px; left: 14px; } .stage-state { top: 12px; right: 14px; } }
+  </style>
+
+<!-- Installable game application -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#152d36">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="岩浆跑酷">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="app-icons/icon-180.png">
+<link rel="icon" type="image/png" href="app-icons/icon-192.png">
+<link rel="stylesheet" href="pwa.css">
+<script defer src="pwa.js"></script>
+</head>
+<body data-no-theme-music>
+  <main>
+    <header>
+      <a class="back" href="season3.html">← 第三季主页</a>
+      <h1>第三季 · 第2关</h1>
+    </header>
+    <p class="hint">只有音乐，没有视频，也没有外部游戏入口。点击开始，让折线跟着《梦的翅膀受了伤（司凤版）》的节拍向前走。</p>
+    <div class="game-frame">
+      <section class="beatline-card" aria-label="第三季第2关折线节拍">
+        <div class="stage">
+          <canvas id="beatline" width="1200" height="640" aria-label="跟随音乐节拍移动的折线"></canvas>
+          <div class="stage-copy"><strong>折线节拍</strong><span>FOLLOW THE SOUND</span></div>
+          <div class="stage-state" id="stage-state" role="status" aria-live="polite">等待音乐</div>
+          <div class="start-curtain" id="start-curtain"><button class="start" id="start" type="button">▶ 开始这一关</button></div>
+        </div>
+        <div class="transport">
+          <div class="timeline"><span id="elapsed">0:00</span><input id="seek" type="range" min="0" max="195.135" value="0" step="0.1" aria-label="歌曲进度"><span id="duration">3:15</span></div>
+          <audio id="music" controls preload="metadata" src="assets/season3/dream-wings.m4a" aria-label="梦的翅膀受了伤（司凤版）"></audio>
+          <p class="source">本关只播放本地音乐，不嵌入视频。</p>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="season3-lv2.js"></script>
+</body>
+</html>

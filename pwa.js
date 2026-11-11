@@ -1,7 +1,7 @@
 (() => {
  'use strict';
  const gameRoot=new URL('.',document.currentScript.src);
- import('./lib/theme-music.mjs?v=20261107a').then(({installThemeMusic})=>installThemeMusic());
+ if(!document.body.dataset.noThemeMusic)import('./lib/theme-music.mjs?v=20261107a').then(({installThemeMusic})=>installThemeMusic());
  const managedServer=location.protocol==='http:'&&location.port==='8080';
  if(managedServer)import('./lib/server-gate.mjs').then(({installServerGate})=>installServerGate()).catch(()=>{
   const gate=document.createElement('section');gate.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#101816;color:white;display:grid;place-items:center;padding:24px;text-align:center;font:18px system-ui';

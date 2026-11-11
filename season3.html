@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>岩浆跑酷·第三季 - 选择关卡</title>
+  <script defer src="pwa.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; font-family: "Noto Sans SC", -apple-system, "PingFang SC", sans-serif; background: radial-gradient(ellipse 80% 60% at 50% 10%, rgba(255, 224, 120, .58), transparent 55%), #fff3cb; color: #68430b; }
+    .shell { min-height: 100vh; display: flex; flex-direction: column; }
+    .top { padding: 18px 16px 8px; text-align: center; }
+    .top h1 { margin: 0; font-size: clamp(18px, 4vw, 28px); color: #9a5c00; letter-spacing: .06em; }
+    .tag { margin: 8px 0 0; color: #8a671e; font-size: 13px; }
+    .level-select { display: grid; place-items: start center; padding: 8px 16px 28px; }
+    .level-select-card { width: min(720px, 100%); padding: 22px 18px 18px; background: rgba(255, 250, 220, .96); border: 2px solid #e3a823; border-radius: 12px; box-shadow: 0 16px 50px rgba(148, 96, 15, .22); }
+    .level-select-card h2 { margin: 0 0 6px; text-align: center; font-size: 22px; color: #9a5c00; }
+    .level-select-desc { text-align: center; color: #8a671e; font-size: 13px; margin: 0 0 14px; }
+    .notice { text-align: center; color: #845400; font-size: 12px; line-height: 1.55; margin: 0 0 12px; padding: 8px 10px; border: 1px dashed #d5a33c; background: rgba(255, 213, 89, .18); }
+    .level-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 10px; }
+    .level-cell { position: relative; min-height: 72px; border-radius: 10px; border: 2px solid #c79d48; background: linear-gradient(180deg, #f5db93, #e7c774); color: #765415; font: 700 18px "Noto Sans SC", sans-serif; padding: 12px 6px 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: not-allowed; }
+    .level-cell.playable { text-decoration: none; border-color: #df8d00; background: linear-gradient(180deg, #ffe982, #ffc53b); color: #6b4000; box-shadow: 0 3px 0 #c7891c; cursor: pointer; }
+    .level-cell.playable:hover { filter: brightness(1.05); }
+    .level-cell.playable:focus-visible { outline: 3px solid #9a5c00; outline-offset: 3px; }
+    .badge { font-size: 10px; color: #765415; background: rgba(255, 255, 255, .45); border-radius: 999px; padding: 2px 8px; }
+    .footer-links { display: flex; gap: 10px; margin-top: 18px; }
+    .side-btn { flex: 1; display: block; border: 1px solid #c79837; border-radius: 10px; padding: 12px; background: #fff1be; color: #79500b; text-align: center; text-decoration: none; font-size: 14px; font-weight: 700; }
+    .side-btn:hover { background: #ffe394; }
+    .side-btn:focus-visible { outline: 3px solid #9a5c00; outline-offset: 3px; }
+    @media (max-width: 380px) { .level-grid { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; } .level-select-card { padding: 18px 12px; } }
+  </style>
+
+<!-- Installable game application -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#152d36">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="岩浆跑酷">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="app-icons/icon-180.png">
+<link rel="icon" type="image/png" href="app-icons/icon-192.png">
+<link rel="stylesheet" href="pwa.css">
+<script defer src="pwa.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="top">
+      <h1>岩浆跑酷·第三季</h1>
+      <p class="tag">第三季 · 选择关卡 · 黄色世界</p>
+    </header>
+    <main class="level-select">
+      <section class="level-select-card" aria-labelledby="level-title">
+        <h2 id="level-title">选择关卡</h2>
+        <p class="level-select-desc">共 39 关 · 第三季</p>
+        <p class="notice">第一关已开放，更多关卡敬请期待！</p>
+        <div class="level-grid" aria-label="第三季关卡">
+          <a class="level-cell playable" href="season3-lv1.html" aria-label="第 1 关，开始游戏"><span>1</span><span class="badge">开始游戏</span></a>
+          <button class="level-cell" type="button" disabled aria-label="第 2 关，待开放"><span>2</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 3 关，待开放"><span>3</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 4 关，待开放"><span>4</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 5 关，待开放"><span>5</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 6 关，待开放"><span>6</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 7 关，待开放"><span>7</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 8 关，待开放"><span>8</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 9 关，待开放"><span>9</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 10 关，待开放"><span>10</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 11 关，待开放"><span>11</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 12 关，待开放"><span>12</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 13 关，待开放"><span>13</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 14 关，待开放"><span>14</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 15 关，待开放"><span>15</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 16 关，待开放"><span>16</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 17 关，待开放"><span>17</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 18 关，待开放"><span>18</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 19 关，待开放"><span>19</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 20 关，待开放"><span>20</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 21 关，待开放"><span>21</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 22 关，待开放"><span>22</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 23 关，待开放"><span>23</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 24 关，待开放"><span>24</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 25 关，待开放"><span>25</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 26 关，待开放"><span>26</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 27 关，待开放"><span>27</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 28 关，待开放"><span>28</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 29 关，待开放"><span>29</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 30 关，待开放"><span>30</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 31 关，待开放"><span>31</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 32 关，待开放"><span>32</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 33 关，待开放"><span>33</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 34 关，待开放"><span>34</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 35 关，待开放"><span>35</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 36 关，待开放"><span>36</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 37 关，待开放"><span>37</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 38 关，待开放"><span>38</span><span class="badge">待开放</span></button>
+          <button class="level-cell" type="button" disabled aria-label="第 39 关，待开放"><span>39</span><span class="badge">待开放</span></button>
+        </div>
+        <nav class="footer-links" aria-label="游戏导航">
+          <a class="side-btn" href="app.html">返回游戏主页</a>
+          <a class="side-btn" href="season2.html">返回第二季</a>
+        </nav>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
