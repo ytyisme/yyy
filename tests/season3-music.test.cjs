@@ -15,7 +15,7 @@ test("third-season music level has no home entry and only local audio", () => {
   assert.doesNotMatch(page, /bilibili\.com/i);
   assert.match(page, /<canvas\b[^>]*id="beatline"/);
   assert.match(page, /<audio\b[^>]*src="assets\/season3\/dream-wings\.m4a"/);
-  assert.match(page, /season3-lv2\.js/);
+  assert.match(page, /<script src="season3-lv2\.js"><\/script>/);
   assert.match(script, /requestAnimationFrame/);
   assert.match(script, /BPM = 82/);
   assert(fs.statSync(path.join(root, "assets/season3/dream-wings.m4a")).size > 10000);
