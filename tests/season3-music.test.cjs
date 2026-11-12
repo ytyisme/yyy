@@ -8,8 +8,8 @@ const page = fs.readFileSync(path.join(root, "season3-lv2.html"), "utf8");
 const home = fs.readFileSync(path.join(root, "season3.html"), "utf8");
 const script = fs.readFileSync(path.join(root, "season3-lv2.js"), "utf8");
 
-test("third-season music level has no home entry and only local audio", () => {
-  assert.doesNotMatch(home, /href="season3-lv2\.html"/);
+test("third-season music level has a home entry and only local audio", () => {
+  assert.match(home, /href="season3-lv2\.html"/);
   assert.doesNotMatch(page, /<iframe\b/i);
   assert.doesNotMatch(page, /打开原游戏/);
   assert.doesNotMatch(page, /bilibili\.com/i);
