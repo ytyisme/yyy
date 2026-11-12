@@ -1,140 +1,54 @@
-const audio = document.getElementById('music');
-const canvas = document.getElementById('beatline');
-const ctx = canvas.getContext('2d');
-const start = document.getElementById('start');
-const curtain = document.getElementById('start-curtain');
-const state = document.getElementById('stage-state');
-const seek = document.getElementById('seek');
-const elapsed = document.getElementById('elapsed');
-const duration = document.getElementById('duration');
+import {connectRoom,makePlayerId} from './lib/chase-network.mjs?v=castle1';
+import {CASTLE_HAZARDS,CASTLE_LOBBY,GATE_Z,crossedClosedGate,gateOpenAt,hitHazard,pushAway,towerComplete} from './lib/bouncy-castle.mjs?v=castle1';
 
-const FALLBACK_DURATION = 195.135;
-const BPM = 82;
-const BEAT_OFFSET = .42;
-let points = [];
-let raf = 0;
-let lastBeat = -1;
+const T=globalThis.THREE,$=id=>document.getElementById(id),canvas=$('castle'),status=$('status'),network=$('network'),playersLabel=$('players'),toast=$('toast');
+const player={x:0,y:1,z:7,vy:0,mode:'free',progress:0,insideTower:false,won:false};
+const keys=new Set(),peers=new Map();
+let yaw=0,pitch=-.18,last=0,lastSend=0,link=null,viewPointer=null,lastViewX=0,lastViewY=0,toastTimer=0;
 
-const formatTime = seconds => {
-  const value = Math.max(0, Math.floor(Number(seconds) || 0));
-  return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, '0')}`;
-};
-
-function makePoints(total) {
-  const interval = 60 / BPM;
-  const count = Math.max(2, Math.ceil(Math.max(total, 1) / interval));
-  return Array.from({length: count + 1}, (_, index) => {
-    const progress = index / count;
-    const turn = index * 1.73;
-    return {time: BEAT_OFFSET + index * interval, x: .06 + progress * .88, y: .5 + Math.sin(turn) * .25 + Math.sin(turn * .41) * .1};
-  });
+const renderer=new T.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio||1,2));
+if('outputColorSpace' in renderer&&T.SRGBColorSpace)renderer.outputColorSpace=T.SRGBColorSpace;
+const scene=new T.Scene();scene.background=new T.Color(0x9bd9ef);scene.fog=new T.Fog(0x9bd9ef,32,72);
+const camera=new T.PerspectiveCamera(58,1.7,.1,100);scene.add(new T.HemisphereLight(0xffffff,0x916c4b,2.5));const sun=new T.DirectionalLight(0xfff2cf,2.4);sun.position.set(-12,24,10);scene.add(sun);
+const world=new T.Group();scene.add(world);const avatarGroup=new T.Group();scene.add(avatarGroup);
+const materials={floor:new T.MeshStandardMaterial({color:0xf4b84e,roughness:.7}),wall:new T.MeshStandardMaterial({color:0xf0809e,roughness:.55}),blue:new T.MeshStandardMaterial({color:0x55bde0,roughness:.45}),yellow:new T.MeshStandardMaterial({color:0xffd85b,roughness:.45}),green:new T.MeshStandardMaterial({color:0x79c97b,roughness:.55}),red:new T.MeshStandardMaterial({color:0xef765b,roughness:.5}),white:new T.MeshStandardMaterial({color:0xfff5dd,roughness:.65}),gold:new T.MeshStandardMaterial({color:0xe1a72f,metalness:.35,roughness:.3}),black:new T.MeshStandardMaterial({color:0x161719,roughness:.35})};
+function add(mesh,parent=world){parent.add(mesh);return mesh}
+function box(w,h,d,material,x,y,z,parent=world){const mesh=new T.Mesh(new T.BoxGeometry(w,h,d),material);mesh.position.set(x,y,z);return add(mesh,parent)}
+function sphere(radius,material,x,y,z,parent=world){const mesh=new T.Mesh(new T.SphereGeometry(radius,20,12),material);mesh.position.set(x,y,z);return add(mesh,parent)}
+function cylinder(radius,height,material,x,y,z,parent=world){const mesh=new T.Mesh(new T.CylinderGeometry(radius,radius,height,24),material);mesh.position.set(x,y,z);return add(mesh,parent)}
+function label(text,x,y,z,color='#fff5dd'){const textureCanvas=document.createElement('canvas');textureCanvas.width=512;textureCanvas.height=96;const context=textureCanvas.getContext('2d');context.fillStyle='rgba(32,21,12,.72)';context.beginPath();context.roundRect(4,4,504,88,18);context.fill();context.fillStyle=color;context.font='bold 35px system-ui';context.textAlign='center';context.textBaseline='middle';context.fillText(text,256,50);const texture=new T.CanvasTexture(textureCanvas);const sprite=new T.Sprite(new T.SpriteMaterial({map:texture,transparent:true}));sprite.scale.set(4.2,.78,1);sprite.position.set(x,y,z);return add(sprite)}
+function inflatableWall(x,y,z,w,h,d,material){box(w,h,d,material,x,y,z);sphere(Math.min(w,d)*.45,material,x-w/2,y,z);sphere(Math.min(w,d)*.45,material,x+w/2,y,z)}
+function buildCastle(){
+  box(40,.6,28,materials.floor,0,-.3,0);
+  inflatableWall(0,1,-14,40,3,.9,materials.wall);inflatableWall(0,1,14,40,3,.9,materials.blue);inflatableWall(-20,1,0,.9,3,28,materials.yellow);inflatableWall(20,1,0,.9,3,28,materials.red);
+  box(6,.5,5,materials.blue,-12,.25,2);for(const x of [-14,-12,-10]){box(.22,4,.22,materials.white,x,2,2);box(2.7,.18,.18,materials.yellow,x,1.1,2);box(2.7,.18,.18,materials.yellow,x,2,2);box(2.7,.18,.18,materials.yellow,x,2.9,2);}label('攀爬架',-12,4.3,2);
+  box(6,.35,5,materials.red,10,3.8,2);for(let i=0;i<5;i++){const ramp=box(5,.22,1.25,materials.blue,10,3.4-i*.58,3.4+i*1.1);ramp.rotation.x=-.1;}box(5,.3,5,materials.blue,10,.3,8);label('滑滑梯',10,5.1,2);
+  cylinder(3,.45,materials.green,-3,.3,9);cylinder(2.55,.12,materials.white,-3,.56,9);for(let i=0;i<8;i++){const bar=new T.Mesh(new T.TorusGeometry(2.7,.06,8,32),materials.yellow);bar.rotation.x=Math.PI/2;bar.position.set(-3,.62+i*.08,9);add(bar)}label('蹦床',-3,2.1,9);
+  cylinder(4,8,materials.blue,0,4,-11);cylinder(3.5,6.8,materials.yellow,0,4,-11);cylinder(3,5.6,materials.red,0,4,-11);cylinder(2.5,4.6,materials.white,0,4,-11);cylinder(4.4,.45,materials.gold,0,8.2,-11);sphere(1,materials.red,0,10,-11);label('主塔',0,10.8,-11,'#ffe77c');
+  box(7,.45,1,materials.gold,0,.35,-6.4);label('等孩子让开再进去',0,2.1,-6.4,'#fff3bd');
+  for(const hazard of CASTLE_HAZARDS){const material=hazard.id==='golden-poop'?materials.gold:materials.black;const group=new T.Group();group.position.set(hazard.x,0,hazard.z);add(group);for(const [radius,y,scale] of [[1.15,.9,1],[.9,1.8,.82],[.62,2.5,.65]]){const part=new T.Mesh(new T.SphereGeometry(radius,18,12),material);part.scale.set(scale,1,scale);part.position.y=y;group.add(part)}const tip=new T.Mesh(new T.ConeGeometry(.45,1.2,18),material);tip.position.set(.32,3.25,0);tip.rotation.z=-.45;group.add(tip);label(hazard.name,hazard.x,4.2,hazard.z,'#fff4c2')}
+  const guardXs=[-2.2,0,2.2];guardXs.forEach((x,index)=>{const guard=createAvatar(index===1?0xffc45c:0xef8ba8);guard.position.set(x,1,-6.7);guard.userData.guard=index;add(guard);});
 }
-
-function resize() {
-  const ratio = Math.min(window.devicePixelRatio || 1, 2);
-  const rect = canvas.getBoundingClientRect();
-  const width = Math.max(1, Math.round(rect.width * ratio));
-  const height = Math.max(1, Math.round(rect.height * ratio));
-  if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
-}
-
-function pointAt(time) {
-  const current = Math.max(0, Math.min(points.at(-1)?.time || FALLBACK_DURATION, time));
-  let high = points.findIndex(point => point.time >= current);
-  if (high < 0) high = points.length - 1;
-  const low = Math.max(0, high - 1);
-  const before = points[low];
-  const after = points[high];
-  const fraction = after.time === before.time ? 0 : (current - before.time) / (after.time - before.time);
-  return {x: before.x + (after.x - before.x) * fraction, y: before.y + (after.y - before.y) * fraction, index: low};
-}
-
-function draw(time = audio.currentTime || 0) {
-  resize();
-  const width = canvas.width;
-  const height = canvas.height;
-  const scale = Math.min(width / 1200, height / 640);
-  const xOffset = (width - 1200 * scale) / 2;
-  const yOffset = (height - 640 * scale) / 2;
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = '#211506';
-  ctx.fillRect(0, 0, width, height);
-  ctx.setTransform(scale, 0, 0, scale, xOffset, yOffset);
-  ctx.strokeStyle = 'rgba(255, 215, 105, .08)';
-  ctx.lineWidth = 1;
-  for (let x = 40; x < 1200; x += 80) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 640); ctx.stroke(); }
-  for (let y = 40; y < 640; y += 80) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1200, y); ctx.stroke(); }
-  const current = pointAt(time);
-  const currentIndex = current.index;
-  const pulse = Math.max(0, 1 - Math.max(0, time - (points[currentIndex]?.time || 0)) / .22);
-  ctx.beginPath();
-  points.forEach((point, index) => { const x = point.x * 1200; const y = point.y * 640; index ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
-  ctx.strokeStyle = 'rgba(255, 219, 116, .18)';
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  ctx.beginPath();
-  points.slice(0, currentIndex + 1).forEach((point, index) => { const x = point.x * 1200; const y = point.y * 640; index ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
-  ctx.lineTo(current.x * 1200, current.y * 640);
-  ctx.strokeStyle = '#ffd34d';
-  ctx.lineWidth = 8;
-  ctx.lineJoin = 'round';
-  ctx.shadowColor = '#ffc12f';
-  ctx.shadowBlur = 18;
-  ctx.stroke();
-  ctx.shadowBlur = 0;
-  points.forEach((point, index) => {
-    const active = index === currentIndex || index === currentIndex + 1;
-    ctx.fillStyle = active ? '#fff4bf' : 'rgba(255, 211, 77, .38)';
-    ctx.beginPath();
-    ctx.arc(point.x * 1200, point.y * 640, active ? 5 + pulse * 8 : 3, 0, Math.PI * 2);
-    ctx.fill();
-  });
-  ctx.fillStyle = '#fff8d8';
-  ctx.shadowColor = '#ffd34d';
-  ctx.shadowBlur = 24 + pulse * 26;
-  ctx.beginPath();
-  ctx.arc(current.x * 1200, current.y * 640, 11 + pulse * 8, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = '#ffd34d';
-  ctx.beginPath();
-  ctx.arc(current.x * 1200, current.y * 640, 4, 0, Math.PI * 2);
-  ctx.fill();
-}
-
-function updateClock() {
-  const time = audio.currentTime || 0;
-  const total = Number.isFinite(audio.duration) ? audio.duration : FALLBACK_DURATION;
-  seek.max = String(total);
-  seek.value = String(time);
-  elapsed.textContent = formatTime(time);
-  duration.textContent = formatTime(total);
-  const beat = Math.max(0, Math.floor((time - BEAT_OFFSET) / (60 / BPM)));
-  if (beat !== lastBeat) {
-    lastBeat = beat;
-    state.textContent = audio.ended ? '本关完成' : `节拍 ${String(Math.min(beat + 1, points.length)).padStart(3, '0')} / ${points.length}`;
-  }
-  draw(time);
-}
-
-function frame() {
-  updateClock();
-  if (!audio.paused && !audio.ended) raf = requestAnimationFrame(frame);
-}
-
-function startMusic() {
-  if (audio.ended) audio.currentTime = 0;
-  audio.play().catch(() => { state.textContent = '浏览器阻止播放，请再点一次开始'; });
-}
-
-audio.addEventListener('loadedmetadata', () => { points = makePoints(audio.duration); updateClock(); });
-audio.addEventListener('play', () => { curtain.hidden = true; start.textContent = 'Ⅱ 暂停'; state.textContent = '节拍进行中'; cancelAnimationFrame(raf); raf = requestAnimationFrame(frame); });
-audio.addEventListener('pause', () => { if (!audio.ended) { curtain.hidden = false; start.textContent = '▶ 继续'; state.textContent = '音乐已暂停'; } cancelAnimationFrame(raf); updateClock(); });
-audio.addEventListener('ended', () => { curtain.hidden = false; start.textContent = '↺ 再来一次'; state.textContent = '本关完成'; cancelAnimationFrame(raf); updateClock(); });
-audio.addEventListener('error', () => { state.textContent = '音乐加载失败，请刷新后重试'; });
-start.addEventListener('click', () => audio.paused ? startMusic() : audio.pause());
-seek.addEventListener('input', () => { audio.currentTime = Number(seek.value); updateClock(); });
-window.addEventListener('resize', () => draw());
-
-points = makePoints(FALLBACK_DURATION);
-draw();
+function createAvatar(color){const group=new T.Group();const body=new T.Mesh(new T.CapsuleGeometry(.38,1,6,12),new T.MeshStandardMaterial({color,roughness:.55}));body.position.y=1;group.add(body);const head=new T.Mesh(new T.SphereGeometry(.34,16,10),new T.MeshStandardMaterial({color:0xf1c6a7,roughness:.7}));head.position.y=2.15;group.add(head);const hair=new T.Mesh(new T.SphereGeometry(.36,16,8),new T.MeshStandardMaterial({color:0x3a201b,roughness:.8}));hair.scale.set(1,.55,1);hair.position.y=2.38;group.add(hair);return group}
+buildCastle();const avatar=createAvatar(0x4687e8);add(avatar,avatarGroup);
+const remoteMeshes=new Map();
+function resize(){const rect=canvas.getBoundingClientRect(),width=Math.max(1,rect.width),height=Math.max(1,rect.height);renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();}window.addEventListener('resize',resize);resize();
+function notify(message,seconds=3){toast.textContent=message;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),seconds*1000)}
+function updateStatus(){const mode={free:'自由移动',climb:'手动攀爬架',slide:'手动滑梯',trampoline:'蹦床：Space 手动起跳',tower:'手动爬主塔',won:'已通关'}[player.mode];status.textContent=player.won?'✦ 已通关 · 你登上了主塔顶':`${mode} · E 交互`;playersLabel.textContent=`玩家 ${peers.size+1}`;}
+function near(){const options=[['climb',-12,2,3],['slide',10,2,3],['trampoline',-3,9,3.4],['tower',0,-6.4,3.2]];return options.map(([id,x,z,r])=>({id,d:Math.hypot(player.x-x,player.z-z),r})).find(item=>item.d<item.r)||null}
+function interact(){if(player.won)return;if(player.mode!=='free'){if(player.mode==='trampoline'&&Math.abs(player.y-1)<.12){player.mode='free';notify('离开蹦床');}return;}const target=near();if(!target){notify('先走近攀爬架、滑梯、蹦床或主塔入口');return;}if(target.id==='tower'){if(!player.insideTower||!gateOpenAt(performance.now()/1000)){notify('三个小孩还守着门，等他们让开！');return;}player.mode='tower';player.progress=0;notify('按 W / ↑ 手动爬上主塔，绝不会自动完成');}else{player.mode=target.id;player.progress=0;player.y=target.id==='slide'?4:1;notify(target.id==='climb'?'按 W / ↑ 手动向上攀爬，S / ↓ 下来':target.id==='slide'?'按 W / ↑ 手动滑下去，S / ↓ 回到上面':'按 Space 手动起跳；E 离开蹦床');}updateStatus();}
+function moveFree(dt){const forward=(keys.has('forward')||keys.has('up'))?1:0,back=(keys.has('back')||keys.has('down'))?1:0,right=(keys.has('right'))?1:0,left=(keys.has('left'))?1:0;const localX=right-left,localZ=back-forward;if(!localX&&!localZ)return;const length=Math.hypot(localX,localZ),speed=5;const dx=(localX*Math.cos(yaw)-localZ*Math.sin(yaw))/length*speed*dt,dz=(localX*Math.sin(yaw)+localZ*Math.cos(yaw))/length*speed*dt;const previous={x:player.x,z:player.z};player.x=Math.max(-18.2,Math.min(18.2,player.x+dx));player.z=Math.max(-12.2,Math.min(12.2,player.z+dz));const hazard=hitHazard(player);if(hazard){const pushed=pushAway(player,hazard);player.x=pushed.x;player.z=pushed.z;notify(`撞到${hazard.name}，快躲开！`);}if(crossedClosedGate(previous,player,player.insideTower,performance.now()/1000)){player.x=0;player.z=GATE_Z+.9;notify('三个小孩把你推出去了：“哈哈哈，想得美！”');}else if(!player.insideTower&&player.z<=GATE_Z){player.insideTower=true;notify('趁孩子让开，冲进主塔！');}}
+function updateMode(dt){const forward=(keys.has('forward')||keys.has('up'))?1:0,back=(keys.has('back')||keys.has('down'))?1:0,axis=forward-back;if(player.mode==='climb'){player.progress=Math.max(0,Math.min(1,player.progress+axis*dt*.28));player.y=1+player.progress*4;player.x=-12;player.z=2;if(player.progress>=1){player.mode='free';player.y=5;notify('攀爬架到顶了，自己下来吧！');}}else if(player.mode==='slide'){player.progress=Math.max(0,Math.min(1,player.progress+axis*dt*.34));player.y=4-player.progress*3.1;player.z=2+player.progress*6;if(player.progress>=1){player.mode='free';player.y=1;notify('滑到软垫上了！');}}else if(player.mode==='trampoline'){if(keys.has('jump')&&Math.abs(player.y-1)<.15)player.vy=7;player.vy-=18*dt;player.y=Math.max(1,player.y+player.vy*dt);if(player.y===1)player.vy=0;player.x=-3;player.z=9;}else if(player.mode==='tower'){player.progress=Math.max(0,Math.min(1,player.progress+axis*dt*.2));player.y=1+player.progress*7;player.x=Math.sin(player.progress*Math.PI*5)*1.7;player.z=-9.5+Math.cos(player.progress*Math.PI*4)*1.4;if(towerComplete(player.progress)){player.mode='won';player.won=true;notify('通关！你爬到了主塔顶！',6);}}else if(player.mode==='free')moveFree(dt);}
+function updateCamera(dt){const target=new T.Vector3(player.x,player.y+1.1,player.z),distance=7;const desired=new T.Vector3(player.x+Math.sin(yaw)*distance,player.y+3.2-pitch*2,player.z+Math.cos(yaw)*distance);camera.position.lerp(desired,Math.min(1,dt*6));camera.lookAt(target);avatar.position.set(player.x,player.y-1,player.z);avatar.rotation.y=yaw;}
+function updateRemotes(now){for(const [id,remote] of peers){if(now-remote.seen>12000){remoteMeshes.get(id)?.removeFromParent();remoteMeshes.delete(id);peers.delete(id);continue;}const mesh=remoteMeshes.get(id);if(mesh){mesh.position.lerp(new T.Vector3(remote.x,remote.y-1,remote.z),.22);mesh.rotation.y=remote.yaw||0;}}}
+function animateGuards(now){const open=gateOpenAt(now/1000);const groups=world.children.filter(child=>child.userData.guard!==undefined);groups.forEach((guard,index)=>{guard.position.z=open?-6.7+Math.sin(now/300+index)*.8:-6.7;guard.rotation.y=Math.sin(now/500+index)*.2;});}
+function sendState(now){if(!link?.online||now-lastSend<120)return;link.send({type:'state',x:player.x,y:player.y,z:player.z,mode:player.mode,winner:player.won,yaw});lastSend=now;}
+function loop(now){const dt=last?Math.min((now-last)/1000,.05):0;last=now;updateMode(dt);updateCamera(dt);updateRemotes(now);animateGuards(now);sendState(now);updateStatus();renderer.render(scene,camera);requestAnimationFrame(loop);}requestAnimationFrame(loop);
+function setKey(key,value){if(value)keys.add(key);else keys.delete(key)}
+const keyMap={KeyW:'forward',ArrowUp:'forward',KeyS:'back',ArrowDown:'back',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',Space:'jump'};
+window.addEventListener('keydown',event=>{const key=keyMap[event.code];if(key){event.preventDefault();setKey(key,true)}if(event.code==='KeyE'&&!event.repeat){event.preventDefault();interact()}});window.addEventListener('keyup',event=>{const key=keyMap[event.code];if(key)setKey(key,false)});window.addEventListener('blur',()=>keys.clear());
+document.querySelectorAll('[data-key]').forEach(button=>{const key=button.dataset.key;const down=event=>{event.preventDefault();button.setPointerCapture?.(event.pointerId);setKey(key,true)},up=()=>setKey(key,false);button.addEventListener('pointerdown',down);button.addEventListener('pointerup',up);button.addEventListener('pointercancel',up);button.addEventListener('lostpointercapture',up)});$('interact').addEventListener('click',interact);
+canvas.addEventListener('pointerdown',event=>{viewPointer=event.pointerId;lastViewX=event.clientX;lastViewY=event.clientY;canvas.setPointerCapture(event.pointerId)});canvas.addEventListener('pointermove',event=>{if(event.pointerId!==viewPointer)return;yaw-=(event.clientX-lastViewX)*.006;pitch=Math.max(-.45,Math.min(.25,pitch-(event.clientY-lastViewY)*.004));lastViewX=event.clientX;lastViewY=event.clientY});canvas.addEventListener('pointerup',()=>{viewPointer=null});canvas.addEventListener('pointercancel',()=>{viewPointer=null});
+async function connect(){try{link=await connectRoom({code:CASTLE_LOBBY.code,id:makePlayerId(),scope:CASTLE_LOBBY.scope,onStatus:value=>{network.textContent=value==='online'?'🟢 已进入公共充气城堡大厅':value==='connecting'?'🟡 正在连接公共大厅':'🟠 联机暂不可用，当前可单人闯关'},onMessage:message=>{if(message.type!=='state'||!message.id||!Number.isFinite(message.x)||!Number.isFinite(message.y)||!Number.isFinite(message.z))return;let remote=peers.get(message.id);if(!remote){remote={x:message.x,y:message.y,z:message.z,seen:Date.now()};peers.set(message.id,remote);const mesh=createAvatar(0xef7795);remoteMeshes.set(message.id,mesh);add(mesh,avatarGroup)}Object.assign(remote,{x:Math.max(-19,Math.min(19,message.x)),y:Math.max(1,Math.min(10,message.y)),z:Math.max(-13,Math.min(13,message.z)),mode:typeof message.mode==='string'?message.mode:'free',winner:Boolean(message.winner),yaw:Number(message.yaw)||0,seen:Date.now()})}})}catch{network.textContent='🟠 联机暂不可用，当前可单人闯关'}}
+connect();window.addEventListener('pagehide',()=>link?.close());

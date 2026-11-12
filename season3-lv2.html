@@ -3,34 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>第三季第2关 · 折线节拍</title>
-  <style>
-    * { box-sizing: border-box; }
-    html, body { margin: 0; min-height: 100%; background: #fff5c5; color: #563609; font-family: system-ui, -apple-system, "Microsoft YaHei", sans-serif; }
-    main { max-width: 1440px; margin: auto; padding: 16px; }
-    header { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-    h1 { margin: 0; font-size: clamp(22px, 3vw, 32px); }
-    .back { display: inline-block; color: #563609; border: 1px solid #c48a1c; border-radius: 10px; padding: 10px 13px; text-decoration: none; background: #fff9dd; }
-    .hint { line-height: 1.6; margin: 14px 0; }
-    .game-frame { width: 100%; height: min(78vh, 850px); min-height: 430px; overflow: hidden; background: #fff9df; border: 2px solid #dbaf46; border-radius: 14px; }
-    .beatline-card { display: flex; flex-direction: column; width: 100%; height: 100%; overflow: hidden; background: #2a1b0b; }
-    .stage { position: relative; flex: 1; min-height: 0; background: radial-gradient(circle at 50% 50%, #54391a, #211506 72%); }
-    canvas { display: block; width: 100%; height: 100%; min-height: 360px; }
-    .stage-copy { position: absolute; top: 18px; left: 20px; color: #fff1b5; pointer-events: none; }
-    .stage-copy strong { display: block; font-size: clamp(18px, 3vw, 28px); letter-spacing: .06em; }
-    .stage-copy span { color: #e9bd54; font-size: 12px; }
-    .stage-state { position: absolute; right: 20px; top: 18px; color: #fff8d8; font-size: 13px; }
-    .start-curtain { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(25, 14, 3, .28); }
-    .start-curtain[hidden] { display: none; }
-    .start { border: 1px solid #ffe18b; border-radius: 999px; padding: 13px 22px; color: #6b4000; background: #ffd34d; box-shadow: 0 5px 0 #bd7d11; font: 700 16px system-ui, sans-serif; cursor: pointer; }
-    .start:active { transform: translateY(3px); box-shadow: 0 2px 0 #bd7d11; }
-    .transport { display: grid; gap: 8px; padding: 14px 16px 16px; background: #2a1b0b; }
-    audio { width: 100%; min-width: 0; accent-color: #ffd34d; }
-    .timeline { display: flex; align-items: center; gap: 10px; color: #e9bd54; font-size: 12px; }
-    input[type="range"] { flex: 1; accent-color: #ffd34d; }
-    .source { margin: 0; color: #a9884e; font-size: 12px; }
-    @media (max-width: 600px) { main { padding: 10px; } header { gap: 10px; } .game-frame { height: 65vh; min-height: 360px; } .stage-copy { top: 12px; left: 14px; } .stage-state { top: 12px; right: 14px; } }
-  </style>
+  <title>第三季第2关 · 充气城堡大闯关</title>
+  <link rel="stylesheet" href="season3-lv2.css?v=castle1">
 
 <!-- Installable game application -->
 <link rel="manifest" href="manifest.webmanifest">
@@ -49,24 +23,24 @@
     <header>
       <a class="back" href="season3.html">← 第三季主页</a>
       <h1>第三季 · 第2关</h1>
+      <span id="network" role="status">公共大厅连接中…</span>
     </header>
-    <p class="hint">只有音乐，没有视频，也没有外部游戏入口。点击开始，让折线跟着《梦的翅膀受了伤（司凤版）》的节拍向前走。</p>
+    <p class="hint">出生在巨大的充气城堡里，直接和其他玩家联机。避开黄金巨猛（屎）和黑曼巴（屎），手动玩设施，找准三个小孩让开的时机冲进主塔并爬到塔顶。</p>
     <div class="game-frame">
-      <section class="beatline-card" aria-label="第三季第2关折线节拍">
-        <div class="stage">
-          <canvas id="beatline" width="1200" height="640" aria-label="跟随音乐节拍移动的折线"></canvas>
-          <div class="stage-copy"><strong>折线节拍</strong><span>FOLLOW THE SOUND</span></div>
-          <div class="stage-state" id="stage-state" role="status" aria-live="polite">等待音乐</div>
-          <div class="start-curtain" id="start-curtain"><button class="start" id="start" type="button">▶ 开始这一关</button></div>
+      <section class="castle-card" aria-label="3D充气城堡大闯关">
+        <canvas id="castle" width="1200" height="700" aria-label="3D充气城堡游戏场景"></canvas>
+        <div class="hud"><span id="status">WASD 移动 · 拖动画面转视角</span><span id="players">玩家 1</span></div>
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        <div class="touch-controls" aria-label="移动控制">
+          <button data-key="forward" type="button">↑</button>
+          <div><button data-key="left" type="button">←</button><button data-key="back" type="button">↓</button><button data-key="right" type="button">→</button></div>
         </div>
-        <div class="transport">
-          <div class="timeline"><span id="elapsed">0:00</span><input id="seek" type="range" min="0" max="195.135" value="0" step="0.1" aria-label="歌曲进度"><span id="duration">3:15</span></div>
-          <audio id="music" controls preload="metadata" src="assets/season3/dream-wings.m4a" aria-label="梦的翅膀受了伤（司凤版）"></audio>
-          <p class="source">本关只播放本地音乐，不嵌入视频。</p>
-        </div>
+        <button class="interact" id="interact" type="button">E 交互</button>
       </section>
     </div>
+    <p class="guide">WASD / 方向键移动，拖动画面旋转视角，E 开始设施或主塔攀爬，Space 在蹦床上手动起跳。攀爬架、滑梯、蹦床和主塔都不会自动完成。</p>
   </main>
-  <script src="season3-lv2.js"></script>
+  <script src="lib/vendor/three.min.js"></script>
+  <script type="module" src="season3-lv2.js?v=castle1"></script>
 </body>
 </html>
