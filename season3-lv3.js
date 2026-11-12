@@ -1,0 +1,9 @@
+const $=id=>document.getElementById(id),choice=$('choice'),room=$('bath-room'),message=$('message'),progress=$('progress'),guestName=$('guest-name'),guestWrap=$('guest-wrap'),tools=[...document.querySelectorAll('[data-tool]')];
+const order=['shampoo','bodywash','shower','dryer'],names={shampoo:'洗发水',bodywash:'沐浴露',shower:'花洒',dryer:'吹风机'},nextHints={shampoo:'盲人提示：现在使用沐浴露。',bodywash:'盲人提示：打开花洒冲洗。',shower:'盲人提示：最后拿起吹风机。',dryer:'照护完成！客人已经洗好并吹干了。'};
+let step=0;
+function start(gender){step=0;choice.hidden=true;room.hidden=false;guestName.textContent=gender==='male'?'男性客人 · 需要照护':'女性客人 · 需要照护';guestWrap.dataset.gender=gender;message.textContent='盲人提示：先拿起洗发水。';tools.forEach((tool,index)=>{tool.disabled=index!==0;tool.classList.remove('done')});progress.textContent='0 / 4';}
+function useTool(tool){const expected=order[step];if(tool!==expected){message.textContent=`请按顺序操作，当前应使用${names[expected]}。`;return;}step+=1;const button=tools.find(item=>item.dataset.tool===tool);button.disabled=true;button.classList.add('done');if(step<order.length){tools[step].disabled=false;message.textContent=nextHints[tool];}else{message.textContent=nextHints[tool];}progress.textContent=`${step} / 4`;}
+document.querySelectorAll('[data-gender]').forEach(button=>button.addEventListener('click',()=>start(button.dataset.gender)));
+tools.forEach(button=>button.addEventListener('click',()=>useTool(button.dataset.tool)));
+$('cancel-mask').addEventListener('click',()=>{message.textContent='想啥呢？隐私遮挡不能取消。';guestWrap.classList.add('tease');setTimeout(()=>guestWrap.classList.remove('tease'),500)});
+$('restart').addEventListener('click',()=>{room.hidden=true;choice.hidden=false;});

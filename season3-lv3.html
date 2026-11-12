@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第三季第3关 · 给盲人洗澡</title>
+  <link rel="stylesheet" href="season3-lv3.css?v=bath1">
+
+<!-- Installable game application -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#152d36">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="岩浆跑酷">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="app-icons/icon-180.png">
+<link rel="icon" type="image/png" href="app-icons/icon-192.png">
+<link rel="stylesheet" href="pwa.css">
+<script defer src="pwa.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <a class="back" href="season3.html">← 第三季主页</a>
+      <h1>第三季 · 第3关</h1>
+      <span class="tag">照护操作关</span>
+    </header>
+    <p class="hint">帮助一位看不见的客人完成洗澡。人物采用非露骨轮廓并始终保留隐私遮挡；听提示，按顺序完成照护操作。</p>
+    <section class="game-frame" aria-label="给盲人洗澡游戏">
+      <div class="choice" id="choice">
+        <h2>先选择需要照护的客人</h2>
+        <p>选择只影响角色称呼和浴巾颜色，不显示任何隐私细节。</p>
+        <div class="gender-buttons">
+          <button type="button" data-gender="male">男性</button>
+          <button type="button" data-gender="female">女性</button>
+        </div>
+      </div>
+      <div class="bath-room" id="bath-room" hidden>
+        <div class="bath-topbar"><strong id="guest-name">照护对象</strong><span id="progress" role="status">0 / 4</span></div>
+        <div class="bath-scene">
+          <div class="shower-wall"><span class="tile-line"></span><span class="shower-head">🚿</span></div>
+          <div class="guest-wrap" id="guest-wrap" aria-label="始终有隐私遮挡的客人轮廓">
+            <div class="guest-hair"></div><div class="guest-head"></div><div class="guest-body"></div><div class="towel towel-top"></div><div class="privacy-mask">隐私遮挡</div>
+          </div>
+          <div class="bath-tools" aria-label="洗澡用品">
+            <button type="button" data-tool="shampoo" disabled><span>🧴</span>洗发水</button>
+            <button type="button" data-tool="bodywash" disabled><span>🫧</span>沐浴露</button>
+            <button type="button" data-tool="shower" disabled><span>🚿</span>花洒</button>
+            <button type="button" data-tool="dryer" disabled><span>💨</span>吹风机</button>
+          </div>
+        </div>
+        <div class="bath-message" id="message" role="status" aria-live="polite">盲人提示：先拿起洗发水。</div>
+        <div class="bath-actions">
+          <button type="button" class="cancel-mask" id="cancel-mask">取消打码</button>
+          <button type="button" class="restart" id="restart">重新选择</button>
+        </div>
+      </div>
+    </section>
+    <p class="guide">按提示依次点击洗发水、沐浴露、花洒、吹风机。取消打码不会解除隐私遮挡。</p>
+  </main>
+  <script src="season3-lv3.js?v=bath1"></script>
+</body>
+</html>
