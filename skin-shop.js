@@ -1,12 +1,14 @@
 import * as THREE from './lib/three.module.js';
 import {SHOP_SKINS,DEFAULT_SKIN,skinById,createSkinShop} from './lib/skin-shop.mjs';
+import {formatLavaCount} from './lib/lava-wallet.mjs';
 import {makeBankRunner} from './lib/bank-run-visuals.mjs';
 const $=id=>document.getElementById(id),shop=createSkinShop(),cards=new Map();
 let selected=shop.equipped(),filter='all',busy=false,toastTimer,drawPreview=()=>{};
 function say(text){clearTimeout(toastTimer);$('message').textContent=text;toastTimer=setTimeout(()=>{$('message').textContent='';},6500);}
 function actionLabel(skin){if(shop.equipped().id===skin.id)return '✓ 已装备';if(shop.owns(skin.id))return '装备皮肤';return `<span class="ingot" aria-hidden="true"></span>${skin.price.toLocaleString('zh-CN')} · 购买并装备`;}
+function digits(){return shop.wallet.balanceExact();}
 function paintAction(button,skin){
-  const owned=shop.owns(skin.id),equipped=shop.equipped().id===skin.id,short=!owned&&shop.wallet.balance()<skin.price;
+  const owned=shop.owns(skin.id),equipped=shop.equipped().id===skin.id,short=!owned&&BigInt(digits())<BigInt(skin.price);
   button.innerHTML=actionLabel(skin);button.className='action'+(equipped?' equipped':owned?' owned':short?' short':'');button.disabled=busy||equipped;
   button.setAttribute('aria-label',equipped?`${skin.name}，已装备`:owned?`装备${skin.name}`:`花费${skin.price}岩浆币购买并装备${skin.name}`);
 }
@@ -17,9 +19,10 @@ for(const skin of SHOP_SKINS){
 }
 function select(skin){selected=skin;$('preview-name').textContent=skin.name;$('preview-tier').textContent=skin.tier+' / '+(skin.price?skin.price+' 岩浆币':'永久免费');$('preview-description').textContent=skin.description;drawPreview(skin.id);refresh();}
 function refresh(){
-  const ownedCount=SHOP_SKINS.filter(skin=>shop.owns(skin.id)).length;$('balance').textContent=shop.wallet.balance().toLocaleString('zh-CN');$('owned-count').textContent=ownedCount;$('empty').hidden=filter!=='owned'||ownedCount>0;
+  const ownedCount=SHOP_SKINS.filter(skin=>shop.owns(skin.id)).length,exact=digits(),balance=$('balance');balance.textContent=formatLavaCount(exact);balance.dataset.exact=exact;balance.title=exact+' 颗岩浆币';balance.classList.toggle('is-exact-long',exact.length>15);$('owned-count').textContent=ownedCount;$('empty').hidden=filter!=='owned'||ownedCount>0;
   for(const skin of SHOP_SKINS){const {card,preview,action}=cards.get(skin.id),owned=shop.owns(skin.id),equipped=shop.equipped().id===skin.id;card.hidden=filter==='owned'&&!owned;card.classList.toggle('selected',skin.id===selected.id);preview.setAttribute('aria-pressed',String(skin.id===selected.id));const tag=card.querySelector('.owned-tag');tag.hidden=!owned;tag.textContent=equipped?'✓ 已装备':'已拥有';paintAction(action,skin);}
-  $('equipped-note').textContent=shop.equipped().id===selected.id?'✓ 正在使用这款皮肤':shop.owns(selected.id)?'已拥有 · 随时免费换装':shop.wallet.balance()<selected.price?`还差 ${(selected.price-shop.wallet.balance()).toLocaleString('zh-CN')} 岩浆币`:'解锁后永久拥有';
+  const have=BigInt(digits()),price=BigInt(selected.price||0);
+  $('equipped-note').textContent=shop.equipped().id===selected.id?'✓ 正在使用这款皮肤':shop.owns(selected.id)?'已拥有 · 随时免费换装':have<price?`还差 ${formatLavaCount(price-have)} 岩浆币`:'解锁后永久拥有';
   $('default-skin').setAttribute('aria-pressed',String(selected.id==='default'));$('default-skin').querySelector('.default-status').textContent=shop.equipped().id==='default'?'已装备 · 试穿 →':'试穿 →';paintAction($('preview-action'),selected);
 }
 async function checkout(skin){
@@ -28,7 +31,7 @@ async function checkout(skin){
   busy=true;refresh();
   try{
     const receipt=await shop.buy(skin.id);
-    if(!receipt.ok){say(receipt.reason==='funds'?`岩浆币不够，还差 ${Math.max(0,skin.price-receipt.balance)} 个。去第21关收集吧！`:receipt.reason==='unsaved'?'本局岩浆币还没有保存成功，请先回游戏完成保存。':'浏览器未能保存购买，请检查存储空间后重试。本次没有扣币。');return;}
+    if(!receipt.ok){const gap=BigInt(skin.price)>BigInt(digits())?formatLavaCount(BigInt(skin.price)-BigInt(digits())):'0';say(receipt.reason==='funds'?`岩浆币不够，还差 ${gap} 个。去第21关收集吧！`:receipt.reason==='unsaved'?'本局岩浆币还没有保存成功，请先回游戏完成保存。':'浏览器未能保存购买，请检查存储空间后重试。本次没有扣币。');return;}
     const equipped=shop.equip(skin.id);
     say(equipped.ok?(receipt.alreadyOwned?`已装备「${skin.name}」，没有重复扣币。`:`已解锁并装备「${skin.name}」！花费 ${skin.price} 岩浆币。`):'皮肤已解锁，换装未能保存；可稍后在「我的衣橱」重新装备。');
   }finally{busy=false;refresh();}

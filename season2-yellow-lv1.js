@@ -1,10 +1,10 @@
 import {FindXiaoyanRound,HIDE_MS,SHUFFLE_MS,DIFFICULTIES} from './lib/find-xiaoyan.mjs';
-import {createLavaWallet,newLavaRunId,LAVA_WALLET_PREFIX,LAVA_PURCHASE_PREFIX} from './lib/lava-wallet.mjs';
+import {createLavaWallet,newLavaRunId,LAVA_WALLET_PREFIX,LAVA_PURCHASE_PREFIX,formatLavaCount} from './lib/lava-wallet.mjs';
 const $=id=>document.getElementById(id),field=$('field'),start=$('start'),buttons=[];
 const wallet=createLavaWallet(),pendingRewards=new Map();
 let runId='';
 function refreshWallet(){
- $('wallet-balance').textContent=wallet.balance().toLocaleString('zh-CN');
+ const exact=wallet.balanceExact();$('wallet-balance').textContent=formatLavaCount(exact);$('wallet-balance').dataset.exact=exact;
  $('save-warning').hidden=pendingRewards.size===0;
  if(round?.reward){$('reward-note').hidden=false;$('reward-note').textContent=`+${round.reward} 岩浆币 · `+(pendingRewards.has(runId)?'等待保存':'已存入余额，可以去皮肤商场使用！');}
 }

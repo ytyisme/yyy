@@ -1,11 +1,11 @@
 import {createIngotRain} from './lib/ingot-rain.mjs';
-import {createLavaWallet,newLavaRunId,LAVA_WALLET_PREFIX,LAVA_PURCHASE_PREFIX} from './lib/lava-wallet.mjs';
+import {createLavaWallet,newLavaRunId,LAVA_WALLET_PREFIX,LAVA_PURCHASE_PREFIX,formatLavaCount} from './lib/lava-wallet.mjs';
 
 const $=id=>document.getElementById(id),wallet=createLavaWallet(),views=new Map(),pendingRuns=new Map(),reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 let runId='',lastPhase='',lastCount=-1,lastSecond=-1,frameId=0;
 const game=createIngotRain({onCollect:({coin,collected})=>{saveRun(runId,collected);pop(coin);sound.coin();}}),s=game.state;
 const sound=createSound();
-function refreshBalance(){$('wallet-balance').textContent=wallet.balance().toLocaleString('zh-CN');}
+function refreshBalance(){const exact=wallet.balanceExact();$('wallet-balance').textContent=formatLavaCount(exact);$('wallet-balance').dataset.exact=exact;}
 function saveRun(id,collected){
   if(!id||!collected)return;pendingRuns.set(id,collected);const receipt=wallet.creditRun(id,collected);if(receipt.persisted)pendingRuns.delete(id);refreshSave();refreshBalance();
 }
