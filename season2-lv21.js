@@ -1,6 +1,6 @@
 import * as THREE from './lib/three.module.js';
 import {BANK_RUN,BANK_STORY,bankStoryAt,createBankRun} from './lib/bank-run.mjs';
-import {createLavaWallet,newLavaRunId} from './lib/lava-wallet.mjs';
+import {createLavaWallet,newLavaRunId,formatLavaCount} from './lib/lava-wallet.mjs';
 import {createSkinShop} from './lib/skin-shop.mjs';
 import {playerSkins} from './lib/player-skins.mjs';
 import {makeBankRunner,makeBankDog,makeLeash,makeBankIntro,makeBankRoadTile,makeBankObstacle,makeBankCoinField,disposeBankView} from './lib/bank-run-visuals.mjs';
@@ -11,7 +11,8 @@ const duckKeys=new Set(),controlReleases=[];
 function readBest(){try{const n=Number(localStorage.getItem('lava-bank-run-best-v1'));return Number.isSafeInteger(n)&&n>=0?n:0;}catch{return 0;}}
 let best=readBest();$('best-intro').textContent=`最好距离 ${best.toLocaleString('zh-CN')} 米`;
 const audio=createSound();
-const game=createBankRun({onCoin:({earned})=>{const receipt=wallet.creditRun(runId,earned);saveOkay=receipt.persisted;$('save-warning').hidden=saveOkay;$('total-coins').textContent=receipt.balance.toLocaleString('zh-CN');audio.coin();},onHit:()=>audio.hit()}),s=game.state;
+const walletText=()=>formatLavaCount(wallet.balanceExact());
+const game=createBankRun({onCoin:({earned})=>{const receipt=wallet.creditRun(runId,earned);saveOkay=receipt.persisted;$('save-warning').hidden=saveOkay;$('total-coins').textContent=walletText();audio.coin();},onHit:()=>audio.hit()}),s=game.state;
 const scene=new THREE.Scene();scene.background=new THREE.Color(0xe9cfae);scene.fog=new THREE.Fog(0xe9cfae,55,180);
 const camera=new THREE.PerspectiveCamera(59,innerWidth/innerHeight,.1,230),rearCamera=new THREE.PerspectiveCamera(52,1.8,.1,90);
 camera.layers.enable(1);
@@ -27,7 +28,7 @@ watchSkinImage(me);
 for(const actor of [me,friend])actor.traverse(part=>part.layers.set(1));
 function refreshSkin(){const skin=skinShop.equipped(),id=skin.id;if($('equipped-skin-name'))$('equipped-skin-name').textContent=skin.name;if(id===currentSkin)return;currentSkin=id;const previous=me;me=makeBankRunner(0x4b9695,{skinId:id});me.traverse(part=>part.layers.set(1));scene.add(me);watchSkinImage(me);previous.removeFromParent();previous.userData.dispose?.();renderNeeded=true;}
 playerSkins.subscribe(refreshSkin);
-window.addEventListener('storage',()=>{refreshSkin();$('total-coins').textContent=wallet.balance().toLocaleString('zh-CN');});window.addEventListener('pageshow',refreshSkin);window.addEventListener('lava-skin-change',refreshSkin);
+window.addEventListener('storage',()=>{refreshSkin();$('total-coins').textContent=walletText();});window.addEventListener('pageshow',refreshSkin);window.addEventListener('lava-skin-change',refreshSkin);
 const coins=makeBankCoinField();road.add(coins);const obstacleViews=new Map();
 const dots=Array.from({length:BANK_RUN.maxHits},()=>{const dot=document.createElement('i');$('hit-dots').append(dot);return dot;});
 const rearFrom=new THREE.Vector3(),rearTo=new THREE.Vector3(),tagPosition=new THREE.Vector3();let rearBounds=null;
@@ -54,7 +55,7 @@ function syncPhase(){
   const phase=s.phase;if(phase===lastPhase)return;lastPhase=phase;renderNeeded=true;document.body.dataset.phase=phase;
   $('welcome').hidden=phase!=='ready'||!webglReady;$('story').hidden=phase!=='intro';$('run-hud').hidden=!['running','paused','caught'].includes(phase)||s.introTime<BANK_RUN.introDuration;$('chase-view').hidden=$('run-hud').hidden;$('controls').hidden=phase!=='running';$('run-tip').hidden=phase!=='running';$('friend-tag').hidden=phase!=='running';$('paused').hidden=phase!=='paused';$('result').hidden=phase!=='caught';$('pause').disabled=!['intro','running'].includes(phase);
   if(phase==='paused'||phase==='caught'){clearControls();audio.sleep();}
-  if(phase==='running'){$('total-coins').textContent=wallet.balance().toLocaleString('zh-CN');audio.unlock();}
+  if(phase==='running'){$('total-coins').textContent=walletText();audio.unlock();}
   if(phase==='caught')complete();
   rearBounds=$('rear-camera').getBoundingClientRect();if(rearBounds.width>0){rearCamera.aspect=rearBounds.width/rearBounds.height;rearCamera.updateProjectionMatrix();}
 }
@@ -147,4 +148,4 @@ function frame(now){
   renderer.setViewport(0,0,innerWidth,innerHeight);renderer.setScissorTest(false);renderer.render(scene,camera);
   if(!storyScene&&rearBounds?.width>0&&!$('chase-view').hidden){renderer.setScissorTest(true);renderer.setScissor(rearBounds.left,innerHeight-rearBounds.bottom,rearBounds.width,rearBounds.height);renderer.setViewport(rearBounds.left,innerHeight-rearBounds.bottom,rearBounds.width,rearBounds.height);renderer.shadowMap.autoUpdate=false;renderer.render(scene,rearCamera);renderer.shadowMap.autoUpdate=true;renderer.setScissorTest(false);}
 }
-$('total-coins').textContent=wallet.balance().toLocaleString('zh-CN');syncPhase();requestAnimationFrame(frame);
+$('total-coins').textContent=walletText();syncPhase();requestAnimationFrame(frame);

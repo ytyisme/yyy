@@ -10,3 +10,4 @@
 .rating{position:absolute;inset:36% 0 auto;text-align:center;font-size:clamp(34px,7vw,58px);font-weight:1000;font-style:italic;color:#fff09a;text-shadow:0 3px 0 #b07126,0 0 8px #fff,0 6px 22px #674095;animation:combo 1.25s both;pointer-events:none}.rating-great{color:#ffcd75;text-shadow:0 3px 0 #c54b41,0 0 8px white,0 6px 22px #674095}.rating-excellent{color:#f9d5ff;text-shadow:0 3px 0 #9a3dd3,0 0 10px white,0 6px 22px #674095}
 
 .music-credit{text-align:center;font-size:10px;line-height:1.7;color:#61728a;margin:15px 0 40px}.music-credit a{text-decoration:underline;text-underline-offset:2px}
+.next-level{text-align:center;margin:0 0 28px;font-weight:800}
