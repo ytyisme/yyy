@@ -203,8 +203,14 @@ test('season 3 level 4 is wired into its selector and keeps season 2 numbering',
   assert.match(page,/creditExact/);
   assert.match(page,/result\.sounds\)audio\.quack/);
   assert.match(page,/match\.preview/);
+  assert.match(select,/共 39 关/);
+  assert.match(select,/前四关已开放/);
   assert.match(select,/玻璃缸橡皮鸭/);
+  assert.match(select,/season3-lv1\.html/);
+  assert.match(select,/season3-lv2\.html/);
+  assert.match(select,/season3-lv3\.html/);
   assert.match(select,/season3-lv4\.html/);
+  assert.doesNotMatch(select,/第 1–3 关和后面的关卡还在制作/);
   assert.doesNotMatch(season2,/玻璃缸橡皮鸭/);
   assert.match(season2,/1–28 关/);
   const answer=answerQuestion('第三季第4关怎么玩？',knowledge);
@@ -214,5 +220,6 @@ test('season 3 level 4 is wired into its selector and keeps season 2 numbering',
   assert.equal(answerQuestion('第4关怎么玩？',knowledge).level,4);
   assert.match(answerQuestion('第35关怎么玩',knowledge).text,/还没有开放/);
   assert.match(answerQuestion('怎么获得岩浆币',knowledge).text,/第22关/);
-  assert.match(answerQuestion('第三季第1关怎么玩',knowledge).text,/还没有开放/);
+  assert.match(answerQuestion('第三季第1关怎么玩',knowledge).text,/已经开放/);
+  assert.match(answerQuestion('第三季第5关怎么玩',knowledge).text,/还没有开放/);
 });
