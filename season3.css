@@ -1,0 +1,24 @@
+:root{color-scheme:light;--ink:#1d4454;--muted:#5d7d8c;--lava:#ef6a4a}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;background:
+  radial-gradient(circle at 18% 0,#fff 0,transparent 34%),
+  linear-gradient(180deg,#e7f7fb 0,#f8efe2 100%);
+  color:var(--ink);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+a,button{font:inherit;color:inherit}
+a{text-decoration:none}
+button{border:0;background:none;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:3px solid var(--lava);outline-offset:3px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px}
+header a{border-radius:999px;background:#fff;padding:10px 14px;box-shadow:0 8px 18px #7ea8b822}
+header div{display:flex;flex-direction:column;align-items:center;line-height:1.15}
+header b{font-size:12px;letter-spacing:.16em}
+header span{font-weight:800}
+main{width:min(880px,calc(100% - 28px));margin:8px auto 40px}
+.intro{margin:0 0 14px;color:var(--muted);line-height:1.6}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:16px}
+.grid button{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:96px;padding:16px;border-radius:18px;background:#fff;text-align:left;box-shadow:0 10px 24px #7ea8b822}
+.grid b{font-size:13px;letter-spacing:.08em}
+.grid span{font-size:16px;font-weight:800}
+.grid .locked{opacity:.62}
+.grid .open{background:#fff7ef;box-shadow:0 10px 24px #ef6a4a22}
+.tip{min-height:1.5em;color:#9a3b28;font-weight:700}

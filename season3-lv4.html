@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#d7f3f8">
-  <title>第29关 · 玻璃缸橡皮鸭</title>
+  <title>第三季第4关 · 玻璃缸橡皮鸭</title>
   <meta name="description" content="把黄、绿、蓝、红、紫橡皮鸭倒进透明玻璃缸，点出三只同色消除。开局有 0.5% 概率出现整组钻石鸭。">
-  <link rel="stylesheet" href="season2-lv29.css">
+  <link rel="stylesheet" href="season3-lv4.css">
   <!-- Installable game application -->
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -20,8 +20,8 @@
 </head>
 <body>
   <header>
-    <a href="season2.html">← 第二季</a>
-    <div><b>第 29 关</b><span>玻璃缸橡皮鸭</span></div>
+    <a href="season3.html">← 第三季</a>
+    <div><b>第 4 关</b><span>玻璃缸橡皮鸭</span></div>
     <button id="sound" type="button" aria-pressed="true">音效：开</button>
   </header>
   <div id="stage" aria-label="透明玻璃缸里的立体橡皮鸭"></div>
@@ -46,14 +46,14 @@
   </section>
   <section id="intro" class="overlay" aria-labelledby="intro-title">
     <div class="card">
-      <p class="eyebrow">LEVEL 29 · GLASS TANK</p>
+      <p class="eyebrow">SEASON 3 · LEVEL 4</p>
       <h1 id="intro-title">把鸭子倒进玻璃缸</h1>
       <p>黄、绿、蓝、红、紫五种橡皮鸭各 30 只，一共 150 只。点你看得到的那一只，它会飞进下面的 7 格选取槽，相同颜色靠在一起。凑满 3 只同色就消除，并嘎一声。</p>
       <p>槽里放满 7 只还没消除，这局失败。缸里和槽里都空了，是普通通关；普通通关不另发岩浆币。</p>
       <p>每次开局只抽一次：0.5% 的概率额外倒进一整组 3 只钻石鸭，普通局一只钻石鸭都没有。找到并消除这 3 只，奖励上面那一串精确整数，只入账一次。洗罐把还在缸里的鸭子抛起来再落回去，不增减、不复活、不重抽，也不再发奖。倒入和洗罐时先看动画，避免误点。</p>
       <p>重开是全新的一局，会重新按 0.5% 决定。已经存进余额的岩浆币不会被收回。拖动画面可以绕着缸看。</p>
       <button id="start" type="button">把鸭子倒进缸里</button>
-      <a href="season2.html">返回第二季</a>
+      <a href="season3.html">返回第三季</a>
     </div>
   </section>
   <section id="result" class="overlay" hidden aria-labelledby="result-title">
@@ -62,16 +62,16 @@
       <p id="result-text"></p>
       <p id="result-prize" class="prize" hidden>本局钻石奖励 <code id="result-exact"></code> 颗岩浆币</p>
       <button id="again" type="button">再来一局</button>
-      <a href="season2.html">返回第二季</a>
+      <a href="season3.html">返回第三季</a>
     </div>
   </section>
   <section id="render-error" class="overlay" hidden role="alert">
     <div class="card">
       <h2>3D 画面暂时无法启动</h2>
       <p>请使用支持 WebGL 的浏览器，开启硬件加速后刷新。规则和奖励数字仍然写在这一页上。</p>
-      <a href="season2.html">返回选关页</a>
+      <a href="season3.html">返回选关页</a>
     </div>
   </section>
-  <script type="module" src="season2-lv29.js"></script>
+  <script type="module" src="season3-lv4.js"></script>
 </body>
 </html>

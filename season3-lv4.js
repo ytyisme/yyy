@@ -50,7 +50,7 @@ if(view){
 function startRound(){
   if(!view||match?.busy)return;
   audio.unlock();
-  sessionId=`duck29-${newLavaRunId()}`;
+  sessionId=`s3duck4-${newLavaRunId()}`;
   rewardNoted=false;
   match=createDuckMatch(preview==='diamonds'?{diamonds:true,preview:true}:preview==='plain'?{diamonds:false,preview:true}:Math.random);
   bodies=createBodies(match.tank,Math.random,{reduced});

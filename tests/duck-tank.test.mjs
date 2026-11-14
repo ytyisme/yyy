@@ -193,23 +193,26 @@ test('a quack is one gesture-gated sound and mute or a missing gesture stays sil
   assert.equal(memory.getItem('duck-tank-sound'),'off');
 });
 
-test('level 29 is wired into the selector, the previous level, and the exact prize text',()=>{
-  const html=fs.readFileSync(new URL('../season2-lv29.html',import.meta.url),'utf8');
-  const page=fs.readFileSync(new URL('../season2-lv29.js',import.meta.url),'utf8');
-  const select=fs.readFileSync(new URL('../season2.html',import.meta.url),'utf8');
-  const previous=fs.readFileSync(new URL('../season2-lv28.html',import.meta.url),'utf8');
+test('season 3 level 4 is wired into its selector and keeps season 2 numbering',()=>{
+  const html=fs.readFileSync(new URL('../season3-lv4.html',import.meta.url),'utf8');
+  const page=fs.readFileSync(new URL('../season3-lv4.js',import.meta.url),'utf8');
+  const select=fs.readFileSync(new URL('../season3.html',import.meta.url),'utf8');
+  const season2=fs.readFileSync(new URL('../season2.html',import.meta.url),'utf8');
   assert.ok(html.includes(`data-exact="${DIAMOND_REWARD}"`));
+  assert.match(html,/第三季第4关/);
   assert.match(page,/creditExact/);
   assert.match(page,/result\.sounds\)audio\.quack/);
   assert.match(page,/match\.preview/);
-  assert.match(select,/29: "玻璃缸橡皮鸭"/);
-  assert.match(select,/season2-lv29\.html/);
-  assert.match(select,/1–29 关/);
-  assert.match(previous,/season2-lv29\.html/);
-  const answer=answerQuestion('第29关怎么玩？',knowledge);
-  assert.equal(answer.level,29);
+  assert.match(select,/玻璃缸橡皮鸭/);
+  assert.match(select,/season3-lv4\.html/);
+  assert.doesNotMatch(season2,/玻璃缸橡皮鸭/);
+  assert.match(season2,/1–28 关/);
+  const answer=answerQuestion('第三季第4关怎么玩？',knowledge);
+  assert.equal(answer.level,null);
   assert.ok(answer.text.includes(DIAMOND_REWARD));
   assert.ok(answer.text.includes('0.5%'));
+  assert.equal(answerQuestion('第4关怎么玩？',knowledge).level,4);
   assert.match(answerQuestion('第35关怎么玩',knowledge).text,/还没有开放/);
   assert.match(answerQuestion('怎么获得岩浆币',knowledge).text,/第22关/);
+  assert.match(answerQuestion('第三季第1关怎么玩',knowledge).text,/还没有开放/);
 });
