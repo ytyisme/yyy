@@ -1,24 +1,86 @@
-:root{color-scheme:light;--ink:#1d4454;--muted:#5d7d8c;--lava:#ef6a4a}
+:root{color-scheme:light;--ink:#6d4b16;--gold:#c9852a}
 *{box-sizing:border-box}
-body{margin:0;min-height:100dvh;background:
-  radial-gradient(circle at 18% 0,#fff 0,transparent 34%),
-  linear-gradient(180deg,#e7f7fb 0,#f8efe2 100%);
-  color:var(--ink);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
-a,button{font:inherit;color:inherit}
-a{text-decoration:none}
-button{border:0;background:none;cursor:pointer}
-button:focus-visible,a:focus-visible{outline:3px solid var(--lava);outline-offset:3px}
-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px}
-header a{border-radius:999px;background:#fff;padding:10px 14px;box-shadow:0 8px 18px #7ea8b822}
-header div{display:flex;flex-direction:column;align-items:center;line-height:1.15}
-header b{font-size:12px;letter-spacing:.16em}
-header span{font-weight:800}
-main{width:min(880px,calc(100% - 28px));margin:8px auto 40px}
-.intro{margin:0 0 14px;color:var(--muted);line-height:1.6}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:16px}
-.grid button{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:96px;padding:16px;border-radius:18px;background:#fff;text-align:left;box-shadow:0 10px 24px #7ea8b822}
-.grid b{font-size:13px;letter-spacing:.08em}
-.grid span{font-size:16px;font-weight:800}
-.grid .locked{opacity:.62}
-.grid .open{background:#fff7ef;box-shadow:0 10px 24px #ef6a4a22}
-.tip{min-height:1.5em;color:#9a3b28;font-weight:700}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:"Noto Sans SC",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0,rgba(255,236,180,.9),transparent 60%),
+    #f6e7c1;
+}
+button{font:inherit}
+button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.top{padding:28px 16px 8px;text-align:center}
+.top h1{margin:0;font-size:clamp(26px,4vw,34px);letter-spacing:.04em;color:#7a5420}
+.tag{margin:8px 0 0;color:#a68448;font-size:13px}
+.level-select{display:grid;place-items:start center;padding:8px 16px 72px}
+.level-select-card{
+  width:min(760px,100%);
+  padding:22px 18px 20px;
+  background:#fffaf0;
+  border:1px solid #f0ddb0;
+  border-radius:18px;
+  box-shadow:0 16px 40px rgba(166,120,40,.12);
+}
+.level-select-card h2{margin:0 0 6px;text-align:center;font-size:22px;color:#8a5e22}
+.level-select-desc{margin:0 0 14px;text-align:center;color:#b08a46;font-size:13px}
+.phone-join{
+  margin:0 0 16px;
+  padding:8px 10px;
+  text-align:center;
+  color:#c49a4a;
+  font-size:13px;
+  border:1px dashed #e6c98a;
+  border-radius:8px;
+  background:rgba(255,236,190,.35);
+}
+.level-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px}
+.level-cell{
+  appearance:none;
+  min-height:78px;
+  padding:10px 4px 8px;
+  border:0;
+  border-radius:14px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  cursor:pointer;
+  color:#7a5418;
+  background:linear-gradient(180deg,#efd292,#e4c06a);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45);
+}
+.level-cell b{font-size:20px;line-height:1}
+.level-cell span{
+  font-size:11px;
+  font-weight:700;
+  padding:2px 8px;
+  border-radius:999px;
+  background:rgba(255,250,240,.72);
+  color:#9a7434;
+}
+.level-cell.open{
+  background:linear-gradient(180deg,#ffe7a6,#f6c44e);
+  box-shadow:0 6px 0 #e3b24d,inset 0 1px 0 rgba(255,255,255,.7);
+}
+.level-cell.open span{background:#ffe08a;color:#8a5a12}
+.level-cell.locked{opacity:.92}
+.level-cell:hover{filter:brightness(1.04)}
+.level-tip{
+  margin:14px 0 0;
+  padding:10px;
+  text-align:center;
+  color:#8a4e16;
+  background:rgba(255,196,90,.18);
+  border:1px solid rgba(214,160,60,.4);
+  border-radius:10px;
+  font-size:13px;
+  font-weight:700;
+}
+.level-tip.hidden{display:none}
+@media(max-width:680px){
+  .level-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .level-cell{min-height:70px}
+  .level-cell b{font-size:18px}
+}

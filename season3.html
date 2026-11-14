@@ -2,48 +2,61 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#d7f3f8">
-  <title>第三季 · 选择关卡</title>
-  <meta name="description" content="岩浆跑酷第三季。第4关玻璃缸橡皮鸭已经开放。">
-  <link rel="stylesheet" href="lava-wallet.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>岩浆跑酷 · 第三季 · 选择关卡</title>
+  <meta name="description" content="岩浆跑酷第三季，共 39 关。前四关已开放，第4关是玻璃缸橡皮鸭。">
+  <link rel="canonical" href="./season3.html">
   <link rel="stylesheet" href="season3.css">
   <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#f6e7c1">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="岩浆跑酷">
   <link rel="apple-touch-icon" href="app-icons/icon-180.png">
   <link rel="icon" type="image/png" href="app-icons/icon-192.png">
   <link rel="stylesheet" href="pwa.css">
-  <script type="module" src="lava-wallet.js"></script>
   <script defer src="pwa.js"></script>
 </head>
 <body>
-  <header>
-    <a href="app.html">← 游戏主页</a>
-    <div><b>第三季</b><span>选择关卡</span></div>
-    <a href="season2.html">第二季</a>
+  <header class="top">
+    <h1>岩浆跑酷 · 第三季</h1>
+    <p class="tag">第三季 · 选择关卡 · 黄色世界</p>
   </header>
-  <main>
-    <p class="intro">第三季目前开放第 4 关。第 1–3 关和后面的关卡还在制作。</p>
-    <div data-lava-wallet></div>
-    <div id="grid" class="grid"></div>
-    <p id="tip" class="tip" role="status"></p>
+  <main class="level-select">
+    <div class="level-select-card">
+      <h2>选择关卡</h2>
+      <p class="level-select-desc">共 39 关 · 第三季</p>
+      <p class="phone-join">前四关已开放，更多关卡敬请期待！</p>
+      <div id="level-grid" class="level-grid"></div>
+      <p id="level-tip" class="level-tip hidden" role="status"></p>
+    </div>
   </main>
   <script>
-    const OPEN = {4: {title: "玻璃缸橡皮鸭", href: "season3-lv4.html"}};
-    const TOTAL = 8;
-    const grid = document.getElementById("grid");
-    const tip = document.getElementById("tip");
+    const TOTAL = 39;
+    const OPEN = {
+      1: "season3-lv1.html",
+      2: "season3-lv2.html",
+      3: "season3-lv3.html",
+      4: "season3-lv4.html"
+    };
+    const NAMES = {4: "玻璃缸橡皮鸭"};
+    const grid = document.getElementById("level-grid");
+    const tip = document.getElementById("level-tip");
     for (let i = 1; i <= TOTAL; i++) {
+      const href = OPEN[i];
       const button = document.createElement("button");
       button.type = "button";
-      const open = OPEN[i];
-      button.className = open ? "open" : "locked";
-      button.innerHTML = "<b>第 " + i + " 关</b><span>" + (open ? open.title : "未开放") + "</span>";
+      button.className = href ? "level-cell open" : "level-cell locked";
+      button.dataset.level = String(i);
+      button.setAttribute("aria-label", "第 " + i + " 关" + (NAMES[i] ? " " + NAMES[i] : "") + "，" + (href ? "开始游戏" : "待开放"));
+      button.innerHTML = "<b>" + i + "</b><span>" + (href ? "开始游戏" : "待开放") + "</span>";
       button.addEventListener("click", () => {
-        if (open) location.href = open.href;
-        else tip.textContent = "第 " + i + " 关还在制作。第三季目前开放第 4 关玻璃缸橡皮鸭。";
+        if (href) {
+          location.href = href;
+          return;
+        }
+        tip.textContent = "第 " + i + " 关还在制作。第三季目前开放前四关。";
+        tip.classList.remove("hidden");
       });
       grid.appendChild(button);
     }
